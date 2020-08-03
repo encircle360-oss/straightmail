@@ -29,7 +29,9 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class EmailService {
 
-    private final String DEFAULT_TEMPLATE = "default.ftl";
+    private final String DEFAULT_TEMPLATE = "default";
+
+    private final String DEFAULT_LOCALE = Locale.getDefault().getLanguage();
 
     private final Configuration freemarkerConfiguration;
 
@@ -89,19 +91,18 @@ public class EmailService {
             modelMap.addAllAttributes(model);
         }
 
-        String templatePath;
-
-        if (emailTemplateDTO == null || emailTemplateDTO.getId() == null) {
-            templatePath = DEFAULT_TEMPLATE;
-        } else {
-            templatePath = emailTemplateDTO.getId() + ".ftl";
+        if (emailTemplateDTO == null) {
+            emailTemplateDTO = EmailTemplateDTO
+                .builder()
+                .id(DEFAULT_TEMPLATE)
+                .locale(DEFAULT_LOCALE)
+                .build();
         }
+
+        String templatePath = emailTemplateDTO.getId() + ".ftl";
 
         Template template = freemarkerConfiguration.getTemplate(templatePath);
-
-        if (emailTemplateDTO != null && emailTemplateDTO.getLocale() != null) {
-            template.setLocale(Locale.forLanguageTag(emailTemplateDTO.getLocale()));
-        }
+        template.setLocale(Locale.forLanguageTag(emailTemplateDTO.getLocale()));
 
         // add import of spring macros, so we can use <@spring.messages 'x' /> in our templates
         template.addAutoImport("spring", "spring.ftl");
