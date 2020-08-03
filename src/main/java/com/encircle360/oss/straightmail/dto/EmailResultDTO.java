@@ -11,7 +11,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class EmailResultDTO {
 
-    private Integer status;
-
     private String message;
+
+    private boolean success;
+
 }

@@ -19,6 +19,7 @@ repositories {
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
     implementation 'org.springframework.boot:spring-boot-starter-freemarker'
 
     // lombok
@@ -27,5 +28,10 @@ dependencies {
     testCompileOnly 'org.projectlombok:lombok'
     testAnnotationProcessor 'org.projectlombok:lombok'
 
+    testImplementation('org.springframework.boot:spring-boot-starter-test')
     testCompile group: 'junit', name: 'junit', version: '4.12'
+}
+
+test {
+    useJUnitPlatform()
 }

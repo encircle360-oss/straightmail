@@ -20,7 +20,7 @@ public class EmailRequestDTO {
     private String sender;
 
     // variables defined in template
-    private HashMap<String,String> model;
+    private HashMap<String, String> model;
 
     // if null use default
     private EmailTemplateDTO emailTemplate;

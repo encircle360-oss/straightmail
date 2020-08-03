@@ -2,6 +2,7 @@ package com.encircle360.oss.straightmail.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mail.MailException;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -20,6 +21,20 @@ public class MailController {
 
     @PostMapping("")
     public ResponseEntity<EmailResultDTO> requestMail(@RequestBody EmailRequestDTO emailRequestDTO) {
-        return ResponseEntity.status(HttpStatus.OK).body(emailService.sendMail(emailRequestDTO));
+        EmailResultDTO emailResult = null;
+        try {
+            emailResult = emailService.sendMail(emailRequestDTO);
+        } catch (MailException mailException) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(EmailResultDTO
+                .builder()
+                .success(false)
+                .message("Sending email gone wrong")
+                .build());
+        }
+
+        if(!emailResult.isSuccess()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(emailResult);
+        }
+        return ResponseEntity.status(HttpStatus.OK).body(emailResult);
     }
 }
