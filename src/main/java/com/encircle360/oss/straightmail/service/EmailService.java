@@ -123,8 +123,8 @@ public class EmailService {
         template.addAutoImport("spring", "spring.ftl");
 
         // add macro request context, otherwise spring import will not work
-        modelMap.addAttribute("springMacroRequestContext", new RequestContext(new FakeLocaleHttpServletRequest(
-            emailTemplateDTO == null ? null : emailTemplateDTO.getLocale()), context));
+        modelMap.addAttribute("springMacroRequestContext",
+            new RequestContext(new FakeLocaleHttpServletRequest(emailTemplateDTO.getLocale()), context));
 
         // process to string and return
         return FreeMarkerTemplateUtils.processTemplateIntoString(template, modelMap);
