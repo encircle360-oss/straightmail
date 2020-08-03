@@ -11,7 +11,7 @@ spring:
         smtp:
           auth: true
           starttls:
-            enable: true
+            enable: ${SMTP_ENABLE_TLS:true}
     protocol: smtp
     test-connection: false
   freemarker:

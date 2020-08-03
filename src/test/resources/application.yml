@@ -5,11 +5,12 @@ spring:
     username: ${SMTP_USER:""}
     password: ${SMTP_PASSWORD:""}
     port: ${SMTP_PORT:587}
+    default-sender: ${DEFAULT_SENDER}
     properties:
       mail:
         smtp:
           auth: true
           starttls:
-            enable: true
+            enable: ${SMTP_ENABLE_TLS:true}
     protocol: smtp
     test-connection: false

@@ -7,6 +7,7 @@ docker run -p8080:8080 \
     --env SMTP_HOST=host.docker.internal \
     --env SMTP_USER=foo \
     --env SMTP_PORT=1025 \
+    --env SMTP_ENABLE_TLS=true \
     straightmail
 ```
 

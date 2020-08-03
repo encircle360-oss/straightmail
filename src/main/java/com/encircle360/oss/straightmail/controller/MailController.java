@@ -12,7 +12,9 @@ import com.encircle360.oss.straightmail.dto.EmailResultDTO;
 import com.encircle360.oss.straightmail.service.EmailService;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 public class MailController {
@@ -20,20 +22,19 @@ public class MailController {
     private final EmailService emailService;
 
     @PostMapping("")
-    public ResponseEntity<EmailResultDTO> requestMail(@RequestBody EmailRequestDTO emailRequestDTO) {
+    public ResponseEntity<EmailResultDTO> requestMail(@RequestBody EmailRequestDTO emailRequest) {
         EmailResultDTO emailResult;
         try {
-            emailResult = emailService.sendMail(emailRequestDTO);
+            emailResult = emailService.sendMail(emailRequest);
         } catch (MailException mailException) {
-            mailException.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(EmailResultDTO
                 .builder()
                 .success(false)
-                .message("Sending email gone wrong")
+                .message("Sending email gone wrong: " + mailException.getMessage())
                 .build());
         }
 
-        if(!emailResult.isSuccess()) {
+        if (!emailResult.isSuccess()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(emailResult);
         }
         return ResponseEntity.status(HttpStatus.OK).body(emailResult);

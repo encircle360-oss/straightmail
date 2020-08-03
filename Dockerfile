@@ -1,4 +1,4 @@
 FROM openjdk:14
-ADD build/libs/*.jar /app.jar
+ADD build/libs/*.jar /straightmail.jar
 ADD src/main/resources /resources
-CMD ["java","-jar","/app.jar"]
+CMD ["java","-jar","/straightmail.jar"]
