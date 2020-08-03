@@ -8,6 +8,7 @@ import java.util.Locale;
 import javax.mail.internet.MimeMessage;
 import javax.servlet.ServletContext;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -30,6 +31,9 @@ import lombok.RequiredArgsConstructor;
 public class EmailService {
 
     private final String DEFAULT_TEMPLATE = "default";
+
+    @Value("${spring.mail.default-sender}")
+    private final String DEFAULT_SENDER = null;
 
     private final String DEFAULT_LOCALE = Locale.getDefault().getLanguage();
 
@@ -70,6 +74,10 @@ public class EmailService {
     private MimeMessage createMessage(EmailRequestDTO emailRequest, String body) {
         MimeMessage message = emailClient.createMimeMessage();
         MimeMessageHelper helper;
+        if (emailRequest.getSender() == null) {
+            emailRequest.setSender(DEFAULT_SENDER);
+        }
+
         try {
             helper = new MimeMessageHelper(message,
                 MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED,

@@ -5,6 +5,7 @@ spring:
     username: foo
     password: bar
     port: 1025
+    default-sender: "tester@encircle360.com"
     properties:
       mail:
         smtp:
