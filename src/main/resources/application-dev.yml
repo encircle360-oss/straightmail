@@ -1,0 +1,15 @@
+spring:
+  mail:
+    default-encoding: UTF-8
+    host: localhost
+    username: foo
+    password: bar
+    port: 1025
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+    protocol: smtp
+    test-connection: false

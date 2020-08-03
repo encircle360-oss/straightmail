@@ -6,16 +6,20 @@ import java.util.HashMap;
 import java.util.Locale;
 
 import javax.mail.internet.MimeMessage;
+import javax.servlet.ServletContext;
 
+import org.springframework.context.MessageSource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.ui.ModelMap;
 import org.springframework.ui.freemarker.FreeMarkerTemplateUtils;
+import org.springframework.web.servlet.support.RequestContext;
 
 import com.encircle360.oss.straightmail.dto.EmailRequestDTO;
 import com.encircle360.oss.straightmail.dto.EmailResultDTO;
 import com.encircle360.oss.straightmail.dto.EmailTemplateDTO;
+import com.encircle360.oss.straightmail.dto.FakeLocaleHttpServletRequest;
 
 import freemarker.template.Configuration;
 import freemarker.template.Template;
@@ -30,6 +34,12 @@ public class EmailService {
 
     private final JavaMailSender emailClient;
 
+    private final String DEFAULT_TEMPLATE = "default.ftl";
+
+    private final MessageSource messageSource;
+
+    private final ServletContext context;
+
     public EmailResultDTO sendMail(EmailRequestDTO emailRequestDTO) {
         String body = null;
         try {
@@ -37,7 +47,7 @@ public class EmailService {
         } catch (IOException | TemplateException e) {
             return EmailResultDTO.builder()
                 .message("Error parsing Template")
-                .success(true)
+                .success(false)
                 .build();
         }
 
@@ -69,28 +79,40 @@ public class EmailService {
             helper.setTo(emailRequest.getRecipient());
             helper.setSubject(emailRequest.getSubject());
             helper.setText(body, true);
-        } catch (Exception ignored) { return null; }
+        } catch (Exception ignored) {
+            return null;
+        }
 
         return message;
     }
 
     private String parseTemplate(EmailTemplateDTO emailTemplateDTO, HashMap<String, String> model) throws IOException, TemplateException {
-        if (emailTemplateDTO == null) {
-            return null;
-        }
-
+        String testmsq = messageSource.getMessage("email.subject", null, Locale.forLanguageTag("de"));
         ModelMap modelMap = new ModelMap();
         if (model != null) {
             modelMap.addAllAttributes(model);
         }
 
-        String templatePath = emailTemplateDTO.getId() + ".ftl";
+        String templatePath;
+
+        if (emailTemplateDTO == null || emailTemplateDTO.getId() == null) {
+            templatePath = DEFAULT_TEMPLATE;
+        } else {
+            templatePath = emailTemplateDTO.getId() + ".ftl";
+        }
 
         Template template = freemarkerConfiguration.getTemplate(templatePath);
-        if (emailTemplateDTO.getLocale() != null) {
-            template.addAutoImport("spring", "spring.ftl");
+
+        if (emailTemplateDTO != null && emailTemplateDTO.getLocale() != null) {
             template.setLocale(Locale.forLanguageTag(emailTemplateDTO.getLocale()));
         }
+
+        // add import of spring macros, so we can use <@spring.messages 'x' /> in our templates
+        template.addAutoImport("spring", "spring.ftl");
+
+        // add macro request context, otherwise spring import will not work
+        modelMap.addAttribute("springMacroRequestContext", new RequestContext(new FakeLocaleHttpServletRequest(
+            emailTemplateDTO == null ? null: emailTemplateDTO.getLocale()), context));
         return FreeMarkerTemplateUtils.processTemplateIntoString(template, modelMap);
     }
 }

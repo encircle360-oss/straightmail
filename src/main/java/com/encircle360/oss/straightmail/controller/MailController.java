@@ -21,7 +21,7 @@ public class MailController {
 
     @PostMapping("")
     public ResponseEntity<EmailResultDTO> requestMail(@RequestBody EmailRequestDTO emailRequestDTO) {
-        EmailResultDTO emailResult = null;
+        EmailResultDTO emailResult;
         try {
             emailResult = emailService.sendMail(emailRequestDTO);
         } catch (MailException mailException) {

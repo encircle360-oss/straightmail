@@ -38,5 +38,17 @@ public class StraightmailApplicationTests {
             .contentType(MediaType.APPLICATION_JSON_VALUE)
             .content(objectMapper.writeValueAsString(EmailRequestDTO.builder().build())))
             .andExpect(status().is4xxClientError());
+
+        String body = objectMapper.writeValueAsString(EmailRequestDTO.builder()
+            .recipient("test@encircle360.com")
+            .sender("test@encircle360.com")
+            .subject("test mail")
+            .build()
+        );
+
+        mock.perform(MockMvcRequestBuilders.post("/")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(body))
+            .andExpect(status().is2xxSuccessful());
     }
 }
