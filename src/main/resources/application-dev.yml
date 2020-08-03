@@ -11,6 +11,12 @@ spring:
         smtp:
           auth: true
           starttls:
-            enable: true
+            enable: ${SMTP_ENABLE_TLS:false}
+          ssl:
+            enable: ${SMTP_ENABLE_SSL:false}
     protocol: smtp
     test-connection: false
+  freemarker:
+    template-loader-path:
+      - classpath:templates
+debug: true
