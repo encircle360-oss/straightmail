@@ -8,6 +8,8 @@ import java.util.Locale;
 import javax.mail.internet.MimeMessage;
 import javax.servlet.ServletContext;
 
+import org.jsoup.Jsoup;
+import org.jsoup.safety.Whitelist;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -82,10 +84,15 @@ public class EmailService {
             helper = new MimeMessageHelper(message,
                 MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED,
                 StandardCharsets.UTF_8.name());
+
+            // set plain text result by removing all html tags and convert br to \n
+            String plainText = Jsoup.clean(body, Whitelist.none().addTags("br"))
+                .replaceAll("(<br>|<br/>|<br />)", "\n");
+
             helper.setFrom(emailRequest.getSender());
             helper.setTo(emailRequest.getRecipient());
             helper.setSubject(emailRequest.getSubject());
-            helper.setText(body, true);
+            helper.setText(plainText, body);
         } catch (Exception ignored) {
             return null;
         }
