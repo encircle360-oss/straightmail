@@ -8,7 +8,6 @@ import java.util.Locale;
 import javax.mail.internet.MimeMessage;
 import javax.servlet.ServletContext;
 
-import org.springframework.context.MessageSource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -30,23 +29,21 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class EmailService {
 
+    private final String DEFAULT_TEMPLATE = "default.ftl";
+
     private final Configuration freemarkerConfiguration;
 
     private final JavaMailSender emailClient;
 
-    private final String DEFAULT_TEMPLATE = "default.ftl";
-
-    private final MessageSource messageSource;
-
     private final ServletContext context;
 
     public EmailResultDTO sendMail(EmailRequestDTO emailRequestDTO) {
-        String body = null;
+        String body;
         try {
             body = parseTemplate(emailRequestDTO.getEmailTemplate(), emailRequestDTO.getModel());
         } catch (IOException | TemplateException e) {
             return EmailResultDTO.builder()
-                .message("Error parsing Template")
+                .message("Error parsing Template: " + e.getMessage())
                 .success(false)
                 .build();
         }
@@ -70,7 +67,7 @@ public class EmailService {
 
     private MimeMessage createMessage(EmailRequestDTO emailRequest, String body) {
         MimeMessage message = emailClient.createMimeMessage();
-        MimeMessageHelper helper = null;
+        MimeMessageHelper helper;
         try {
             helper = new MimeMessageHelper(message,
                 MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED,
@@ -87,7 +84,6 @@ public class EmailService {
     }
 
     private String parseTemplate(EmailTemplateDTO emailTemplateDTO, HashMap<String, String> model) throws IOException, TemplateException {
-        String testmsq = messageSource.getMessage("email.subject", null, Locale.forLanguageTag("de"));
         ModelMap modelMap = new ModelMap();
         if (model != null) {
             modelMap.addAllAttributes(model);
@@ -112,7 +108,9 @@ public class EmailService {
 
         // add macro request context, otherwise spring import will not work
         modelMap.addAttribute("springMacroRequestContext", new RequestContext(new FakeLocaleHttpServletRequest(
-            emailTemplateDTO == null ? null: emailTemplateDTO.getLocale()), context));
+            emailTemplateDTO == null ? null : emailTemplateDTO.getLocale()), context));
+
+        // process to string and return
         return FreeMarkerTemplateUtils.processTemplateIntoString(template, modelMap);
     }
 }

@@ -25,6 +25,7 @@ public class MailController {
         try {
             emailResult = emailService.sendMail(emailRequestDTO);
         } catch (MailException mailException) {
+            mailException.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(EmailResultDTO
                 .builder()
                 .success(false)

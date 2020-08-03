@@ -13,3 +13,7 @@ spring:
             enable: true
     protocol: smtp
     test-connection: false
+  freemarker:
+    template-loader-path:
+      - file:/root/resources/templates
+      - classpath:templates
