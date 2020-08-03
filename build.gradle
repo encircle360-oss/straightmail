@@ -6,7 +6,7 @@ plugins {
 }
 
 group = 'com.encircle360.oss.straightmail'
-version '1.0-SNAPSHOT'
+version '0.0.1'
 
 java {
     sourceCompatibility = JavaVersion.VERSION_14

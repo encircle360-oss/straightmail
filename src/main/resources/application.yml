@@ -15,5 +15,5 @@ spring:
     test-connection: false
   freemarker:
     template-loader-path:
-      - file:/root/resources/templates
+      - file:/resources/templates
       - classpath:templates

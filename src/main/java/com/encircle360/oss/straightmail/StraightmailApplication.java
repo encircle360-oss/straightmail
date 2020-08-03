@@ -20,8 +20,8 @@ public class StraightmailApplication {
     @Bean
     public MessageSource messageSource() {
         ResourceBundleMessageSource messageSource = new ResourceBundleMessageSource();
-        if(Files.exists(Path.of("file:/root/resources/i18n/messages"))) {
-            messageSource.setBasenames("file:/root/resources/i18n/messages", "i18n/messages");
+        if (Files.exists(Path.of("file:/resources/i18n/messages"))) {
+            messageSource.setBasenames("file:/resources/i18n/messages", "i18n/messages");
         } else {
             messageSource.setBasename("i18n/messages");
         }
