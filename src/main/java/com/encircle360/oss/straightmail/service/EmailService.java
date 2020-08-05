@@ -46,6 +46,13 @@ public class EmailService {
     private final ServletContext context;
 
     public EmailResultDTO sendMail(EmailRequestDTO emailRequestDTO) {
+        if(emailRequestDTO == null) {
+            return EmailResultDTO.builder()
+                .message("Request was empty")
+                .success(false)
+                .build();        
+        }
+
         String body;
         try {
             body = parseTemplate(emailRequestDTO.getEmailTemplate(), emailRequestDTO.getModel());
