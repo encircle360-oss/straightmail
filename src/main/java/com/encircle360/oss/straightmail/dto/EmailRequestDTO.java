@@ -1,6 +1,7 @@
 package com.encircle360.oss.straightmail.dto;
 
 import java.util.HashMap;
+import java.util.List;
 
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
@@ -21,7 +22,15 @@ public class EmailRequestDTO {
     @Email
     @NotBlank
     @Schema(name = "recipient", description = "The recipient of the send mail", example = "test@encircle360.com")
-    private String recipient;
+    private List<String> recipient;
+
+    @Email
+    @Schema(name = "cc", description = "The carbon copy recipients of the send mail")
+    private List<String> cc;
+
+    @Email
+    @Schema(name = "bcc", description = "The black carbon copy recipients of the send mail")
+    private List<String> bcc;
 
     @NotBlank
     @Schema(name = "subject", description = "The subject of the email which will be send", example = "This is an urgent E-Mail")

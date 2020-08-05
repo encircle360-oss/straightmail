@@ -46,11 +46,11 @@ public class EmailService {
     private final ServletContext context;
 
     public EmailResultDTO sendMail(EmailRequestDTO emailRequestDTO) {
-        if(emailRequestDTO == null) {
+        if (emailRequestDTO == null) {
             return EmailResultDTO.builder()
                 .message("Request was empty")
                 .success(false)
-                .build();        
+                .build();
         }
 
         String body;
@@ -97,8 +97,24 @@ public class EmailService {
                 .replaceAll("(<br>|<br/>|<br />)", "\n");
 
             helper.setFrom(emailRequest.getSender());
-            helper.setTo(emailRequest.getRecipient());
             helper.setSubject(emailRequest.getSubject());
+
+            for (String s : emailRequest.getRecipient()) {
+                helper.addTo(s);
+            }
+
+            if (emailRequest.getCc() != null && !emailRequest.getCc().isEmpty()) {
+                for (String s : emailRequest.getCc()) {
+                    helper.addCc(s);
+                }
+            }
+
+            if (emailRequest.getBcc() != null && !emailRequest.getBcc().isEmpty()) {
+                for (String s : emailRequest.getBcc()) {
+                    helper.addBcc(s);
+                }
+            }
+
             helper.setText(plainText, body);
         } catch (Exception ignored) {
             return null;
