@@ -24,3 +24,6 @@ spring:
     name: straightmail
 server:
   port: 8080
+springdoc:
+  api-docs:
+    enabled: false
