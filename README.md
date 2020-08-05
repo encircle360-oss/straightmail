@@ -10,7 +10,7 @@ docker run -p 8080:8080 \
     --env DEFAULT_SENDER=test@encircle360.com \
     --env SMTP_ENABLE_TLS=true \
     --env SMTP_ENABLE_SSL=false \
-    --env spring_profiles_active=prod \
+    --env SPRING_PROFILES_ACTIVE=prod \
     straightmail
 ```
 
@@ -36,7 +36,7 @@ If you use dev profile visit:
 ```
 http://straightmail-address:50003/swagger-ui/index.html?url=/v3/api-docs#/
 ```
-
+On this page you can use swagger ui to test the RESTful API for E-Mail sending 
 
 This is open source software by [encircle360](https://encircle360.com).
 Use on your own risk and for personal use.
