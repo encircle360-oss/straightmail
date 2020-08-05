@@ -20,3 +20,5 @@ spring:
     template-loader-path:
       - classpath:templates
 debug: true
+server:
+  port: 50003

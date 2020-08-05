@@ -11,6 +11,7 @@ import com.encircle360.oss.straightmail.dto.EmailRequestDTO;
 import com.encircle360.oss.straightmail.dto.EmailResultDTO;
 import com.encircle360.oss.straightmail.service.EmailService;
 
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -22,6 +23,7 @@ public class MailController {
     private final EmailService emailService;
 
     @PostMapping("")
+    @Operation(operationId = "requestMail", description = "Endpoint to send emails via client")
     public ResponseEntity<EmailResultDTO> requestMail(@RequestBody EmailRequestDTO emailRequest) {
         EmailResultDTO emailResult;
         try {
