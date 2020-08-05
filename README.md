@@ -10,6 +10,7 @@ docker run -p8080:8080 \
     --env DEFAULT_SENDER=test@encircle360.com \
     --env SMTP_ENABLE_TLS=true \
     --env SMTP_ENABLE_SSL=false \
+    --env spring_profiles_active=prod \
     straightmail
 ```
 
@@ -29,6 +30,13 @@ Lets give your straightmail a call:
 ```
 curl -d "{ \"recipient\": \"test@localhost\", \"subject\": \"test mail\", \"model\": { \"testKey\": \"testValue\" }, \"emailTemplate\": { \"id\": \"default\", \"locale\": \"de\" } }"  -H "Content-Type: application/json" -X POST http://localhost:8080/
 ```
+
+If you use dev profile visit:
+
+```
+http://straightmail-address:50003/swagger-ui/index.html?url=/v3/api-docs#/
+```
+
 
 This is open source software by [encircle360](https://encircle360.com).
 Use on your own risk and for personal use.

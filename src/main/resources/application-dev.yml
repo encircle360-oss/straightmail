@@ -22,3 +22,6 @@ spring:
 debug: true
 server:
   port: 50003
+springdoc:
+  api-docs:
+    enabled: true
