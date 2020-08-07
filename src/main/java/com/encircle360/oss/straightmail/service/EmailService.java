@@ -99,7 +99,7 @@ public class EmailService {
             helper.setFrom(emailRequest.getSender());
             helper.setSubject(emailRequest.getSubject());
 
-            for (String s : emailRequest.getRecipient()) {
+            for (String s : emailRequest.getRecipients()) {
                 helper.addTo(s);
             }
 
