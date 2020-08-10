@@ -21,7 +21,7 @@ public class EmailRequestDTO {
 
     @Email
     @NotBlank
-    @Schema(name = "recipient", description = "The recipient of the send mail", example = "test@encircle360.com")
+    @Schema(name = "recipients", description = "The recipient of the send mail", example = "test@encircle360.com")
     private List<String> recipients;
 
     @Email
