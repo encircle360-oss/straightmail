@@ -10,7 +10,7 @@ docker run -p 50003:50003 \
     --env DEFAULT_SENDER=test@encircle360.com \
     --env SMTP_ENABLE_TLS=true \
     --env SMTP_ENABLE_SSL=false \
-    --env SPRING_PROFILES_ACTIVE=prod \
+    --env SPRING_PROFILES_ACTIVE=production \
     registry.gitlab.com/encircle360-oss/straightmail:latest
 ```
 
@@ -28,7 +28,7 @@ ADD src/main/resources /resources
 
 Lets give your straightmail a call:
 ```
-curl -d "{ \"recipient\": \"test@localhost\", \"subject\": \"test mail\", \"model\": { \"testKey\": \"testValue\" }, \"emailTemplate\": { \"id\": \"default\", \"locale\": \"de\" } }"  -H "Content-Type: application/json" -X POST http://localhost:8080/
+curl -d "{ \"recipient\": \"test@localhost\", \"subject\": \"test mail\", \"model\": { \"testKey\": \"testValue\" }, \"emailTemplate\": { \"id\": \"default\", \"locale\": \"de\" } }"  -H "Content-Type: application/json" -X POST http://localhost:50003/
 ```
 
 If you use dev profile visit:
