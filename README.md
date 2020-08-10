@@ -11,7 +11,7 @@ docker run -p 8080:8080 \
     --env SMTP_ENABLE_TLS=true \
     --env SMTP_ENABLE_SSL=false \
     --env SPRING_PROFILES_ACTIVE=prod \
-    straightmail
+    registry.gitlab.com/encircle360-oss/straightmail:latest
 ```
 
 Variables should be set to your correct SMTP credentials and host. DEFAULT_SENDER should be set to your default email address, if no email is set in payload this one will be used.
