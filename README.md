@@ -2,7 +2,7 @@
 
 To run an instance of straightmail just run:
 ```
-docker run -p 8080:8080 \
+docker run -p 50003:50003 \
     --env SMTP_PASSWORD=bar \
     --env SMTP_HOST=host.docker.internal \
     --env SMTP_USER=foo \

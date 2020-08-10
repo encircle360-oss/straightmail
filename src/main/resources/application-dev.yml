@@ -1,4 +1,6 @@
 spring:
+  application:
+    name: straightmail
   mail:
     default-encoding: UTF-8
     host: localhost
