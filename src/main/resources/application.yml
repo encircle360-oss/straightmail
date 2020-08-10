@@ -22,5 +22,6 @@ spring:
     template-loader-path:
       - file:/resources/templates
       - classpath:templates
+
 server:
-  port: 8080
+  port: 50003
