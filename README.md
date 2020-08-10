@@ -10,7 +10,7 @@ docker run -p 50003:50003 \
     --env DEFAULT_SENDER=test@encircle360.com \
     --env SMTP_ENABLE_TLS=true \
     --env SMTP_ENABLE_SSL=false \
-    --env SPRING_PROFILES_ACTIVE=prod \
+    --env SPRING_PROFILES_ACTIVE=production \
     registry.gitlab.com/encircle360-oss/straightmail:latest
 ```
 
