@@ -1,0 +1,6 @@
+springdoc:
+  api-docs:
+    enabled: false
+spring:
+  application:
+    name: straightmail

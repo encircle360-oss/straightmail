@@ -1,0 +1,26 @@
+spring:
+  mail:
+    default-encoding: UTF-8
+    host: ${SMTP_HOST:""}
+    username: ${SMTP_USER:""}
+    password: ${SMTP_PASSWORD:""}
+    port: ${SMTP_PORT:587}
+    default-sender: ${DEFAULT_SENDER:""}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: ${SMTP_ENABLE_TLS:false}
+          ssl:
+            enable: ${SMTP_ENABLE_SSL:false}
+    protocol: smtp
+    test-connection: false
+  freemarker:
+    template-loader-path:
+      - file:/resources/templates
+      - classpath:templates
+  application:
+    name: straightmail
+server:
+  port: 8080

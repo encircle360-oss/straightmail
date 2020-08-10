@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: straightmail
+  mail:
+    default-encoding: UTF-8
+    host: localhost
+    username: foo
+    password: bar
+    port: 1025
+    default-sender: "tester@encircle360.com"
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: ${SMTP_ENABLE_TLS:false}
+          ssl:
+            enable: ${SMTP_ENABLE_SSL:false}
+    protocol: smtp
+    test-connection: false
+  freemarker:
+    template-loader-path:
+      - classpath:templates
+debug: true
+server:
+  port: 50003
+springdoc:
+  api-docs:
+    enabled: true
