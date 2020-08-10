@@ -28,7 +28,7 @@ ADD src/main/resources /resources
 
 Lets give your straightmail a call:
 ```
-curl -d "{ \"recipient\": \"test@localhost\", \"subject\": \"test mail\", \"model\": { \"testKey\": \"testValue\" }, \"emailTemplate\": { \"id\": \"default\", \"locale\": \"de\" } }"  -H "Content-Type: application/json" -X POST http://localhost:8080/
+curl -d "{ \"recipient\": \"test@localhost\", \"subject\": \"test mail\", \"model\": { \"testKey\": \"testValue\" }, \"emailTemplate\": { \"id\": \"default\", \"locale\": \"de\" } }"  -H "Content-Type: application/json" -X POST http://localhost:50003/
 ```
 
 If you use dev profile visit:
