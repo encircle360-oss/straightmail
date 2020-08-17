@@ -20,7 +20,7 @@ If you want to use SSL set `SMTP_ENABLE_SSL` to `true` an `SMTP_ENABLE_TLS` to `
 
 Now you can start using Straightmail for sending your email via simple rest calls.
 
-Open `http://localhost:50003/swagger-ui` in your browser to visit the swagger and openAPI documentation which shows the available REST endpoints you can use to send emails.
+Open `http://localhost:50003/swagger-ui/` in your browser to visit the swagger and openAPI documentation which shows the available REST endpoints you can use to send emails.
 
 Note that you should start straightmail in `production` profile if you're in a production environment otherwise the swagger-ui will be be available and open to the world.
 To do this just switch the docker env variable to `--env SPRING_PROFILES_ACTIVE=production`.
