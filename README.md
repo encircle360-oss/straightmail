@@ -37,7 +37,7 @@ curl -d "{ \"recipient\": \"test@localhost\", \"subject\": \"test mail\", \"mode
 If you want to bring your own templates and language files just use the straightmail base image and create your own straightmail image on top of that.
 We suggest to use your own Dockerfile for that. You could for example put this one with your templates and language files into a git repository to have everything versioned.
 
-###Example Dockerfile
+### Example Dockerfile
 
 Since straightmail will lookup for templates in `/resources/templates/` and i18n files in `/resources/i18n/` you can use the following Dockerfile as example to create your own docker image with your own templates and i18n.
 You can find examples how [templates](src/main/resources/templates) or [i18n files](src/main/resources/i18n) look like [here](src/main/resources).
