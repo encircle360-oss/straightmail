@@ -54,7 +54,7 @@ After you've build your own docker image with your own templates you can use the
 The `emailTemplate.id` field corresponds to the template filename. If you've added a template called `emailConfirmation.ftl` you have to use 
 `{"emailTemplate":
 "id": "emailConfirmation", ...}`
-withn your REST API payload.
+within your API request payload.
 
 ### Good to know 
 Straightmail internally uses the [freemarker](https://freemarker.apache.org/) template engine which has the advantages that it's easy to copy and paste email html templates.
