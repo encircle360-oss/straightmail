@@ -50,6 +50,12 @@ ADD i18n /resources/i18n # add your i18n directory containing messages.propertie
 If you're done with this you can build your own image using docker-cli `docker build .` or let your build pipeline do that.
 E.g. we suggest to use gitlab-ci to always have your own customized straightmail docker image.
 
+After you've build your own docker image with your own templates you can use the REST api to send emails.
+The `emailTemplate.id` field corresponds to the template filename. If you've added a template called `emailConfirmation.ftl` you have to use 
+`{"emailTemplate":
+"id": "emailConfirmation", ...}`
+withn your REST API payload.
+
 ### Good to know 
 Straightmail internally uses the [freemarker](https://freemarker.apache.org/) template engine which has the advantages that it's easy to copy and paste email html templates.
 This is really useful if you for example use email templates bought on themeforest. Since these templates can get updates you don't have to check each html dom element while importing a template update.
