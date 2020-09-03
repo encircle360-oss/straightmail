@@ -25,3 +25,6 @@ spring:
 
 server:
   port: 50003
+management:
+  server:
+    port: 50004
