@@ -14,3 +14,5 @@ spring:
             enable: ${SMTP_ENABLE_TLS:true}
     protocol: smtp
     test-connection: false
+server:
+  port: 50003

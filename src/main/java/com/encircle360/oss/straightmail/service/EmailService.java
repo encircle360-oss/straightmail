@@ -69,7 +69,7 @@ public class EmailService {
             if (emailRequestDTO instanceof EmailTemplateFileRequestDTO) {
                 body = parseTemplateFromFile(((EmailTemplateFileRequestDTO) emailRequestDTO).getEmailTemplateId(), emailRequestDTO.getLocale(), emailRequestDTO.getModel());
             } else if (emailRequestDTO instanceof EmailInlineTemplateRequestDTO) {
-                body = parseTemplateFromFile(((EmailInlineTemplateRequestDTO) emailRequestDTO).getEmailTemplate(), emailRequestDTO.getLocale(), emailRequestDTO.getModel());
+                body = parseTemplateFromString(((EmailInlineTemplateRequestDTO) emailRequestDTO).getEmailTemplate(), emailRequestDTO.getLocale(), emailRequestDTO.getModel());
             }
         } catch (IOException | TemplateException e) {
 

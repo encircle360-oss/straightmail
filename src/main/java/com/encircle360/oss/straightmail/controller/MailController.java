@@ -49,6 +49,19 @@ public class MailController {
 
     @PostMapping("/inline")
     public ResponseEntity<EmailResultDTO> requestInlineTemplateMail(@RequestBody @Valid EmailInlineTemplateRequestDTO emailRequestInlineTemplateDTO) {
-        return ResponseEntity.status(HttpStatus.OK).build();
-    }
+        EmailResultDTO emailResult;
+        try {
+            emailResult = emailService.sendMailTemplateFile(emailRequestInlineTemplateDTO);
+        } catch (MailException mailException) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(EmailResultDTO
+                .builder()
+                .success(false)
+                .message("Sending email gone wrong: " + mailException.getMessage())
+                .build());
+        }
+
+        if (!emailResult.isSuccess()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(emailResult);
+        }
+        return ResponseEntity.status(HttpStatus.OK).body(emailResult);    }
 }

@@ -75,16 +75,48 @@ public class StraightmailApplicationTests {
         testMap.put("test", JsonNodeFactory.instance.numberNode(200.8));
         String body = objectMapper.writeValueAsString(
             EmailTemplateFileRequestDTO.builder()
-            .recipients(List.of("test@encircle360.com"))
-            .sender("test@encircle360.com")
-            .subject("test mail")
-            .model(testMap)
-            .emailTemplateId("test_template")
-            .locale("de")
-            .build()
+                .recipients(List.of("test@encircle360.com"))
+                .sender("test@encircle360.com")
+                .subject("test mail")
+                .model(testMap)
+                .emailTemplateId("test_template")
+                .locale("de")
+                .build()
         );
 
         mock.perform(MockMvcRequestBuilders.post("/")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(body))
+            .andExpect(status().is2xxSuccessful());
+    }
+
+    @Test
+    public void inlineTemplateTest() throws Exception {
+        String[] arguments = {};
+        StraightmailApplication.main(arguments);
+
+        mock.perform(MockMvcRequestBuilders.post("/"))
+            .andExpect(status().is4xxClientError());
+
+        mock.perform(MockMvcRequestBuilders.post("/")
+            .contentType(MediaType.APPLICATION_JSON_VALUE)
+            .content(objectMapper.writeValueAsString(EmailTemplateFileRequestDTO.builder().build())))
+            .andExpect(status().is4xxClientError());
+
+        HashMap<String, JsonNode> testMap = new HashMap<>();
+        testMap.put("test", JsonNodeFactory.instance.numberNode(200.8));
+        String body = objectMapper.writeValueAsString(
+            EmailInlineTemplateRequestDTO.builder()
+                .recipients(List.of("test@encircle360.com"))
+                .sender("test@encircle360.com")
+                .subject("test mail")
+                .model(testMap)
+                .emailTemplate("${test!\"\"}")
+                .locale("de")
+                .build()
+        );
+
+        mock.perform(MockMvcRequestBuilders.post("/inline")
             .contentType(MediaType.APPLICATION_JSON)
             .content(body))
             .andExpect(status().is2xxSuccessful());
