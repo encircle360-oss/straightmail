@@ -32,7 +32,7 @@ public class MailController {
     public ResponseEntity<EmailResultDTO> requestMail(@RequestBody @Valid EmailTemplateFileRequestDTO emailRequest) {
         EmailResultDTO emailResult;
         try {
-            emailResult = emailService.sendMail(emailRequest);
+            emailResult = emailService.sendMailTemplateFile(emailRequest);
         } catch (MailException mailException) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(EmailResultDTO
                 .builder()

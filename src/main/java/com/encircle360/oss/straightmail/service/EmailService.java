@@ -50,7 +50,7 @@ public class EmailService {
 
     private final ServletContext context;
 
-    public EmailResultDTO sendMail(EmailTemplateFileRequestDTO emailRequestDTO) {
+    public EmailResultDTO sendMailTemplateFile(EmailTemplateFileRequestDTO emailRequestDTO) {
         if (emailRequestDTO == null) {
             return EmailResultDTO.builder()
                 .message("Request was empty")
@@ -87,13 +87,13 @@ public class EmailService {
 
     private MimeMessage createMessage(EmailRequestDTO emailRequest, String body) {
         MimeMessage message = emailClient.createMimeMessage();
-        MimeMessageHelper helper;
+
         if (emailRequest.getSender() == null) {
             emailRequest.setSender(DEFAULT_SENDER);
         }
 
         try {
-            helper = new MimeMessageHelper(message,
+            MimeMessageHelper helper = new MimeMessageHelper(message,
                 MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED,
                 StandardCharsets.UTF_8.name());
 
@@ -126,7 +126,7 @@ public class EmailService {
                 Base64.Decoder decoder = Base64.getDecoder();
                 for (AttachmentDTO attachment : emailRequest.getAttachments()) {
                     byte[] fileBytes = decoder.decode(attachment.getContent());
-                    ByteArrayDataSource bads = new ByteArrayDataSource(fileBytes, "application/octet-stream");
+                    ByteArrayDataSource bads = new ByteArrayDataSource(fileBytes, attachment.getMimeType());
                     helper.addAttachment(attachment.getFilename(), bads);
                 }
             }

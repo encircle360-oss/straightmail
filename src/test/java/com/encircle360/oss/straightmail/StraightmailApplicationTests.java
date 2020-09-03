@@ -2,6 +2,8 @@ package com.encircle360.oss.straightmail;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.util.List;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +14,8 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
-import com.encircle360.oss.straightmail.dto.EmailRequestDTO;
+import com.encircle360.oss.straightmail.dto.EmailInlineTemplateRequestDTO;
+import com.encircle360.oss.straightmail.dto.EmailTemplateFileRequestDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @SpringBootTest
@@ -36,11 +39,11 @@ public class StraightmailApplicationTests {
 
         mock.perform(MockMvcRequestBuilders.post("/")
             .contentType(MediaType.APPLICATION_JSON_VALUE)
-            .content(objectMapper.writeValueAsString(EmailRequestDTO.builder().build())))
+            .content(objectMapper.writeValueAsString(EmailTemplateFileRequestDTO.builder().build())))
             .andExpect(status().is4xxClientError());
 
-        String body = objectMapper.writeValueAsString(EmailRequestDTO.builder()
-            .recipients("test@encircle360.com")
+        String body = objectMapper.writeValueAsString(EmailInlineTemplateRequestDTO.builder()
+            .recipients(List.of("test@encircle360.com"))
             .sender("test@encircle360.com")
             .subject("test mail")
             .build()
