@@ -14,6 +14,6 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 public class EmailTemplateFileRequestDTO extends EmailRequestDTO {
 
-    @Schema(name = "emailTemplate", description = "Email template reference definition")
-    private EmailTemplateDTO emailTemplate;
+    @Schema(name = "emailTemplateId", description = "Email template reference definition")
+    private String emailTemplateId;
 }

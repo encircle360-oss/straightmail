@@ -16,7 +16,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import com.encircle360.oss.straightmail.dto.EmailInlineTemplateRequestDTO;
-import com.encircle360.oss.straightmail.dto.EmailTemplateDTO;
 import com.encircle360.oss.straightmail.dto.EmailTemplateFileRequestDTO;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -74,17 +73,14 @@ public class StraightmailApplicationTests {
 
         HashMap<String, JsonNode> testMap = new HashMap<>();
         testMap.put("test", JsonNodeFactory.instance.numberNode(200.8));
-        String body = objectMapper.writeValueAsString(EmailTemplateFileRequestDTO.builder()
+        String body = objectMapper.writeValueAsString(
+            EmailTemplateFileRequestDTO.builder()
             .recipients(List.of("test@encircle360.com"))
             .sender("test@encircle360.com")
             .subject("test mail")
             .model(testMap)
-            .emailTemplate(EmailTemplateDTO
-                .builder()
-                .locale("de")
-                .id("test_template")
-                .build()
-            )
+            .emailTemplateId("test_template")
+            .locale("de")
             .build()
         );
 

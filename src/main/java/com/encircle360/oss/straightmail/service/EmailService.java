@@ -13,6 +13,7 @@ import javax.servlet.ServletContext;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.MessageSource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -23,7 +24,6 @@ import org.springframework.web.servlet.support.RequestContext;
 import com.encircle360.oss.straightmail.dto.AttachmentDTO;
 import com.encircle360.oss.straightmail.dto.EmailRequestDTO;
 import com.encircle360.oss.straightmail.dto.EmailResultDTO;
-import com.encircle360.oss.straightmail.dto.EmailTemplateDTO;
 import com.encircle360.oss.straightmail.dto.EmailTemplateFileRequestDTO;
 import com.encircle360.oss.straightmail.dto.FakeLocaleHttpServletRequest;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -32,7 +32,9 @@ import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class EmailService {
@@ -50,6 +52,8 @@ public class EmailService {
 
     private final ServletContext context;
 
+    private final MessageSource messageSource;
+
     public EmailResultDTO sendMailTemplateFile(EmailTemplateFileRequestDTO emailRequestDTO) {
         if (emailRequestDTO == null) {
             return EmailResultDTO.builder()
@@ -60,7 +64,7 @@ public class EmailService {
 
         String body;
         try {
-            body = parseTemplate(emailRequestDTO.getEmailTemplate(), emailRequestDTO.getModel());
+            body = parseTemplate(emailRequestDTO.getEmailTemplateId(), emailRequestDTO.getLocale(), emailRequestDTO.getModel());
         } catch (IOException | TemplateException e) {
             return EmailResultDTO.builder()
                 .message("Error parsing Template: " + e.getMessage())
@@ -85,6 +89,15 @@ public class EmailService {
             .build();
     }
 
+    private String messageOrDefault(String subject, String locale) {
+        try {
+            return messageSource.getMessage(subject, null, Locale.forLanguageTag(locale));
+        } catch (Exception e) {
+            log.error(e.getMessage());
+        }
+        return subject;
+    }
+
     private MimeMessage createMessage(EmailRequestDTO emailRequest, String body) {
         MimeMessage message = emailClient.createMimeMessage();
 
@@ -100,9 +113,10 @@ public class EmailService {
             // set plain text result by removing all html tags and convert br to \n
             String plainText = Jsoup.clean(body, Whitelist.none().addTags("br"));
             plainText = plainText.replaceAll("(<br>|<br/>|<br />)", "\n");
+            String subject = messageOrDefault(emailRequest.getSubject(), emailRequest.getLocale());
 
             helper.setFrom(emailRequest.getSender());
-            helper.setSubject(emailRequest.getSubject());
+            helper.setSubject(subject);
 
             if (emailRequest.getRecipients() != null && !emailRequest.getRecipients().isEmpty()) {
                 for (String s : emailRequest.getRecipients()) {
@@ -139,31 +153,31 @@ public class EmailService {
         return message;
     }
 
-    private String parseTemplate(EmailTemplateDTO emailTemplateDTO, HashMap<String, JsonNode> model) throws IOException, TemplateException {
+    private String parseTemplate(String emailTemplateId, String locale, HashMap<String, JsonNode> model) throws IOException, TemplateException {
         ModelMap modelMap = new ModelMap();
         if (model != null) {
             modelMap.addAllAttributes(model);
         }
 
-        if (emailTemplateDTO == null) {
-            emailTemplateDTO = EmailTemplateDTO
-                .builder()
-                .id(DEFAULT_TEMPLATE)
-                .locale(DEFAULT_LOCALE)
-                .build();
+        if (emailTemplateId == null) {
+            emailTemplateId = DEFAULT_TEMPLATE;
         }
 
-        String templatePath = emailTemplateDTO.getId() + ".ftl";
+        if (locale == null) {
+            locale = DEFAULT_LOCALE;
+        }
+
+        String templatePath = emailTemplateId + ".ftl";
 
         Template template = freemarkerConfiguration.getTemplate(templatePath);
-        template.setLocale(Locale.forLanguageTag(emailTemplateDTO.getLocale()));
+        template.setLocale(Locale.forLanguageTag(locale));
 
         // add import of spring macros, so we can use <@spring.messages 'x' /> in our templates
         template.addAutoImport("spring", "spring.ftl");
 
         // add macro request context, otherwise spring import will not work
         modelMap.addAttribute("springMacroRequestContext",
-            new RequestContext(new FakeLocaleHttpServletRequest(emailTemplateDTO.getLocale()), context));
+            new RequestContext(new FakeLocaleHttpServletRequest(locale), context));
 
         // process to string and return
         return FreeMarkerTemplateUtils.processTemplateIntoString(template, modelMap);
