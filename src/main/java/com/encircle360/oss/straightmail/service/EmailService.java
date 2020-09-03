@@ -21,7 +21,9 @@ import org.springframework.web.servlet.support.RequestContext;
 import com.encircle360.oss.straightmail.dto.EmailRequestDTO;
 import com.encircle360.oss.straightmail.dto.EmailResultDTO;
 import com.encircle360.oss.straightmail.dto.EmailTemplateDTO;
+import com.encircle360.oss.straightmail.dto.EmailTemplateFileRequestDTO;
 import com.encircle360.oss.straightmail.dto.FakeLocaleHttpServletRequest;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import freemarker.template.Configuration;
 import freemarker.template.Template;
@@ -45,7 +47,7 @@ public class EmailService {
 
     private final ServletContext context;
 
-    public EmailResultDTO sendMail(EmailRequestDTO emailRequestDTO) {
+    public EmailResultDTO sendMail(EmailTemplateFileRequestDTO emailRequestDTO) {
         if (emailRequestDTO == null) {
             return EmailResultDTO.builder()
                 .message("Request was empty")
@@ -123,7 +125,7 @@ public class EmailService {
         return message;
     }
 
-    private String parseTemplate(EmailTemplateDTO emailTemplateDTO, HashMap<String, String> model) throws IOException, TemplateException {
+    private String parseTemplate(EmailTemplateDTO emailTemplateDTO, HashMap<String, JsonNode> model) throws IOException, TemplateException {
         ModelMap modelMap = new ModelMap();
         if (model != null) {
             modelMap.addAllAttributes(model);

@@ -6,18 +6,20 @@ import java.util.List;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @Data
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
 @Schema(name = "EmailRequest", description = "Object for requesting an email sending")
-public class EmailRequestDTO {
+public abstract class EmailRequestDTO {
 
     @Email
     @NotBlank
@@ -42,8 +44,6 @@ public class EmailRequestDTO {
     private String sender;
 
     @Schema(name = "model", description = "Contains contents for template, map key will be available in template", example = "")
-    private HashMap<String, String> model;
+    private HashMap<String, JsonNode> model;
 
-    @Schema(name = "emailTemplate", description = "Email template reference definition")
-    private EmailTemplateDTO emailTemplate;
 }
