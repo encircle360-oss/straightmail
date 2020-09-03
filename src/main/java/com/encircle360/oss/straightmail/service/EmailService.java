@@ -56,7 +56,7 @@ public class EmailService {
 
     private final MessageSource messageSource;
 
-    public <T extends EmailRequestDTO> EmailResultDTO sendMailTemplateFile(T emailRequestDTO) {
+    public <T extends EmailRequestDTO> EmailResultDTO sendMail(T emailRequestDTO) {
         if (emailRequestDTO == null) {
             return EmailResultDTO.builder()
                 .message("Request was empty")

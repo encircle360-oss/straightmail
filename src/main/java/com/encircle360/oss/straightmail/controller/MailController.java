@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.encircle360.oss.straightmail.dto.EmailInlineTemplateRequestDTO;
+import com.encircle360.oss.straightmail.dto.EmailRequestDTO;
 import com.encircle360.oss.straightmail.dto.EmailResultDTO;
 import com.encircle360.oss.straightmail.dto.EmailTemplateFileRequestDTO;
 import com.encircle360.oss.straightmail.service.EmailService;
@@ -28,11 +29,21 @@ public class MailController {
     private final EmailService emailService;
 
     @PostMapping("")
-    @Operation(operationId = "requestMail", description = "Endpoint to send emails via client")
-    public ResponseEntity<EmailResultDTO> requestMail(@RequestBody @Valid EmailTemplateFileRequestDTO emailRequest) {
+    @Operation(operationId = "sendEMailWithTemplateId", description = "Endpoint to send emails via client")
+    public ResponseEntity<EmailResultDTO> sendEMailWithTemplateId(@RequestBody @Valid EmailTemplateFileRequestDTO emailRequest) {
+        return send(emailRequest);
+    }
+
+    @PostMapping("/inline")
+    @Operation(operationId = "sendEMailWithInlineTemplate", description = "Sends an email with the given contents from request")
+    public ResponseEntity<EmailResultDTO> sendEMailWithInlineTemplate(@RequestBody @Valid EmailInlineTemplateRequestDTO emailRequestInlineTemplateDTO) {
+        return send(emailRequestInlineTemplateDTO);
+    }
+
+    private ResponseEntity<EmailResultDTO> send(EmailRequestDTO emailRequest) {
         EmailResultDTO emailResult;
         try {
-            emailResult = emailService.sendMailTemplateFile(emailRequest);
+            emailResult = emailService.sendMail(emailRequest);
         } catch (MailException mailException) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(EmailResultDTO
                 .builder()
@@ -46,22 +57,4 @@ public class MailController {
         }
         return ResponseEntity.status(HttpStatus.OK).body(emailResult);
     }
-
-    @PostMapping("/inline")
-    public ResponseEntity<EmailResultDTO> requestInlineTemplateMail(@RequestBody @Valid EmailInlineTemplateRequestDTO emailRequestInlineTemplateDTO) {
-        EmailResultDTO emailResult;
-        try {
-            emailResult = emailService.sendMailTemplateFile(emailRequestInlineTemplateDTO);
-        } catch (MailException mailException) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(EmailResultDTO
-                .builder()
-                .success(false)
-                .message("Sending email gone wrong: " + mailException.getMessage())
-                .build());
-        }
-
-        if (!emailResult.isSuccess()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(emailResult);
-        }
-        return ResponseEntity.status(HttpStatus.OK).body(emailResult);    }
 }
