@@ -2,10 +2,12 @@ package com.encircle360.oss.straightmail.service;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Locale;
 
 import javax.mail.internet.MimeMessage;
+import javax.mail.util.ByteArrayDataSource;
 import javax.servlet.ServletContext;
 
 import org.jsoup.Jsoup;
@@ -18,6 +20,7 @@ import org.springframework.ui.ModelMap;
 import org.springframework.ui.freemarker.FreeMarkerTemplateUtils;
 import org.springframework.web.servlet.support.RequestContext;
 
+import com.encircle360.oss.straightmail.dto.AttachmentDTO;
 import com.encircle360.oss.straightmail.dto.EmailRequestDTO;
 import com.encircle360.oss.straightmail.dto.EmailResultDTO;
 import com.encircle360.oss.straightmail.dto.EmailTemplateDTO;
@@ -95,14 +98,16 @@ public class EmailService {
                 StandardCharsets.UTF_8.name());
 
             // set plain text result by removing all html tags and convert br to \n
-            String plainText = Jsoup.clean(body, Whitelist.none().addTags("br"))
-                .replaceAll("(<br>|<br/>|<br />)", "\n");
+            String plainText = Jsoup.clean(body, Whitelist.none().addTags("br"));
+            plainText = plainText.replaceAll("(<br>|<br/>|<br />)", "\n");
 
             helper.setFrom(emailRequest.getSender());
             helper.setSubject(emailRequest.getSubject());
 
-            for (String s : emailRequest.getRecipients()) {
-                helper.addTo(s);
+            if (emailRequest.getRecipients() != null && !emailRequest.getRecipients().isEmpty()) {
+                for (String s : emailRequest.getRecipients()) {
+                    helper.addTo(s);
+                }
             }
 
             if (emailRequest.getCc() != null && !emailRequest.getCc().isEmpty()) {
@@ -114,6 +119,15 @@ public class EmailService {
             if (emailRequest.getBcc() != null && !emailRequest.getBcc().isEmpty()) {
                 for (String s : emailRequest.getBcc()) {
                     helper.addBcc(s);
+                }
+            }
+
+            if (emailRequest.getAttachments() != null && !emailRequest.getAttachments().isEmpty()) {
+                Base64.Decoder decoder = Base64.getDecoder();
+                for (AttachmentDTO attachment : emailRequest.getAttachments()) {
+                    byte[] fileBytes = decoder.decode(attachment.getContent());
+                    ByteArrayDataSource bads = new ByteArrayDataSource(fileBytes, "application/octet-stream");
+                    helper.addAttachment(attachment.getFilename(), bads);
                 }
             }
 

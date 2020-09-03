@@ -23,7 +23,7 @@ public abstract class EmailRequestDTO {
 
     @Email
     @NotBlank
-    @Schema(name = "recipients", description = "The recipient of the send mail", example = "test@encircle360.com")
+    @Schema(name = "recipients", description = "The recipient of the send mail")
     private List<String> recipients;
 
     @Email
@@ -34,6 +34,10 @@ public abstract class EmailRequestDTO {
     @Schema(name = "bcc", description = "The black carbon copy recipients of the send mail")
     private List<String> bcc;
 
+
+    @Schema(name = "attachments", description = "Attachments on an email")
+    private List<AttachmentDTO> attachments;
+
     @NotBlank
     @Schema(name = "subject", description = "The subject of the email which will be send", example = "This is an urgent E-Mail")
     private String subject;
@@ -43,7 +47,7 @@ public abstract class EmailRequestDTO {
     @Schema(name = "sender", description = "Sender of the email", example = "sender@encircle360.com")
     private String sender;
 
-    @Schema(name = "model", description = "Contains contents for template, map key will be available in template", example = "")
+    @Schema(name = "model", description = "Contains contents for template, map key will be available in template")
     private HashMap<String, JsonNode> model;
 
 }
