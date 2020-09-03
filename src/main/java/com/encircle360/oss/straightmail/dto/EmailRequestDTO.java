@@ -50,6 +50,7 @@ public abstract class EmailRequestDTO {
     @Schema(name = "model", description = "Contains contents for template, map key will be available in template")
     private HashMap<String, JsonNode> model;
 
+    @Schema(name = "locale", description = "Locale country code", example = "de")
     private String locale;
 
 }

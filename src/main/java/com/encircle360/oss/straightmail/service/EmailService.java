@@ -1,6 +1,7 @@
 package com.encircle360.oss.straightmail.service;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashMap;
@@ -22,6 +23,7 @@ import org.springframework.ui.freemarker.FreeMarkerTemplateUtils;
 import org.springframework.web.servlet.support.RequestContext;
 
 import com.encircle360.oss.straightmail.dto.AttachmentDTO;
+import com.encircle360.oss.straightmail.dto.EmailInlineTemplateRequestDTO;
 import com.encircle360.oss.straightmail.dto.EmailRequestDTO;
 import com.encircle360.oss.straightmail.dto.EmailResultDTO;
 import com.encircle360.oss.straightmail.dto.EmailTemplateFileRequestDTO;
@@ -54,7 +56,7 @@ public class EmailService {
 
     private final MessageSource messageSource;
 
-    public EmailResultDTO sendMailTemplateFile(EmailTemplateFileRequestDTO emailRequestDTO) {
+    public <T extends EmailRequestDTO> EmailResultDTO sendMailTemplateFile(T emailRequestDTO) {
         if (emailRequestDTO == null) {
             return EmailResultDTO.builder()
                 .message("Request was empty")
@@ -62,12 +64,20 @@ public class EmailService {
                 .build();
         }
 
-        String body;
+        String body = null;
         try {
-            body = parseTemplate(emailRequestDTO.getEmailTemplateId(), emailRequestDTO.getLocale(), emailRequestDTO.getModel());
+            if (emailRequestDTO instanceof EmailTemplateFileRequestDTO) {
+                body = parseTemplateFromFile(((EmailTemplateFileRequestDTO) emailRequestDTO).getEmailTemplateId(), emailRequestDTO.getLocale(), emailRequestDTO.getModel());
+            } else if (emailRequestDTO instanceof EmailInlineTemplateRequestDTO) {
+                body = parseTemplateFromFile(((EmailInlineTemplateRequestDTO) emailRequestDTO).getEmailTemplate(), emailRequestDTO.getLocale(), emailRequestDTO.getModel());
+            }
         } catch (IOException | TemplateException e) {
+
+        }
+
+        if (body == null) {
             return EmailResultDTO.builder()
-                .message("Error parsing Template: " + e.getMessage())
+                .message("Error parsing Template")
                 .success(false)
                 .build();
         }
@@ -153,11 +163,19 @@ public class EmailService {
         return message;
     }
 
-    private String parseTemplate(String emailTemplateId, String locale, HashMap<String, JsonNode> model) throws IOException, TemplateException {
-        ModelMap modelMap = new ModelMap();
-        if (model != null) {
-            modelMap.addAllAttributes(model);
+    private String parseTemplateFromString(String emailTemplateString, String locale, HashMap<String, JsonNode> model) throws IOException, TemplateException {
+        ModelMap modelMap = toModelMap(model);
+
+        if (locale == null) {
+            locale = DEFAULT_LOCALE;
         }
+
+        Template template = new Template("email", new StringReader(emailTemplateString), freemarkerConfiguration);
+        return processTemplate(template, locale, modelMap);
+    }
+
+    private String parseTemplateFromFile(String emailTemplateId, String locale, HashMap<String, JsonNode> model) throws IOException, TemplateException {
+        ModelMap modelMap = toModelMap(model);
 
         if (emailTemplateId == null) {
             emailTemplateId = DEFAULT_TEMPLATE;
@@ -170,6 +188,11 @@ public class EmailService {
         String templatePath = emailTemplateId + ".ftl";
 
         Template template = freemarkerConfiguration.getTemplate(templatePath);
+        return processTemplate(template, locale, modelMap);
+    }
+
+    private String processTemplate(Template template, String locale, ModelMap modelMap) throws IOException, TemplateException {
+
         template.setLocale(Locale.forLanguageTag(locale));
 
         // add import of spring macros, so we can use <@spring.messages 'x' /> in our templates
@@ -181,5 +204,13 @@ public class EmailService {
 
         // process to string and return
         return FreeMarkerTemplateUtils.processTemplateIntoString(template, modelMap);
+    }
+
+    private ModelMap toModelMap(HashMap<String,JsonNode> model) {
+        ModelMap modelMap = new ModelMap();
+        if (model != null) {
+            modelMap.addAllAttributes(model);
+        }
+        return modelMap;
     }
 }
