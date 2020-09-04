@@ -74,17 +74,29 @@ public class StraightmailApplicationTests {
             .content(objectMapper.writeValueAsString(EmailTemplateFileRequestDTO.builder().build())))
             .andExpect(status().is4xxClientError());
 
+        TestPojo testPojo = TestPojo
+            .builder()
+            .doubles(List.of(1d, 2d, 344.34, 32432.3))
+            .booleans(List.of(true, false, true, false, false))
+            .integers(List.of(1, 2, 34, 556456, 433))
+            .strings(List.of("I'm", "a", "string", "list"))
+            .singleString("I'm a string")
+            .singleBoolean(true)
+            .singleDouble(32434.44)
+            .singleInteger(344)
+            .build();
+
         HashMap<String, JsonNode> testMap = new HashMap<>();
         JsonNodeFactory nodeFactory = JsonNodeFactory.instance;
         testMap.put("number", nodeFactory.numberNode(200.8));
         testMap.put("string", nodeFactory.textNode("I'm a string"));
         testMap.put("bool", nodeFactory.booleanNode(false));
+        testMap.put("object", nodeFactory.pojoNode(testPojo));
 
         String body = objectMapper.writeValueAsString(
             EmailTemplateFileRequestDTO.builder()
                 .recipients(List.of("test@encircle360.com"))
                 .sender("test@encircle360.com")
-                .subject("test mail")
                 .model(testMap)
                 .emailTemplateId("test_json_node")
                 .locale("de")

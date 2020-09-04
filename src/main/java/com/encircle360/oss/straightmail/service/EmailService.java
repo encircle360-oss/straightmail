@@ -6,7 +6,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Locale;
-import java.util.Map;
 
 import javax.mail.internet.MimeMessage;
 import javax.mail.util.ByteArrayDataSource;
@@ -29,6 +28,7 @@ import com.encircle360.oss.straightmail.dto.EmailRequestDTO;
 import com.encircle360.oss.straightmail.dto.EmailResultDTO;
 import com.encircle360.oss.straightmail.dto.EmailTemplateFileRequestDTO;
 import com.encircle360.oss.straightmail.dto.FakeLocaleHttpServletRequest;
+import com.encircle360.oss.straightmail.wrapper.JsonNodeObjectWrapper;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import freemarker.template.Configuration;
@@ -52,23 +52,30 @@ public class EmailService {
 
     private final Configuration freemarkerConfiguration;
 
+    private final JsonNodeObjectWrapper jsonNodeObjectWrapper;
+
     private final JavaMailSender emailClient;
 
     private final ServletContext context;
 
     private final MessageSource messageSource;
 
-    public <T extends EmailRequestDTO> EmailResultDTO sendMail(T emailRequestDTO) {
-        if (emailRequestDTO == null) {
-            return result("Request was empty",false);
+    public <T extends EmailRequestDTO> EmailResultDTO sendMail(T emailRequest) {
+        if (emailRequest == null) {
+            return result("Request was empty", false);
         }
 
         String body = null;
+        String subject = null;
+
         try {
-            if (emailRequestDTO instanceof EmailTemplateFileRequestDTO) {
-                body = parseTemplateFromFile(((EmailTemplateFileRequestDTO) emailRequestDTO).getEmailTemplateId(), emailRequestDTO.getLocale(), emailRequestDTO.getModel());
-            } else if (emailRequestDTO instanceof EmailInlineTemplateRequestDTO) {
-                body = parseTemplateFromString(((EmailInlineTemplateRequestDTO) emailRequestDTO).getEmailTemplate(), emailRequestDTO.getLocale(), emailRequestDTO.getModel());
+            if (emailRequest instanceof EmailTemplateFileRequestDTO) {
+                subject = parseTemplateFromFile(((EmailTemplateFileRequestDTO) emailRequest).getEmailTemplateId() + "_subject", emailRequest.getLocale(), emailRequest.getModel());
+                body = parseTemplateFromFile(((EmailTemplateFileRequestDTO) emailRequest).getEmailTemplateId(), emailRequest.getLocale(), emailRequest.getModel());
+            } else if (emailRequest instanceof EmailInlineTemplateRequestDTO) {
+                EmailInlineTemplateRequestDTO inlineTemplateRequest = (EmailInlineTemplateRequestDTO) emailRequest;
+                subject = parseTemplateFromString(inlineTemplateRequest.getSubject(), inlineTemplateRequest.getLocale(), inlineTemplateRequest.getModel());
+                body = parseTemplateFromString(inlineTemplateRequest.getEmailTemplate(), inlineTemplateRequest.getLocale(), inlineTemplateRequest.getModel());
             }
         } catch (IOException | TemplateException e) {
             log.error(e.getMessage());
@@ -78,9 +85,9 @@ public class EmailService {
             return result("Error parsing Template", false);
         }
 
-        MimeMessage message = createMessage(emailRequestDTO, body);
+        MimeMessage message = createMessage(emailRequest, subject, body);
         if (message == null) {
-            return result("Error creating mimetype message, maybe some missing or invalid fields",false);
+            return result("Error creating mimetype message, maybe some missing or invalid fields", false);
         }
 
         emailClient.send(message);
@@ -88,16 +95,7 @@ public class EmailService {
         return result("Message was send to SMTP Server", true);
     }
 
-    private String messageOrDefault(String subject, String locale) {
-        try {
-            return messageSource.getMessage(subject, null, Locale.forLanguageTag(locale));
-        } catch (Exception e) {
-            log.error(e.getMessage());
-        }
-        return subject;
-    }
-
-    private MimeMessage createMessage(EmailRequestDTO emailRequest, String body) {
+    private MimeMessage createMessage(EmailRequestDTO emailRequest, String subject, String htmlBody) {
         MimeMessage message = emailClient.createMimeMessage();
 
         if (emailRequest.getSender() == null) {
@@ -110,9 +108,8 @@ public class EmailService {
                 StandardCharsets.UTF_8.name());
 
             // set plain text result by removing all html tags and convert br to \n
-            String plainText = Jsoup.clean(body, Whitelist.none().addTags("br"));
+            String plainText = Jsoup.clean(htmlBody, Whitelist.none().addTags("br"));
             plainText = plainText.replaceAll("(<br>|<br/>|<br\\s+/>)", "\n");
-            String subject = messageOrDefault(emailRequest.getSubject(), emailRequest.getLocale());
 
             helper.setFrom(emailRequest.getSender());
             helper.setSubject(subject);
@@ -144,9 +141,9 @@ public class EmailService {
                 }
             }
 
-            helper.setText(plainText, body);
-        } catch (Exception ignored) {
-            log.error(ignored.getMessage());
+            helper.setText(plainText, htmlBody);
+        } catch (Exception e) {
+            log.error(e.getMessage());
             return null;
         }
 
@@ -160,6 +157,7 @@ public class EmailService {
             locale = DEFAULT_LOCALE;
         }
 
+        freemarkerConfiguration.setObjectWrapper(jsonNodeObjectWrapper);
         Template template = new Template("email", new StringReader(emailTemplateString), freemarkerConfiguration);
         return processTemplate(template, locale, modelMap);
     }
@@ -177,6 +175,7 @@ public class EmailService {
 
         String templatePath = emailTemplateId + ".ftl";
 
+        freemarkerConfiguration.setObjectWrapper(jsonNodeObjectWrapper);
         Template template = freemarkerConfiguration.getTemplate(templatePath);
         return processTemplate(template, locale, modelMap);
     }
@@ -201,26 +200,7 @@ public class EmailService {
         if (model == null) {
             return modelMap;
         }
-
-        for (Map.Entry<String, JsonNode> entry : model.entrySet()) {
-            JsonNode node = entry.getValue();
-            switch (node.getNodeType()) {
-                case NULL:
-                    break;
-                case STRING:
-                    modelMap.addAttribute(entry.getKey(), node.textValue());
-                    break;
-                case BOOLEAN:
-                    modelMap.addAttribute(entry.getKey(), node.booleanValue());
-                    break;
-                case NUMBER:
-                    modelMap.addAttribute(entry.getKey(), node.numberValue());
-                    break;
-                default:
-                    modelMap.addAttribute(entry.getKey(), node);
-                    break;
-            }
-        }
+        modelMap.addAllAttributes(model);
         return modelMap;
     }
 

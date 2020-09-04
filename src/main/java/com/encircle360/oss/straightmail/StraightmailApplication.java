@@ -10,6 +10,10 @@ import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.support.ResourceBundleMessageSource;
 
+import com.encircle360.oss.straightmail.wrapper.JsonNodeObjectWrapper;
+
+import freemarker.template.Configuration;
+
 @SpringBootApplication
 public class StraightmailApplication {
 
@@ -27,6 +31,11 @@ public class StraightmailApplication {
         }
         messageSource.setDefaultEncoding(StandardCharsets.UTF_8.name());
         return messageSource;
+    }
+
+    @Bean
+    JsonNodeObjectWrapper jsonNodeObjectWrapper() {
+        return new JsonNodeObjectWrapper(Configuration.getVersion());
     }
 
 }

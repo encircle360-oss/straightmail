@@ -35,13 +35,8 @@ public abstract class EmailRequestDTO {
     @Schema(name = "bcc", description = "The black carbon copy recipients of the send mail")
     private List<String> bcc;
 
-
     @Schema(name = "attachments", description = "Attachments on an email")
     private List<AttachmentDTO> attachments;
-
-    @NotBlank
-    @Schema(name = "subject", description = "The subject of the email which will be send", example = "This is an urgent E-Mail")
-    private String subject;
 
     @NotBlank
     @Pattern(regexp = EmailRegex.value)
