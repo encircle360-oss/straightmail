@@ -73,7 +73,7 @@ public class EmailService {
                 body = parseTemplateFromString(((EmailInlineTemplateRequestDTO) emailRequestDTO).getEmailTemplate(), emailRequestDTO.getLocale(), emailRequestDTO.getModel());
             }
         } catch (IOException | TemplateException e) {
-
+            log.error(e.getMessage());
         }
 
         if (body == null) {
@@ -210,7 +210,25 @@ public class EmailService {
     private ModelMap toModelMap(HashMap<String, JsonNode> model) {
         ModelMap modelMap = new ModelMap();
         if (model != null) {
-            modelMap.addAllAttributes(model);
+            for (String s : model.keySet()) {
+                JsonNode node = model.get(s);
+                switch (node.getNodeType()) {
+                    case NULL:
+                        break;
+                    case STRING:
+                        modelMap.addAttribute(s, node.textValue());
+                        break;
+                    case BOOLEAN:
+                        modelMap.addAttribute(s, node.booleanValue());
+                        break;
+                    case NUMBER:
+                        modelMap.addAttribute(s, node.numberValue());
+                        break;
+                    default:
+                        modelMap.addAttribute(s, node);
+                        break;
+                }
+            }
         }
         return modelMap;
     }

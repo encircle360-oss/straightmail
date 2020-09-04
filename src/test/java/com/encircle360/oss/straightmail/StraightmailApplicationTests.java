@@ -36,7 +36,10 @@ public class StraightmailApplicationTests {
     public void contextLoads() throws Exception {
         String[] arguments = {};
         StraightmailApplication.main(arguments);
+    }
 
+    @Test
+    public void basicRequest() throws Exception {
         mock.perform(MockMvcRequestBuilders.post("/"))
             .andExpect(status().is4xxClientError());
 
@@ -72,14 +75,18 @@ public class StraightmailApplicationTests {
             .andExpect(status().is4xxClientError());
 
         HashMap<String, JsonNode> testMap = new HashMap<>();
-        testMap.put("test", JsonNodeFactory.instance.numberNode(200.8));
+        JsonNodeFactory nodeFactory = JsonNodeFactory.instance;
+        testMap.put("number", nodeFactory.numberNode(200.8));
+        testMap.put("string", nodeFactory.textNode("I'm a string"));
+        testMap.put("bool", nodeFactory.booleanNode(false));
+
         String body = objectMapper.writeValueAsString(
             EmailTemplateFileRequestDTO.builder()
                 .recipients(List.of("test@encircle360.com"))
                 .sender("test@encircle360.com")
                 .subject("test mail")
                 .model(testMap)
-                .emailTemplateId("test_template")
+                .emailTemplateId("test_json_node")
                 .locale("de")
                 .build()
         );
