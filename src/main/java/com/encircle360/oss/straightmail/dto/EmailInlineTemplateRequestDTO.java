@@ -12,6 +12,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
+@Schema(name = "EmailInlineTemplateRequest", description = "An email request which includes the template as string")
 public class EmailInlineTemplateRequestDTO extends EmailRequestDTO {
 
     @Schema(name = "emailTemplate", description = "Email template reference definition")

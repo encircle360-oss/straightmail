@@ -41,7 +41,8 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class EmailService {
 
-    private final String DEFAULT_TEMPLATE = "default";
+    @Value("${spring.mail.default-template}")
+    private final String DEFAULT_TEMPLATE = null;
 
     @Value("${spring.mail.default-sender}")
     private final String DEFAULT_SENDER = null;
@@ -122,7 +123,7 @@ public class EmailService {
 
             // set plain text result by removing all html tags and convert br to \n
             String plainText = Jsoup.clean(body, Whitelist.none().addTags("br"));
-            plainText = plainText.replaceAll("(<br>|<br/>|<br />)", "\n");
+            plainText = plainText.replaceAll("(<br>|<br/>|<br\\s+/>)", "\n");
             String subject = messageOrDefault(emailRequest.getSubject(), emailRequest.getLocale());
 
             helper.setFrom(emailRequest.getSender());
@@ -150,8 +151,8 @@ public class EmailService {
                 Base64.Decoder decoder = Base64.getDecoder();
                 for (AttachmentDTO attachment : emailRequest.getAttachments()) {
                     byte[] fileBytes = decoder.decode(attachment.getContent());
-                    ByteArrayDataSource bads = new ByteArrayDataSource(fileBytes, attachment.getMimeType());
-                    helper.addAttachment(attachment.getFilename(), bads);
+                    ByteArrayDataSource attachmentByteArrayDataSource = new ByteArrayDataSource(fileBytes, attachment.getMimeType());
+                    helper.addAttachment(attachment.getFilename(), attachmentByteArrayDataSource);
                 }
             }
 
@@ -206,7 +207,7 @@ public class EmailService {
         return FreeMarkerTemplateUtils.processTemplateIntoString(template, modelMap);
     }
 
-    private ModelMap toModelMap(HashMap<String,JsonNode> model) {
+    private ModelMap toModelMap(HashMap<String, JsonNode> model) {
         ModelMap modelMap = new ModelMap();
         if (model != null) {
             modelMap.addAllAttributes(model);

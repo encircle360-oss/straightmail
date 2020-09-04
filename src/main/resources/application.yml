@@ -8,6 +8,7 @@ spring:
     password: ${SMTP_PASSWORD:""}
     port: ${SMTP_PORT:587}
     default-sender: ${DEFAULT_SENDER:""}
+    default-template: ${DEFAULT_TEMPLATE:"default"}
     properties:
       mail:
         smtp:

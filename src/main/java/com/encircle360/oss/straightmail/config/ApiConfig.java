@@ -9,7 +9,7 @@ import io.swagger.v3.oas.annotations.servers.Server;
 @OpenAPIDefinition(
     info = @Info(
         title = "Straightmail",
-        version = "0.0.1",
+        version = "0.0.2",
         description = ""
     ),
     servers = {

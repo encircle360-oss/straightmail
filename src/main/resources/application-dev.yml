@@ -8,6 +8,7 @@ spring:
     password: bar
     port: 1025
     default-sender: "tester@encircle360.com"
+    default-template: "default"
     properties:
       mail:
         smtp:

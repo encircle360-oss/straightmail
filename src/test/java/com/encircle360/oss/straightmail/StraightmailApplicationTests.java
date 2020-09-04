@@ -121,4 +121,93 @@ public class StraightmailApplicationTests {
             .content(body))
             .andExpect(status().is2xxSuccessful());
     }
+
+    @Test
+    public void testEmailValidation() throws Exception {
+        HashMap<String, JsonNode> testMap = new HashMap<>();
+        testMap.put("test", JsonNodeFactory.instance.numberNode(200.8));
+        String body = objectMapper.writeValueAsString(
+            EmailInlineTemplateRequestDTO.builder()
+                .recipients(List.of("test@encircle360.com"))
+                .sender("tes1 t@encircle360.com")
+                .subject("test mail")
+                .model(testMap)
+                .emailTemplate("${test!\"\"}")
+                .locale("de")
+                .build()
+        );
+
+        mock.perform(MockMvcRequestBuilders.post("/inline")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(body))
+            .andExpect(status().is4xxClientError());
+
+        body = objectMapper.writeValueAsString(
+            EmailInlineTemplateRequestDTO.builder()
+                .recipients(List.of("tes t@encircle360.com"))
+                .sender("tes1t@encircle360.com")
+                .subject("test mail")
+                .model(testMap)
+                .emailTemplate("${test!\"\"}")
+                .locale("de")
+                .build()
+        );
+
+        mock.perform(MockMvcRequestBuilders.post("/inline")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(body))
+            .andExpect(status().is4xxClientError());
+
+        body = objectMapper.writeValueAsString(
+            EmailInlineTemplateRequestDTO.builder()
+                .recipients(List.of("tes t@encircle360.com"))
+                .cc(List.of("tes t@encircle360.com"))
+                .sender("tes1t@encircle360.com")
+                .subject("test mail")
+                .model(testMap)
+                .emailTemplate("${test!\"\"}")
+                .locale("de")
+                .build()
+        );
+
+        mock.perform(MockMvcRequestBuilders.post("/inline")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(body))
+            .andExpect(status().is4xxClientError());
+
+        body = objectMapper.writeValueAsString(
+            EmailInlineTemplateRequestDTO.builder()
+                .recipients(List.of("tes t@encircle360.com"))
+                .bcc(List.of("tes t@encircle360.com"))
+                .sender("tes1t@encircle360.com")
+                .subject("test mail")
+                .model(testMap)
+                .emailTemplate("${test!\"\"}")
+                .locale("de")
+                .build()
+        );
+
+        mock.perform(MockMvcRequestBuilders.post("/inline")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(body))
+            .andExpect(status().is4xxClientError());
+
+        body = objectMapper.writeValueAsString(
+            EmailInlineTemplateRequestDTO.builder()
+                .recipients(List.of("test@encircle360ö.com"))
+                .cc(List.of("test@encircle360ö.berlin"))
+                .bcc(List.of("test@encircle360ö.cloud"))
+                .sender("tes1t@encircle360ö.com")
+                .subject("test mail")
+                .model(testMap)
+                .emailTemplate("${test!\"\"}")
+                .locale("de")
+                .build()
+        );
+
+        mock.perform(MockMvcRequestBuilders.post("/inline")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(body))
+            .andExpect(status().is2xxSuccessful());
+    }
 }

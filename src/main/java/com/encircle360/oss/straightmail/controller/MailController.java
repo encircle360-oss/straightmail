@@ -30,8 +30,8 @@ public class MailController {
 
     @PostMapping("")
     @Operation(operationId = "sendEMailWithTemplateId", description = "Endpoint to send emails via client")
-    public ResponseEntity<EmailResultDTO> sendEMailWithTemplateId(@RequestBody @Valid EmailTemplateFileRequestDTO emailRequest) {
-        return send(emailRequest);
+    public ResponseEntity<EmailResultDTO> sendEMailWithTemplateId(@RequestBody @Valid EmailTemplateFileRequestDTO emailFileRequest) {
+        return send(emailFileRequest);
     }
 
     @PostMapping("/inline")
