@@ -6,6 +6,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 import javax.mail.internet.MimeMessage;
 import javax.mail.util.ByteArrayDataSource;
@@ -209,25 +210,27 @@ public class EmailService {
 
     private ModelMap toModelMap(HashMap<String, JsonNode> model) {
         ModelMap modelMap = new ModelMap();
-        if (model != null) {
-            for (String s : model.keySet()) {
-                JsonNode node = model.get(s);
-                switch (node.getNodeType()) {
-                    case NULL:
-                        break;
-                    case STRING:
-                        modelMap.addAttribute(s, node.textValue());
-                        break;
-                    case BOOLEAN:
-                        modelMap.addAttribute(s, node.booleanValue());
-                        break;
-                    case NUMBER:
-                        modelMap.addAttribute(s, node.numberValue());
-                        break;
-                    default:
-                        modelMap.addAttribute(s, node);
-                        break;
-                }
+        if (model == null) {
+            return modelMap;
+        }
+        
+        for (Map.Entry<String, JsonNode> entry : model.entrySet()) {
+            JsonNode node = entry.getValue();
+            switch (node.getNodeType()) {
+                case NULL:
+                    break;
+                case STRING:
+                    modelMap.addAttribute(entry.getKey(), node.textValue());
+                    break;
+                case BOOLEAN:
+                    modelMap.addAttribute(entry.getKey(), node.booleanValue());
+                    break;
+                case NUMBER:
+                    modelMap.addAttribute(entry.getKey(), node.numberValue());
+                    break;
+                default:
+                    modelMap.addAttribute(entry.getKey(), node);
+                    break;
             }
         }
         return modelMap;
