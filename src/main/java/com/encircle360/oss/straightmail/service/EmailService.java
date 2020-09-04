@@ -60,10 +60,7 @@ public class EmailService {
 
     public <T extends EmailRequestDTO> EmailResultDTO sendMail(T emailRequestDTO) {
         if (emailRequestDTO == null) {
-            return EmailResultDTO.builder()
-                .message("Request was empty")
-                .success(false)
-                .build();
+            return result("Request was empty",false);
         }
 
         String body = null;
@@ -78,27 +75,17 @@ public class EmailService {
         }
 
         if (body == null) {
-            return EmailResultDTO.builder()
-                .message("Error parsing Template")
-                .success(false)
-                .build();
+            return result("Error parsing Template", false);
         }
 
         MimeMessage message = createMessage(emailRequestDTO, body);
         if (message == null) {
-            return EmailResultDTO
-                .builder()
-                .message("Error creating mimetype message, maybe some missing or invalid fields")
-                .success(false)
-                .build();
+            return result("Error creating mimetype message, maybe some missing or invalid fields",false);
         }
 
         emailClient.send(message);
 
-        return EmailResultDTO.builder()
-            .message("Message was send to SMTP Server")
-            .success(true)
-            .build();
+        return result("Message was send to SMTP Server", true);
     }
 
     private String messageOrDefault(String subject, String locale) {
@@ -159,6 +146,7 @@ public class EmailService {
 
             helper.setText(plainText, body);
         } catch (Exception ignored) {
+            log.error(ignored.getMessage());
             return null;
         }
 
@@ -213,7 +201,7 @@ public class EmailService {
         if (model == null) {
             return modelMap;
         }
-        
+
         for (Map.Entry<String, JsonNode> entry : model.entrySet()) {
             JsonNode node = entry.getValue();
             switch (node.getNodeType()) {
@@ -234,5 +222,12 @@ public class EmailService {
             }
         }
         return modelMap;
+    }
+
+    private EmailResultDTO result(String message, boolean success) {
+        return EmailResultDTO.builder()
+            .message(message)
+            .success(success)
+            .build();
     }
 }
