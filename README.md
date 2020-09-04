@@ -38,6 +38,13 @@ Let's send an email using our straightmail instance with a template submitted in
 curl -d "{ \"recipients\": [\"test@localhost\"], \"subject\": \"test mail\", \"model\": { \"testKey\": \"testValue\" }, \"emailTemplate\":  \"Hello world\", \"locale\": \"de\"  }"  -H "Content-Type: application/json" -X POST http://localhost:50003/inline
 ```
 
+### Attachments
+Attachments can be provided as array of attachment objects. The content of the files should be a base64 encoded utf 8 string. for example:
+
+```
+{..., "attachments": [{"filename":"picture.jpg", "mimeType": "image/jpg", "content":"IG51bGw="}]}
+```
+
 ### Customization
 If you want to bring your own templates and language files just use the straightmail base image and create your own straightmail image on top of that.
 We suggest to use your own Dockerfile for that. You could for example put this one with your templates and language files into a git repository to have everything versioned.
