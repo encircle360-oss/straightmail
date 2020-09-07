@@ -15,6 +15,7 @@ public class JsonTextNodeModel extends BeanModel implements TemplateScalarModel 
     }
 
     public String getAsString() {
-        return ((TextNode) object).asText();
+        TextNode textNode = ((TextNode) object);
+        return textNode.asText();
     }
 }

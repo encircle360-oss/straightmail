@@ -11,12 +11,11 @@ import freemarker.template.TemplateModelException;
 import freemarker.template.TemplateModelIterator;
 import freemarker.template.TemplateSequenceModel;
 
-public class JsonArrayNodeModel extends BeanModel
-    implements
-    TemplateCollectionModel,
-    TemplateSequenceModel {
+public class JsonArrayNodeModel extends BeanModel implements TemplateCollectionModel, TemplateSequenceModel {
+
     public static final ModelFactory FACTORY =
         (object, wrapper) -> new JsonArrayNodeModel(object, (BeansWrapper) wrapper);
+
     private final int length;
 
     JsonArrayNodeModel(Object array, BeansWrapper wrapper) {
@@ -49,10 +48,8 @@ public class JsonArrayNodeModel extends BeanModel
         return length == 0;
     }
 
-    private class Iterator
-        implements
-        TemplateSequenceModel,
-        TemplateModelIterator {
+    private class Iterator implements TemplateSequenceModel, TemplateModelIterator {
+
         private int position = 0;
 
         public boolean hasNext() {

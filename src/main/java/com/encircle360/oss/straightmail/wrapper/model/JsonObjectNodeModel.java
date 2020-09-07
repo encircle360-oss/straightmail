@@ -30,7 +30,11 @@ public class JsonObjectNodeModel extends BeanModel {
     public TemplateModel get(String key) throws TemplateModelException {
         ObjectNode objectNode = (ObjectNode) object;
         final JsonNode jsonNode = objectNode.get(key);
-        if (jsonNode != null) { return wrap(jsonNode); } else { return null; }
+
+        if (jsonNode == null) {
+            return null;
+        }
+        return wrap(jsonNode);
     }
 
     @Override
@@ -58,6 +62,9 @@ public class JsonObjectNodeModel extends BeanModel {
         List<JsonNode> values = new ArrayList<>(size());
         final Iterator<Map.Entry<String, JsonNode>> it = objectNode.fields();
         it.forEachRemaining(next -> values.add(next.getValue()));
-        return new CollectionAndSequence(new SimpleSequence(values, wrapper));
+
+        SimpleSequence simpleSequence = new SimpleSequence(values, wrapper);
+
+        return new CollectionAndSequence(simpleSequence);
     }
 }

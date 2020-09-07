@@ -20,6 +20,7 @@ import freemarker.template.DefaultObjectWrapper;
 import freemarker.template.Version;
 
 public class JsonNodeObjectWrapper extends DefaultObjectWrapper {
+
     public JsonNodeObjectWrapper(Version incompatibleImprovements) {
         super(incompatibleImprovements);
     }

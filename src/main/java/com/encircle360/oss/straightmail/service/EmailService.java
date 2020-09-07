@@ -14,7 +14,6 @@ import javax.servlet.ServletContext;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.MessageSource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -58,8 +57,6 @@ public class EmailService {
 
     private final ServletContext context;
 
-    private final MessageSource messageSource;
-
     public <T extends EmailRequestDTO> EmailResultDTO sendMail(T emailRequest) {
         if (emailRequest == null) {
             return result("Request was empty", false);
@@ -81,9 +78,12 @@ public class EmailService {
             log.error(e.getMessage());
         }
 
-        if (body == null) {
+        if (subject == null || body == null) {
             return result("Error parsing Template", false);
         }
+
+        // remove all HTML from subject
+        subject = Jsoup.clean(subject, Whitelist.none());
 
         MimeMessage message = createMessage(emailRequest, subject, body);
         if (message == null) {
