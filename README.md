@@ -3,7 +3,7 @@
 ### Getting started
 To run an instance with default tetmplates and language just run:
 ```
-docker run -p 50003:50003 \
+docker run -p 50003:50003 -p 50004:50004 \
     --env SMTP_PASSWORD=bar \
     --env SMTP_HOST=host.docker.internal \
     --env SMTP_USER=foo \
@@ -52,6 +52,10 @@ Attachments can be provided as array of attachment objects. The content of the f
 If you want to bring your own templates and language files just use the straightmail base image and create your own straightmail image on top of that.
 We suggest to use your own Dockerfile for that. You could for example put this one with your templates and language files into a git repository to have everything versioned.
 
+#### Models in your template
+
+You can use objects, lists and primitive types in your template (provided in model field). Numbers (doubles, integers and co.) will be mapped correctly into the template.  
+
 ### i18n
 
 As you can see in Dockerfile we provide i18n functionality. You can also provide customized subject, just use freemarker template language in template_subject.ftl files 
@@ -76,6 +80,10 @@ After you've build your own docker image with your own templates you can use the
 The `emailTemplateId` field corresponds to the template filename. If you've added a template called `emailConfirmation.ftl` you have to use 
 `"emailConfirmation"`
 within your API request payload.
+
+### Service Health
+
+If you started with port exposing to localhost you can fetch `http://localhost:50004/actuator/health` to get health status of the service itself 
 
 ### Good to know 
 Straightmail internally uses the [freemarker](https://freemarker.apache.org/) template engine which has the advantages that it's easy to copy and paste email html templates.
