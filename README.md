@@ -30,8 +30,8 @@ You should also note that this service is ment to be an internal service and sho
 ### Example REST call to send an email
 Let's send an email using our straightmail instance with template as files in our templates file directory. 
 Your template should be saved in two files, one for the subject and one for
-the body of an email. Template id is name of the template without file ending, the subject template is always 
-called templateId_subject.ftl (notice: alle HTML tags will be removed from subject while parsing)
+the body of an email. Template id is the name of the template file without ending, the subject template always 
+called templateId_subject.ftl (**important:** all HTML tags will be removed from subject while parsing)
 ```
 curl -d "{ \"recipients\": [\"test@localhost\"], \"model\": { \"testKey\": \"testValue\" }, \"emailTemplateId\":  \"default\", \"locale\": \"de\"  }"  -H "Content-Type: application/json" -X POST http://localhost:50003/
 ```
@@ -54,10 +54,10 @@ We suggest to use your own Dockerfile for that. You could for example put this o
 
 ### i18n
 
-As you can see in Dockerfile we provide i18n functionality. You can also provide an internationalized subject, just set the subject to a message key from `message.properties` files 
+As you can see in Dockerfile we provide i18n functionality. You can also provide customized subject, just use freemarker template language in template_subject.ftl files 
 
-In Templates you can use:
-```<@spring.message "message.key"/>``` to load messages from properties files. In the next section Example Dockerfile more information about templates and messages are provided. 
+In template files you can use:
+```<@spring.message "message.key"/>``` to load messages from properties files. In the next section example Dockerfile, more information about templates and messages will be provided. 
 
 ### Example Dockerfile
 
