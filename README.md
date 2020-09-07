@@ -33,7 +33,7 @@ Your template should be saved in two files, one for the subject and one for
 the body of an email. Template id is the name of the template file without ending, the subject template always 
 called templateId_subject.ftl (**important:** all HTML tags will be removed from subject while parsing)
 ```
-curl -d "{ \"recipients\": [\"test@localhost\"], \"model\": { \"testKey\": \"testValue\" }, \"emailTemplateId\":  \"default\", \"locale\": \"de\"  }"  -H "Content-Type: application/json" -X POST http://localhost:50003/
+curl -d '{   "recipients": ["test@encircle360.com"],   "cc": null,   "bcc": null,   "attachments": null,   "sender": "test@encircle360.com",   "model": {     "test": 200.8,     "text": "test text"   },   "locale": "de",   "subject": "test mail: ${text}",   "emailTemplateId": "default" }'  -H "Content-Type: application/json" -X POST http://localhost:50003/
 ```
 
 Let's send an email using our straightmail instance with a template submitted inline.
