@@ -3,47 +3,50 @@ package com.encircle360.oss.straightmail.dto;
 import java.util.HashMap;
 import java.util.List;
 
-import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Pattern;
+
+import com.encircle360.oss.straightmail.config.EmailRegex;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @Data
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
 @Schema(name = "EmailRequest", description = "Object for requesting an email sending")
-public class EmailRequestDTO {
+public abstract class EmailRequestDTO {
 
-    @Email
     @NotBlank
-    @Schema(name = "recipients", description = "The recipient of the send mail", example = "test@encircle360.com")
+    @Pattern(regexp = EmailRegex.value)
+    @Schema(name = "recipients", description = "The recipient of the send mail")
     private List<String> recipients;
 
-    @Email
+    @Pattern(regexp = EmailRegex.value)
     @Schema(name = "cc", description = "The carbon copy recipients of the send mail")
     private List<String> cc;
 
-    @Email
+    @Pattern(regexp = EmailRegex.value)
     @Schema(name = "bcc", description = "The black carbon copy recipients of the send mail")
     private List<String> bcc;
 
-    @NotBlank
-    @Schema(name = "subject", description = "The subject of the email which will be send", example = "This is an urgent E-Mail")
-    private String subject;
+    @Schema(name = "attachments", description = "Attachments on an email")
+    private List<AttachmentDTO> attachments;
 
-    @Email
     @NotBlank
+    @Pattern(regexp = EmailRegex.value)
     @Schema(name = "sender", description = "Sender of the email", example = "sender@encircle360.com")
     private String sender;
 
-    @Schema(name = "model", description = "Contains contents for template, map key will be available in template", example = "")
-    private HashMap<String, String> model;
+    @Schema(name = "model", description = "Contains contents for template, map key will be available in template")
+    private HashMap<String, JsonNode> model;
 
-    @Schema(name = "emailTemplate", description = "Email template reference definition")
-    private EmailTemplateDTO emailTemplate;
+    @Schema(name = "locale", description = "Locale country code", example = "de")
+    private String locale;
+
 }

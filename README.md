@@ -28,14 +28,36 @@ To do this just switch the docker env variable to `--env SPRING_PROFILES_ACTIVE=
 You should also note that this service is ment to be an internal service and shouldn't be exposed to the outside world since it has no security in it's APIs.
 
 ### Example REST call to send an email
-Let's send an email using our straightmail instance.
+Let's send an email using our straightmail instance with template as files in our templates file directory. 
+Your template should be saved in two files, one for the subject and one for
+the body of an email. Template id is the name of the template file without ending, the subject template always 
+called templateId_subject.ftl (**important:** all HTML tags will be removed from subject while parsing)
 ```
-curl -d "{ \"recipient\": \"test@localhost\", \"subject\": \"test mail\", \"model\": { \"testKey\": \"testValue\" }, \"emailTemplate\": { \"id\": \"default\", \"locale\": \"de\" } }"  -H "Content-Type: application/json" -X POST http://localhost:50003/
+curl -d '{   "recipients": ["test@encircle360.com"],   "cc": null,   "bcc": null,   "attachments": null,   "sender": "test@encircle360.com",   "model": {     "test": 200.8,     "text": "test text"   },   "locale": "de",   "subject": "test mail: ${text}",   "emailTemplateId": "default" }'  -H "Content-Type: application/json" -X POST http://localhost:50003/
+```
+
+Let's send an email using our straightmail instance with a template submitted inline.
+```
+curl -d '{   "recipients": ["test@localhost"],   "cc": null,   "bcc": null,   "attachments": null,   "sender": "test@localhost",   "model": {     "test": 200.8,     "text": "test text"   },   "locale": "de",   "subject": "test mail: ${text}",   "emailTemplate": "${test!\"\"}" }' -H "Content-Type: application/json" -X POST http://localhost:50003/inline
+```
+
+### Attachments
+Attachments can be provided as array of attachment objects. The content of the files should be a base64 encoded utf 8 string. for example:
+
+```
+{..., "attachments": [{"filename":"picture.jpg", "mimeType": "image/jpg", "content":"IG51bGw="}]}
 ```
 
 ### Customization
 If you want to bring your own templates and language files just use the straightmail base image and create your own straightmail image on top of that.
 We suggest to use your own Dockerfile for that. You could for example put this one with your templates and language files into a git repository to have everything versioned.
+
+### i18n
+
+As you can see in Dockerfile we provide i18n functionality. You can also provide customized subject, just use freemarker template language in template_subject.ftl files 
+
+In template files you can use:
+```<@spring.message "message.key"/>``` to load messages from properties files. In the next section example Dockerfile, more information about templates and messages will be provided. 
 
 ### Example Dockerfile
 
@@ -51,15 +73,16 @@ If you're done with this you can build your own image using docker-cli `docker b
 E.g. we suggest to use gitlab-ci to always have your own customized straightmail docker image.
 
 After you've build your own docker image with your own templates you can use the REST api to send emails.
-The `emailTemplate.id` field corresponds to the template filename. If you've added a template called `emailConfirmation.ftl` you have to use 
-`{"emailTemplate":
-"id": "emailConfirmation", ...}`
+The `emailTemplateId` field corresponds to the template filename. If you've added a template called `emailConfirmation.ftl` you have to use 
+`"emailConfirmation"`
 within your API request payload.
 
 ### Good to know 
 Straightmail internally uses the [freemarker](https://freemarker.apache.org/) template engine which has the advantages that it's easy to copy and paste email html templates.
 This is really useful if you for example use email templates bought on themeforest. Since these templates can get updates you don't have to check each html dom element while importing a template update.
-Mostly you only have to focus on your content model variables and you're able to just copy the html from the update.
+Mostly you only have to focus on your content model variables and you're able to just copy the html from the update. 
+
+Templates will be used for body and subject, too. So you can use i18n features also in your subject. 
 
 So you have the [full feature support](https://freemarker.apache.org/docs/ref.html) of freemarker in your templates and also activated i18n support so that you can also put your resource bundles with messages.properties into your image and switch the locale for each email you're sending.
 

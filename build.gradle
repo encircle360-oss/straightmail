@@ -6,7 +6,7 @@ plugins {
 }
 
 group = 'com.encircle360.oss.straightmail'
-version '0.0.1'
+version '0.0.2'
 
 java {
     sourceCompatibility = JavaVersion.VERSION_14
@@ -21,6 +21,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-mail'
     implementation 'org.springframework.boot:spring-boot-starter-freemarker'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
     // jsoup for cleaning html mail to text
     compile group: 'org.jsoup', name: 'jsoup', version: '1.13.1'
