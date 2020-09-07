@@ -28,14 +28,17 @@ To do this just switch the docker env variable to `--env SPRING_PROFILES_ACTIVE=
 You should also note that this service is ment to be an internal service and shouldn't be exposed to the outside world since it has no security in it's APIs.
 
 ### Example REST call to send an email
-Let's send an email using our straightmail instance with a template as file in our templates file directory.
+Let's send an email using our straightmail instance with template as files in our templates file directory. 
+Your template should be saved in two files, one for the subject and one for
+the body of an email. Template id is name of the template without file ending, the subject template is always 
+called templateId_subject.ftl (notice: alle HTML tags will be removed from subject while parsing)
 ```
-curl -d "{ \"recipients\": [\"test@localhost\"], \"subject\": \"test mail\", \"model\": { \"testKey\": \"testValue\" }, \"emailTemplateId\":  \"default\", \"locale\": \"de\"  }"  -H "Content-Type: application/json" -X POST http://localhost:50003/
+curl -d "{ \"recipients\": [\"test@localhost\"], \"model\": { \"testKey\": \"testValue\" }, \"emailTemplateId\":  \"default\", \"locale\": \"de\"  }"  -H "Content-Type: application/json" -X POST http://localhost:50003/
 ```
 
 Let's send an email using our straightmail instance with a template submitted inline.
 ```
-curl -d "{ \"recipients\": [\"test@localhost\"], \"subject\": \"test mail\", \"model\": { \"testKey\": \"testValue\" }, \"emailTemplate\":  \"Hello world\", \"locale\": \"de\"  }"  -H "Content-Type: application/json" -X POST http://localhost:50003/inline
+curl -d '{   "recipients": ["test@localhost"],   "cc": null,   "bcc": null,   "attachments": null,   "sender": "test@localhost",   "model": {     "test": 200.8,     "text": "test text"   },   "locale": "de",   "subject": "test mail: ${text}",   "emailTemplate": "${test!\"\"}" }' -H "Content-Type: application/json" -X POST http://localhost:50003/inline
 ```
 
 ### Attachments
@@ -77,7 +80,9 @@ within your API request payload.
 ### Good to know 
 Straightmail internally uses the [freemarker](https://freemarker.apache.org/) template engine which has the advantages that it's easy to copy and paste email html templates.
 This is really useful if you for example use email templates bought on themeforest. Since these templates can get updates you don't have to check each html dom element while importing a template update.
-Mostly you only have to focus on your content model variables and you're able to just copy the html from the update.
+Mostly you only have to focus on your content model variables and you're able to just copy the html from the update. 
+
+Templates will be used for body and subject, too. So you can use i18n features also in your subject. 
 
 So you have the [full feature support](https://freemarker.apache.org/docs/ref.html) of freemarker in your templates and also activated i18n support so that you can also put your resource bundles with messages.properties into your image and switch the locale for each email you're sending.
 

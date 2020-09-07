@@ -1,5 +1,7 @@
 package com.encircle360.oss.straightmail;
 
+import static freemarker.template.Configuration.VERSION_2_3_28;
+
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -11,8 +13,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.support.ResourceBundleMessageSource;
 
 import com.encircle360.oss.straightmail.wrapper.JsonNodeObjectWrapper;
-
-import freemarker.template.Configuration;
 
 @SpringBootApplication
 public class StraightmailApplication {
@@ -35,7 +35,7 @@ public class StraightmailApplication {
 
     @Bean
     JsonNodeObjectWrapper jsonNodeObjectWrapper() {
-        return new JsonNodeObjectWrapper(Configuration.getVersion());
+        return new JsonNodeObjectWrapper(VERSION_2_3_28);
     }
 
 }
