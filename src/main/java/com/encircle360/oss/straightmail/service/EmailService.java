@@ -57,6 +57,9 @@ public class EmailService {
 
     private final ServletContext context;
 
+    private final Base64.Decoder decoder = Base64.getDecoder();
+
+
     public <T extends EmailRequestDTO> EmailResultDTO sendMail(T emailRequest) {
         if (emailRequest == null) {
             return result("Request was empty", false);
@@ -133,7 +136,6 @@ public class EmailService {
             }
 
             if (emailRequest.getAttachments() != null && !emailRequest.getAttachments().isEmpty()) {
-                Base64.Decoder decoder = Base64.getDecoder();
                 for (AttachmentDTO attachment : emailRequest.getAttachments()) {
                     byte[] fileBytes = decoder.decode(attachment.getContent());
                     ByteArrayDataSource attachmentByteArrayDataSource = new ByteArrayDataSource(fileBytes, attachment.getMimeType());
