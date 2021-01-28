@@ -12,7 +12,7 @@ docker run -p 50003:50003 -p 50004:50004 \
     --env SMTP_ENABLE_TLS=true \
     --env SMTP_ENABLE_SSL=false \
     --env SPRING_PROFILES_ACTIVE=development \
-    registry.gitlab.com/encircle360-oss/straightmail:latest
+    registry.gitlab.com/encircle360-oss/straightmail/straightmail:latest
 ```
 Variables should be set to your correct SMTP credentials and host. `DEFAULT_SENDER` should be set to your default email address, if no email is set in payload this one will be used.
 
@@ -68,7 +68,7 @@ In template files you can use:
 Since straightmail will lookup for templates in `/resources/templates/` and i18n files in `/resources/i18n/` you can use the following Dockerfile as example to create your own docker image with your own templates and i18n.
 You can find examples how [templates](src/main/resources/templates) or [i18n files](src/main/resources/i18n) look like [here](src/main/resources).
 ```
-FROM registry.gitlab.com/encircle360-oss/straightmail:latest
+FROM registry.gitlab.com/encircle360-oss/straightmail/straightmail:latest
 ADD templates /resources/templates # add your template directory containing *.ftl templates here
 ADD i18n /resources/i18n # add your i18n directory containing messages.properties files here
 ```
