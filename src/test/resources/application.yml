@@ -5,8 +5,8 @@ spring:
     username: ${SMTP_USER:""}
     password: ${SMTP_PASSWORD:""}
     port: ${SMTP_PORT:1025}
-    default-sender: ${DEFAULT_SENDER:""}
-    default-template: ${DEFAULT_TEMPLATE:"default"}
+    default-sender: ${DEFAULT_SENDER:test@encircle360.com}
+    default-template: ${DEFAULT_TEMPLATE:default}
     properties:
       mail:
         smtp:
