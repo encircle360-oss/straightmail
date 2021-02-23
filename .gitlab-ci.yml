@@ -29,9 +29,9 @@ docker-build:
   script:
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
     - docker pull $CONTAINER_IMAGE:latest || true
-    - docker build --cache-from $CONTAINER_IMAGE:latest -t $CI_REGISTRY_IMAGE:${git describe --tags} -t $CI_REGISTRY_IMAGE:latest .
+    - docker build --cache-from $CONTAINER_IMAGE:latest -t $CI_REGISTRY_IMAGE:$(git describe --tags) -t $CI_REGISTRY_IMAGE:latest .
     - docker push $CI_REGISTRY_IMAGE:latest
-    - docker push $CI_REGISTRY_IMAGE:${git describe --tags}
+    - docker push $CI_REGISTRY_IMAGE:$(git describe --tags)
 
 docker-build-staging:
   stage: package
@@ -40,6 +40,6 @@ docker-build-staging:
   script:
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
     - docker pull $CONTAINER_IMAGE:staging || true
-    - docker build --cache-from $CONTAINER_IMAGE:staging -t $CI_REGISTRY_IMAGE:${git describe --tags}-staging -t $CI_REGISTRY_IMAGE:staging .
+    - docker build --cache-from $CONTAINER_IMAGE:staging -t $CI_REGISTRY_IMAGE:$(git describe --tags)-staging -t $CI_REGISTRY_IMAGE:staging .
     - docker push $CI_REGISTRY_IMAGE:staging
-    - docker push $CI_REGISTRY_IMAGE:${git describe --tags}-staging
+    - docker push $CI_REGISTRY_IMAGE:$(git describe --tags)-staging
