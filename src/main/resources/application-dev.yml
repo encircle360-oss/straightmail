@@ -1,6 +1,10 @@
 spring:
   application:
     name: straightmail
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/straightmail
+      database: straightmail
   mail:
     default-encoding: UTF-8
     host: localhost
@@ -23,4 +27,4 @@ spring:
     template-loader-path:
       - classpath:templates
 
-debug: true
+#debug: true

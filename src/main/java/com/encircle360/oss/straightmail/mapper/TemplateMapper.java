@@ -3,6 +3,7 @@ package com.encircle360.oss.straightmail.mapper;
 import java.util.List;
 
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.factory.Mappers;
 
@@ -19,7 +20,9 @@ public interface TemplateMapper {
 
     List<TemplateDTO> toDtos(List<Template> template);
 
+    @Mapping(ignore = true, target = "id")
     Template createFromDtp(CreateUpdateTemplateDTO createUpdateTemplateDTO);
 
+    @Mapping(ignore = true, target = "id")
     void updateFromDto(CreateUpdateTemplateDTO createUpdateTemplateDTO, @MappingTarget Template template);
 }

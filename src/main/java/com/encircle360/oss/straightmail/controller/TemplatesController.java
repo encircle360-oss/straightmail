@@ -42,7 +42,7 @@ public class TemplatesController {
 
     private final TemplateService templateService;
 
-    private final TemplateMapper templateMapper;
+    private final TemplateMapper templateMapper = TemplateMapper.INSTANCE;
 
     @GetMapping(value = "", produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(operationId = "listTemplates", description = "Returns a pageable list of templates")

@@ -1,7 +1,7 @@
 ## straightmail - mail sending APIs with template and i18n support
 
 ### Getting started
-To run an instance with default tetmplates and language just run:
+To run an instance with default templates and language just run:
 ```
 docker run -p 50003:50003 -p 50004:50004 \
     --env SMTP_PASSWORD=bar \
