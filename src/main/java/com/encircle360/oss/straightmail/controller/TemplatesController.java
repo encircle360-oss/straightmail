@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -71,8 +72,8 @@ public class TemplatesController {
 
     @Operation(operationId = "createTemplate", description = "Creates a template in database with the given contents")
     @PostMapping(value = "", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<TemplateDTO> create(@Valid final CreateUpdateTemplateDTO createUpdateTemplateDTO) {
-        Template template = templateMapper.createFromDtp(createUpdateTemplateDTO);
+    public ResponseEntity<TemplateDTO> create(@RequestBody @Valid final CreateUpdateTemplateDTO createUpdateTemplateDTO) {
+        Template template = templateMapper.createFromDto(createUpdateTemplateDTO);
         template = templateService.save(template);
         TemplateDTO templateDTO = templateMapper.toDto(template);
 
@@ -81,7 +82,7 @@ public class TemplatesController {
 
     @Operation(operationId = "updateTemplate", description = "Updates a template in database with the given contents")
     @PutMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<TemplateDTO> update(@PathVariable final String id, @Valid final CreateUpdateTemplateDTO createUpdateTemplateDTO) {
+    public ResponseEntity<TemplateDTO> update(@PathVariable final String id, @RequestBody @Valid final CreateUpdateTemplateDTO createUpdateTemplateDTO) {
         Template template = templateService.get(id);
         if (template == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();

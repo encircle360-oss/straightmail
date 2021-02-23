@@ -10,8 +10,8 @@ import lombok.experimental.SuperBuilder;
 
 @Data
 @SuperBuilder
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 @Schema(name = "CreateUpdateTemplate", description = "Data for creating a template")
 public class CreateUpdateTemplateDTO {
 

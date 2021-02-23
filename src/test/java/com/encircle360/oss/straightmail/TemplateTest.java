@@ -2,6 +2,7 @@ package com.encircle360.oss.straightmail;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -17,7 +18,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @AutoConfigureMockMvc
 public class TemplateTest {
 
-    private final ObjectMapper mapper = new ObjectMapper();
+    @Autowired
+    private ObjectMapper mapper;
+
     @Autowired
     private MockMvc mock;
 
@@ -35,6 +38,9 @@ public class TemplateTest {
             .name("test")
             .content("test")
             .build();
+
+        Assertions.assertNotNull(createUpdateTemplateDTO.getName());
+        Assertions.assertNotNull(createUpdateTemplateDTO.getContent());
 
         mock.perform(MockMvcRequestBuilders.post("/templates")
             .contentType(MediaType.APPLICATION_JSON_VALUE)

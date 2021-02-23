@@ -1,4 +1,7 @@
 spring:
+  data:
+    mongodb:
+      database: test
   mail:
     default-encoding: UTF-8
     host: ${SMTP_HOST:""}

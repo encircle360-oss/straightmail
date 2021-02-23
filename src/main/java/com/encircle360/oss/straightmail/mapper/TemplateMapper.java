@@ -21,7 +21,7 @@ public interface TemplateMapper {
     List<TemplateDTO> toDtos(List<Template> template);
 
     @Mapping(ignore = true, target = "id")
-    Template createFromDtp(CreateUpdateTemplateDTO createUpdateTemplateDTO);
+    Template createFromDto(CreateUpdateTemplateDTO createUpdateTemplateDTO);
 
     @Mapping(ignore = true, target = "id")
     void updateFromDto(CreateUpdateTemplateDTO createUpdateTemplateDTO, @MappingTarget Template template);
