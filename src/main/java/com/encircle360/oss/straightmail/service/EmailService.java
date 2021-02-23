@@ -14,6 +14,7 @@ import javax.servlet.ServletContext;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -70,8 +71,12 @@ public class EmailService {
 
         try {
             if (emailRequest instanceof EmailTemplateFileRequestDTO) {
-                subject = parseTemplateFromFile(((EmailTemplateFileRequestDTO) emailRequest).getEmailTemplateId() + "_subject", emailRequest.getLocale(), emailRequest.getModel());
-                body = parseTemplateFromFile(((EmailTemplateFileRequestDTO) emailRequest).getEmailTemplateId(), emailRequest.getLocale(), emailRequest.getModel());
+                String templateId = ((EmailTemplateFileRequestDTO) emailRequest).getEmailTemplateId();
+                subject = parseTemplateFromFile(templateId + "_subject", emailRequest.getLocale(), emailRequest.getModel());
+                body = parseTemplateFromFile(templateId, emailRequest.getLocale(), emailRequest.getModel());
+                if (templateExists(templateId)) {
+                    plainText = parseTemplateFromFile(templateId + "_subject", emailRequest.getLocale(), emailRequest.getModel());
+                }
             } else if (emailRequest instanceof EmailInlineTemplateRequestDTO) {
                 EmailInlineTemplateRequestDTO inlineTemplateRequest = (EmailInlineTemplateRequestDTO) emailRequest;
                 subject = parseTemplateFromString(inlineTemplateRequest.getSubject(), inlineTemplateRequest.getLocale(), inlineTemplateRequest.getModel());
@@ -188,6 +193,7 @@ public class EmailService {
 
         freemarkerConfiguration.setObjectWrapper(jsonNodeObjectWrapper);
         Template template = freemarkerConfiguration.getTemplate(templatePath);
+
         return processTemplate(template, locale, modelMap);
     }
 
@@ -220,5 +226,10 @@ public class EmailService {
             .message(message)
             .success(success)
             .build();
+    }
+
+    public boolean templateExists(String templateId) {
+        String templatePath = templateId + ".ftl";
+        return new ClassPathResource("templates/" + templatePath).exists();
     }
 }
