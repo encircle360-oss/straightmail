@@ -5,13 +5,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.util.HashMap;
 import java.util.List;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
@@ -23,7 +21,6 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@RunWith(SpringRunner.class)
 public class StraightmailApplicationTests {
 
     @Autowired
@@ -31,12 +28,6 @@ public class StraightmailApplicationTests {
 
     @Autowired
     private ObjectMapper objectMapper;
-
-    @Test
-    public void contextLoads() throws Exception {
-        String[] arguments = {};
-        StraightmailApplication.main(arguments);
-    }
 
     @Test
     public void basicRequest() throws Exception {
@@ -48,10 +39,15 @@ public class StraightmailApplicationTests {
             .content(objectMapper.writeValueAsString(EmailTemplateFileRequestDTO.builder().build())))
             .andExpect(status().is4xxClientError());
 
-        String body = objectMapper.writeValueAsString(EmailInlineTemplateRequestDTO.builder()
+        JsonNodeFactory nodeFactory = JsonNodeFactory.instance;
+        HashMap<String, JsonNode> model = new HashMap<>();
+        model.put("test", nodeFactory.textNode("test"));
+
+        String body = objectMapper.writeValueAsString(EmailTemplateFileRequestDTO.builder()
             .recipients(List.of("test@encircle360.com"))
             .sender("test@encircle360.com")
-            .subject("test mail")
+            .emailTemplateId("test")
+            .model(model)
             .build()
         );
 
@@ -63,9 +59,6 @@ public class StraightmailApplicationTests {
 
     @Test
     public void jsonNodeModel() throws Exception {
-        String[] arguments = {};
-        StraightmailApplication.main(arguments);
-
         mock.perform(MockMvcRequestBuilders.post("/"))
             .andExpect(status().is4xxClientError());
 
