@@ -22,4 +22,8 @@ public class CreateUpdateTemplateDTO {
     @NotBlank
     @Schema(name = "content", description = "Content of the template in database")
     private String content;
+
+    @Schema(name = "locale", description = "Locale of the template in database")
+    private String locale;
+
 }

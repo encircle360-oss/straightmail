@@ -1,5 +1,7 @@
 package com.encircle360.oss.straightmail.controller;
 
+import java.io.IOException;
+
 import javax.validation.Valid;
 
 import org.springframework.context.annotation.Profile;
@@ -15,11 +17,15 @@ import org.springframework.web.bind.annotation.RestController;
 import com.encircle360.oss.straightmail.config.MongoDbConfig;
 import com.encircle360.oss.straightmail.dto.TemplateRenderRequestDTO;
 import com.encircle360.oss.straightmail.model.Template;
+import com.encircle360.oss.straightmail.service.FreemarkerService;
 import com.encircle360.oss.straightmail.service.TemplateService;
 
+import freemarker.template.TemplateException;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Validated
 @RestController
 @RequiredArgsConstructor
@@ -29,6 +35,8 @@ public class RenderController {
 
     private final TemplateService templateService;
 
+    private final FreemarkerService freemarkerService;
+
     @Operation(operationId = "renderTemplate", description = "Returns the rendered template as HTML.")
     @PostMapping(value = "", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<String> render(@RequestBody @Valid TemplateRenderRequestDTO templateRenderRequestDTO) {
@@ -37,6 +45,12 @@ public class RenderController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
 
-        return ResponseEntity.status(HttpStatus.OK).build();
+        try {
+            String rendered = freemarkerService.parseTemplateFromString(template.getContent(),template.getLocale(), templateRenderRequestDTO.getModel());
+            return ResponseEntity.status(HttpStatus.OK).body(rendered);
+        } catch (IOException | TemplateException e) {
+            log.error(e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 }
