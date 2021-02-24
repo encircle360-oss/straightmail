@@ -18,8 +18,8 @@ public class StraightmailApplicationTests extends AbstractTest {
 
     @Test
     public void basicRequest() throws Exception {
-        emptyPost("/", status().is4xxClientError());
-        post("/", EmailTemplateFileRequestDTO.builder().build(), status().isBadRequest());
+        emptyPost("/email", status().is4xxClientError());
+        post("/email", EmailTemplateFileRequestDTO.builder().build(), status().isBadRequest());
 
         HashMap<String, JsonNode> testMap = new HashMap<>();
         testMap.put("test", JsonNodeFactory.instance.numberNode(200.8));
@@ -30,13 +30,13 @@ public class StraightmailApplicationTests extends AbstractTest {
             .model(testMap)
             .emailTemplateId("test")
             .build();
-        post("/", emailInlineTemplateRequestDTO, status().is2xxSuccessful());
+        post("/email", emailInlineTemplateRequestDTO, status().is2xxSuccessful());
     }
 
     @Test
     public void jsonNodeModel() throws Exception {
-        emptyPost("/", status().is4xxClientError());
-        post("/", EmailTemplateFileRequestDTO.builder().build(), status().is4xxClientError());
+        emptyPost("/email", status().is4xxClientError());
+        post("/email", EmailTemplateFileRequestDTO.builder().build(), status().is4xxClientError());
 
         TestPojo testPojo = TestPojo
             .builder()
@@ -65,13 +65,13 @@ public class StraightmailApplicationTests extends AbstractTest {
             .locale("de")
             .build();
 
-        post("/", emailTemplateFileRequestDTO, status().is2xxSuccessful());
+        post("/email", emailTemplateFileRequestDTO, status().is2xxSuccessful());
     }
 
     @Test
     public void inlineTemplateTest() throws Exception {
-        emptyPost("/", status().is4xxClientError());
-        post("/", EmailTemplateFileRequestDTO.builder().build(), status().is4xxClientError());
+        emptyPost("/email", status().is4xxClientError());
+        post("/email", EmailTemplateFileRequestDTO.builder().build(), status().is4xxClientError());
 
         HashMap<String, JsonNode> testMap = new HashMap<>();
         testMap.put("test", JsonNodeFactory.instance.numberNode(200.8));
@@ -85,7 +85,7 @@ public class StraightmailApplicationTests extends AbstractTest {
             .locale("de")
             .build();
 
-        post("/inline", emailInlineTemplateRequestDTO, status().is2xxSuccessful());
+        post("/email/inline", emailInlineTemplateRequestDTO, status().is2xxSuccessful());
     }
 
     @Test
@@ -101,7 +101,7 @@ public class StraightmailApplicationTests extends AbstractTest {
             .locale("de")
             .build();
 
-        post("/inline", emailInlineTemplateRequestDTO, status().is4xxClientError());
+        post("/email/inline", emailInlineTemplateRequestDTO, status().is4xxClientError());
 
         emailInlineTemplateRequestDTO = EmailInlineTemplateRequestDTO.builder()
             .recipients(List.of("tes t@encircle360.com"))
@@ -111,7 +111,7 @@ public class StraightmailApplicationTests extends AbstractTest {
             .emailTemplate("${test!\"\"}")
             .locale("de")
             .build();
-        post("/inline", emailInlineTemplateRequestDTO, status().is4xxClientError());
+        post("/email/inline", emailInlineTemplateRequestDTO, status().is4xxClientError());
 
         emailInlineTemplateRequestDTO = EmailInlineTemplateRequestDTO.builder()
             .recipients(List.of("tes t@encircle360.com"))
@@ -123,7 +123,7 @@ public class StraightmailApplicationTests extends AbstractTest {
             .locale("de")
             .build();
 
-        post("/inline", emailInlineTemplateRequestDTO, status().is4xxClientError());
+        post("/email/inline", emailInlineTemplateRequestDTO, status().is4xxClientError());
 
         emailInlineTemplateRequestDTO =
             EmailInlineTemplateRequestDTO.builder()
@@ -136,7 +136,7 @@ public class StraightmailApplicationTests extends AbstractTest {
                 .locale("de")
                 .build();
 
-        post("/inline", emailInlineTemplateRequestDTO, status().is4xxClientError());
+        post("/email/inline", emailInlineTemplateRequestDTO, status().is4xxClientError());
 
         emailInlineTemplateRequestDTO = EmailInlineTemplateRequestDTO.builder()
             .recipients(List.of("test@encircle360ö.com"))
@@ -148,7 +148,7 @@ public class StraightmailApplicationTests extends AbstractTest {
             .emailTemplate("${test!\"\"}")
             .locale("de")
             .build();
-        post("/inline", emailInlineTemplateRequestDTO, status().is4xxClientError());
+        post("/email/inline", emailInlineTemplateRequestDTO, status().is4xxClientError());
 
         emailInlineTemplateRequestDTO = EmailInlineTemplateRequestDTO.builder()
             .recipients(List.of("test@encircle360.com"))
@@ -160,7 +160,7 @@ public class StraightmailApplicationTests extends AbstractTest {
             .emailTemplate("${test!\"\"}")
             .locale("de")
             .build();
-        post("/inline", emailInlineTemplateRequestDTO, status().is2xxSuccessful());
+        post("/email/inline", emailInlineTemplateRequestDTO, status().is2xxSuccessful());
 
     }
 }
