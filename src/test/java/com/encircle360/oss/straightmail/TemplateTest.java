@@ -7,14 +7,17 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
+import com.encircle360.oss.straightmail.config.MongoDbConfig;
 import com.encircle360.oss.straightmail.dto.template.CreateUpdateTemplateDTO;
 import com.encircle360.oss.straightmail.dto.template.TemplateDTO;
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@ActiveProfiles(MongoDbConfig.PROFILE)
 public class TemplateTest extends AbstractTest {
 
     @Test

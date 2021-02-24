@@ -1,38 +1,25 @@
 package com.encircle360.oss.straightmail.service;
 
 import java.io.IOException;
-import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import java.util.HashMap;
-import java.util.Locale;
 
 import javax.mail.internet.MimeMessage;
 import javax.mail.util.ByteArrayDataSource;
-import javax.servlet.ServletContext;
 
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
-import org.springframework.ui.ModelMap;
-import org.springframework.ui.freemarker.FreeMarkerTemplateUtils;
-import org.springframework.web.servlet.support.RequestContext;
 
 import com.encircle360.oss.straightmail.dto.AttachmentDTO;
 import com.encircle360.oss.straightmail.dto.EmailInlineTemplateRequestDTO;
 import com.encircle360.oss.straightmail.dto.EmailRequestDTO;
 import com.encircle360.oss.straightmail.dto.EmailResultDTO;
 import com.encircle360.oss.straightmail.dto.EmailTemplateFileRequestDTO;
-import com.encircle360.oss.straightmail.dto.FakeLocaleHttpServletRequest;
-import com.encircle360.oss.straightmail.wrapper.JsonNodeObjectWrapper;
-import com.fasterxml.jackson.databind.JsonNode;
 
-import freemarker.template.Configuration;
-import freemarker.template.Template;
 import freemarker.template.TemplateException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,22 +28,12 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 public class EmailService {
-
-    @Value("${spring.mail.default-template}")
-    private final String DEFAULT_TEMPLATE = null;
-
     @Value("${spring.mail.default-sender}")
     private final String DEFAULT_SENDER = null;
 
-    private final String DEFAULT_LOCALE = Locale.getDefault().getLanguage();
-
-    private final Configuration freemarkerConfiguration;
-
-    private final JsonNodeObjectWrapper jsonNodeObjectWrapper;
-
     private final JavaMailSender emailClient;
 
-    private final ServletContext context;
+    private final FreemarkerService freemarkerService;
 
     private final Base64.Decoder decoder = Base64.getDecoder();
 
@@ -72,17 +49,18 @@ public class EmailService {
         try {
             if (emailRequest instanceof EmailTemplateFileRequestDTO) {
                 String templateId = ((EmailTemplateFileRequestDTO) emailRequest).getEmailTemplateId();
-                subject = parseTemplateFromFile(templateId + "_subject", emailRequest.getLocale(), emailRequest.getModel());
-                body = parseTemplateFromFile(templateId, emailRequest.getLocale(), emailRequest.getModel());
-                if (templateExists(templateId)) {
-                    plainText = parseTemplateFromFile(templateId + "_subject", emailRequest.getLocale(), emailRequest.getModel());
+                subject = freemarkerService.parseTemplateFromFile(templateId + "_subject", emailRequest.getLocale(), emailRequest.getModel());
+                body = freemarkerService.parseTemplateFromFile(templateId, emailRequest.getLocale(), emailRequest.getModel());
+                if (freemarkerService.templateExists(templateId)) {
+                    plainText = freemarkerService.parseTemplateFromFile(templateId + "_subject", emailRequest.getLocale(), emailRequest.getModel());
                 }
             } else if (emailRequest instanceof EmailInlineTemplateRequestDTO) {
                 EmailInlineTemplateRequestDTO inlineTemplateRequest = (EmailInlineTemplateRequestDTO) emailRequest;
-                subject = parseTemplateFromString(inlineTemplateRequest.getSubject(), inlineTemplateRequest.getLocale(), inlineTemplateRequest.getModel());
-                body = parseTemplateFromString(inlineTemplateRequest.getEmailTemplate(), inlineTemplateRequest.getLocale(), inlineTemplateRequest.getModel());
+                subject = freemarkerService.parseTemplateFromString(inlineTemplateRequest.getSubject(), inlineTemplateRequest.getLocale(), inlineTemplateRequest.getModel());
+                body = freemarkerService.parseTemplateFromString(inlineTemplateRequest.getEmailTemplate(), inlineTemplateRequest.getLocale(), inlineTemplateRequest.getModel());
                 if (inlineTemplateRequest.getPlainText() != null) {
-                    plainText = parseTemplateFromString(inlineTemplateRequest.getPlainText(), inlineTemplateRequest.getLocale(), inlineTemplateRequest.getModel());
+                    plainText = freemarkerService.parseTemplateFromString(inlineTemplateRequest.getPlainText(), inlineTemplateRequest.getLocale(), inlineTemplateRequest
+                        .getModel());
                 }
             }
         } catch (IOException | TemplateException e) {
@@ -104,10 +82,6 @@ public class EmailService {
         emailClient.send(message);
 
         return result("Message was send to SMTP Server", true);
-    }
-
-    private MimeMessage createMessage(EmailRequestDTO emailRequest, String subject, String htmlBody) {
-        return createMessage(emailRequest, subject, htmlBody, null);
     }
 
     private MimeMessage createMessage(EmailRequestDTO emailRequest, String subject, String htmlBody, String plainText) {
@@ -166,70 +140,10 @@ public class EmailService {
         return message;
     }
 
-    private String parseTemplateFromString(String emailTemplateString, String locale, HashMap<String, JsonNode> model) throws IOException, TemplateException {
-        ModelMap modelMap = toModelMap(model);
-
-        if (locale == null) {
-            locale = DEFAULT_LOCALE;
-        }
-
-        freemarkerConfiguration.setObjectWrapper(jsonNodeObjectWrapper);
-        Template template = new Template("email", new StringReader(emailTemplateString), freemarkerConfiguration);
-        return processTemplate(template, locale, modelMap);
-    }
-
-    private String parseTemplateFromFile(String emailTemplateId, String locale, HashMap<String, JsonNode> model) throws IOException, TemplateException {
-        ModelMap modelMap = toModelMap(model);
-
-        if (emailTemplateId == null) {
-            emailTemplateId = DEFAULT_TEMPLATE;
-        }
-
-        if (locale == null) {
-            locale = DEFAULT_LOCALE;
-        }
-
-        String templatePath = emailTemplateId + ".ftl";
-
-        freemarkerConfiguration.setObjectWrapper(jsonNodeObjectWrapper);
-        Template template = freemarkerConfiguration.getTemplate(templatePath);
-
-        return processTemplate(template, locale, modelMap);
-    }
-
-    private String processTemplate(Template template, String locale, ModelMap modelMap) throws IOException, TemplateException {
-
-        template.setLocale(Locale.forLanguageTag(locale));
-
-        // add import of spring macros, so we can use <@spring.messages 'x' /> in our templates
-        template.addAutoImport("spring", "spring.ftl");
-
-        // add macro request context, otherwise spring import will not work
-        modelMap.addAttribute("springMacroRequestContext",
-            new RequestContext(new FakeLocaleHttpServletRequest(locale), context));
-
-        // process to string and return
-        return FreeMarkerTemplateUtils.processTemplateIntoString(template, modelMap);
-    }
-
-    private ModelMap toModelMap(HashMap<String, JsonNode> model) {
-        ModelMap modelMap = new ModelMap();
-        if (model == null) {
-            return modelMap;
-        }
-        modelMap.addAllAttributes(model);
-        return modelMap;
-    }
-
     private EmailResultDTO result(String message, boolean success) {
         return EmailResultDTO.builder()
             .message(message)
             .success(success)
             .build();
-    }
-
-    public boolean templateExists(String templateId) {
-        String templatePath = templateId + ".ftl";
-        return new ClassPathResource("templates/" + templatePath).exists();
     }
 }

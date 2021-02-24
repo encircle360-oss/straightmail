@@ -106,4 +106,5 @@ public class TemplatesController {
         templateService.delete(template);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
+
 }
