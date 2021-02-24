@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.encircle360.oss.straightmail.config.MongoDbConfig;
 import com.encircle360.oss.straightmail.dto.TemplateRenderRequestDTO;
+import com.encircle360.oss.straightmail.dto.template.RenderedTemplateDTO;
+import com.encircle360.oss.straightmail.mapper.TemplateMapper;
 import com.encircle360.oss.straightmail.model.Template;
 import com.encircle360.oss.straightmail.service.FreemarkerService;
 import com.encircle360.oss.straightmail.service.TemplateService;
@@ -33,20 +35,25 @@ import lombok.extern.slf4j.Slf4j;
 @Profile(MongoDbConfig.PROFILE)
 public class RenderController {
 
+    private final TemplateMapper mapper = TemplateMapper.INSTANCE;
+
     private final TemplateService templateService;
 
     private final FreemarkerService freemarkerService;
 
     @Operation(operationId = "renderTemplate", description = "Returns the rendered template as HTML.")
     @PostMapping(value = "", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> render(@RequestBody @Valid TemplateRenderRequestDTO templateRenderRequestDTO) {
+    public ResponseEntity<RenderedTemplateDTO> render(@RequestBody @Valid TemplateRenderRequestDTO templateRenderRequestDTO) {
         Template template = templateService.get(templateRenderRequestDTO.getTemplateId());
         if (template == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
 
         try {
-            String rendered = freemarkerService.parseTemplateFromString(template.getContent(),template.getLocale(), templateRenderRequestDTO.getModel());
+            String renderedHtml = freemarkerService.parseTemplateFromString(template.getHtml(),template.getLocale(), templateRenderRequestDTO.getModel());
+            String renderedPlain = freemarkerService.parseTemplateFromString(template.getPlain(),template.getLocale(), templateRenderRequestDTO.getModel());
+
+            RenderedTemplateDTO rendered = mapper.toRendered(template, renderedHtml, renderedPlain);
             return ResponseEntity.status(HttpStatus.OK).body(rendered);
         } catch (IOException | TemplateException e) {
             log.error(e.getMessage());

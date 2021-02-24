@@ -2,6 +2,8 @@ package com.encircle360.oss.straightmail;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -12,8 +14,10 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import com.encircle360.oss.straightmail.config.MongoDbConfig;
+import com.encircle360.oss.straightmail.dto.PageContainer;
 import com.encircle360.oss.straightmail.dto.template.CreateUpdateTemplateDTO;
 import com.encircle360.oss.straightmail.dto.template.TemplateDTO;
+import com.fasterxml.jackson.core.type.TypeReference;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -32,11 +36,12 @@ public class TemplateTest extends AbstractTest {
         createUpdateTemplateDTO = CreateUpdateTemplateDTO
             .builder()
             .name("test")
-            .content("test")
+            .html("test")
+            .tags(List.of("test", "foo", "bar"))
             .build();
 
         Assertions.assertNotNull(createUpdateTemplateDTO.getName());
-        Assertions.assertNotNull(createUpdateTemplateDTO.getContent());
+        Assertions.assertNotNull(createUpdateTemplateDTO.getHtml());
 
         MvcResult result = post("/templates", createUpdateTemplateDTO, status().isCreated());
         TemplateDTO templateDTO = resultToObject(result, TemplateDTO.class);
@@ -44,7 +49,7 @@ public class TemplateTest extends AbstractTest {
         Assertions.assertNotNull(templateDTO);
         Assertions.assertNotNull(templateDTO.getId());
         Assertions.assertNotNull(templateDTO.getName());
-        Assertions.assertNotNull(templateDTO.getContent());
+        Assertions.assertNotNull(templateDTO.getHtml());
 
         result = get("/templates/" + templateDTO.getId(), status().isOk());
 
@@ -53,7 +58,12 @@ public class TemplateTest extends AbstractTest {
         Assertions.assertNotNull(templateDTO);
         Assertions.assertNotNull(templateDTO.getId());
         Assertions.assertNotNull(templateDTO.getName());
-        Assertions.assertNotNull(templateDTO.getContent());
+        Assertions.assertNotNull(templateDTO.getHtml());
+
+        MvcResult listResult = get("/templates?tag=foo&tag=bar", status().isOk());
+        PageContainer<TemplateDTO> templateDTOPageContainer = mapper.readValue(listResult.getResponse().getContentAsString(), new TypeReference<PageContainer<TemplateDTO>>() {});
+        Assertions.assertNotNull(templateDTOPageContainer);
+        Assertions.assertEquals(1, templateDTOPageContainer.getTotalElements());
 
         delete("/templates/" + templateDTO.getId(), status().isNoContent());
         get("/templates/" + templateDTO.getId(), status().isNotFound());

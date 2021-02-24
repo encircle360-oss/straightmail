@@ -39,6 +39,10 @@ public class FreemarkerService {
     private final ServletContext context;
 
     public String parseTemplateFromString(String templateContent, String locale, HashMap<String, JsonNode> model) throws IOException, TemplateException {
+        if(templateContent == null) {
+            return null;
+        }
+
         ModelMap modelMap = toModelMap(model);
 
         if (locale == null) {

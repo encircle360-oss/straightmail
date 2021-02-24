@@ -2,6 +2,7 @@ spring:
   data:
     mongodb:
       database: test
+      uri: mongodb://localhost:57534/test
   mail:
     default-encoding: UTF-8
     host: ${SMTP_HOST:localhost}

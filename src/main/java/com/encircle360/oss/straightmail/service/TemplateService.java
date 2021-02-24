@@ -1,5 +1,7 @@
 package com.encircle360.oss.straightmail.service;
 
+import java.util.List;
+
 import org.springframework.context.annotation.Profile;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -31,5 +33,12 @@ public class TemplateService {
 
     public void delete(Template template) {
         templateRepository.delete(template);
+    }
+
+    public Page<Template> findAll(List<String> tags, Pageable pageable) {
+        if (tags == null || tags.isEmpty()) {
+            return findAll(pageable);
+        }
+        return templateRepository.findAllByTagsContains(tags, pageable);
     }
 }

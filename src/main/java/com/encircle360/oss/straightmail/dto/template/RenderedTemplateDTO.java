@@ -2,8 +2,6 @@ package com.encircle360.oss.straightmail.dto.template;
 
 import java.util.List;
 
-import javax.validation.constraints.NotBlank;
-
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -14,17 +12,15 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(name = "CreateUpdateTemplate", description = "Data for creating a template")
-public class CreateUpdateTemplateDTO {
+@Schema(name = "RenderedTemplate", description = "template result with rendered content")
+public class RenderedTemplateDTO {
 
-    @NotBlank
+    @Schema(name = "id", description = "Id of the template in database")
+    private String id;
+
     @Schema(name = "name", description = "Name of the template in database")
     private String name;
 
-    @Schema(name = "id", description = "Subject of the template in database")
-    private String subject;
-
-    @NotBlank
     @Schema(name = "html", description = "Html content of the template in database")
     private String html;
 
@@ -36,5 +32,4 @@ public class CreateUpdateTemplateDTO {
 
     @Schema(name = "tags", description = "List of tags which this template has.")
     private List<String> tags;
-
 }

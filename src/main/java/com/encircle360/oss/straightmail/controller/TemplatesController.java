@@ -48,10 +48,11 @@ public class TemplatesController {
     @GetMapping(value = "", produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(operationId = "listTemplates", description = "Returns a pageable list of templates")
     public ResponseEntity<PageContainer<TemplateDTO>> list(@RequestParam(required = false) String sort,
-                                                           @RequestParam(required = false) Integer size,
-                                                           @RequestParam(required = false) Integer page) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(sort));
-        Page<Template> templatePage = templateService.findAll(pageable);
+                                                           @RequestParam(required = false, defaultValue = "10") Integer size,
+                                                           @RequestParam(required = false, defaultValue = "0") Integer page,
+                                                           @RequestParam(required = false) List<String> tag) {
+        Pageable pageable = PageRequest.of(page, size, sort == null ? Sort.unsorted() : Sort.by(sort));
+        Page<Template> templatePage = templateService.findAll(tag, pageable);
         List<TemplateDTO> dtos = templateMapper.toDtos(templatePage.getContent());
 
         PageContainer<TemplateDTO> pageContainer = PageContainer.of(dtos, templatePage);

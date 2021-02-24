@@ -11,7 +11,7 @@ import org.springframework.data.mongodb.config.AbstractMongoClientConfiguration;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 
 @Configuration
-@Profile(PROFILE)
+@Profile({PROFILE})
 @EnableConfigurationProperties(MongoProperties.class)
 @EnableMongoRepositories("com.encircle360.oss.straightmail.repository")
 public class MongoDbConfig extends AbstractMongoClientConfiguration {
