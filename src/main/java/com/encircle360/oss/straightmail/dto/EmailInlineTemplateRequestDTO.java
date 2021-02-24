@@ -24,4 +24,7 @@ public class EmailInlineTemplateRequestDTO extends EmailRequestDTO {
     @Schema(name = "emailTemplate", description = "Email template reference definition")
     private String emailTemplate;
 
+    @Schema(name = "plainText", description = "Email template as plaintext without any html")
+    private String plainText;
+
 }

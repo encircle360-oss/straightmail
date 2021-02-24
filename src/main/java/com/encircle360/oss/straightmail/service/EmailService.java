@@ -14,6 +14,7 @@ import javax.servlet.ServletContext;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -59,23 +60,30 @@ public class EmailService {
 
     private final Base64.Decoder decoder = Base64.getDecoder();
 
-
     public <T extends EmailRequestDTO> EmailResultDTO sendMail(T emailRequest) {
         if (emailRequest == null) {
             return result("Request was empty", false);
         }
 
+        String plainText = null;
         String body = null;
         String subject = null;
 
         try {
             if (emailRequest instanceof EmailTemplateFileRequestDTO) {
-                subject = parseTemplateFromFile(((EmailTemplateFileRequestDTO) emailRequest).getEmailTemplateId() + "_subject", emailRequest.getLocale(), emailRequest.getModel());
-                body = parseTemplateFromFile(((EmailTemplateFileRequestDTO) emailRequest).getEmailTemplateId(), emailRequest.getLocale(), emailRequest.getModel());
+                String templateId = ((EmailTemplateFileRequestDTO) emailRequest).getEmailTemplateId();
+                subject = parseTemplateFromFile(templateId + "_subject", emailRequest.getLocale(), emailRequest.getModel());
+                body = parseTemplateFromFile(templateId, emailRequest.getLocale(), emailRequest.getModel());
+                if (templateExists(templateId)) {
+                    plainText = parseTemplateFromFile(templateId + "_subject", emailRequest.getLocale(), emailRequest.getModel());
+                }
             } else if (emailRequest instanceof EmailInlineTemplateRequestDTO) {
                 EmailInlineTemplateRequestDTO inlineTemplateRequest = (EmailInlineTemplateRequestDTO) emailRequest;
                 subject = parseTemplateFromString(inlineTemplateRequest.getSubject(), inlineTemplateRequest.getLocale(), inlineTemplateRequest.getModel());
                 body = parseTemplateFromString(inlineTemplateRequest.getEmailTemplate(), inlineTemplateRequest.getLocale(), inlineTemplateRequest.getModel());
+                if (inlineTemplateRequest.getPlainText() != null) {
+                    plainText = parseTemplateFromString(inlineTemplateRequest.getPlainText(), inlineTemplateRequest.getLocale(), inlineTemplateRequest.getModel());
+                }
             }
         } catch (IOException | TemplateException e) {
             log.error(e.getMessage());
@@ -88,7 +96,7 @@ public class EmailService {
         // remove all HTML from subject
         subject = Jsoup.clean(subject, Whitelist.none());
 
-        MimeMessage message = createMessage(emailRequest, subject, body);
+        MimeMessage message = createMessage(emailRequest, subject, body, plainText);
         if (message == null) {
             return result("Error creating mimetype message, maybe some missing or invalid fields", false);
         }
@@ -99,6 +107,10 @@ public class EmailService {
     }
 
     private MimeMessage createMessage(EmailRequestDTO emailRequest, String subject, String htmlBody) {
+        return createMessage(emailRequest, subject, htmlBody, null);
+    }
+
+    private MimeMessage createMessage(EmailRequestDTO emailRequest, String subject, String htmlBody, String plainText) {
         MimeMessage message = emailClient.createMimeMessage();
 
         if (emailRequest.getSender() == null) {
@@ -111,8 +123,10 @@ public class EmailService {
                 StandardCharsets.UTF_8.name());
 
             // set plain text result by removing all html tags and convert br to \n
-            String plainText = Jsoup.clean(htmlBody, Whitelist.none().addTags("br"));
-            plainText = plainText.replaceAll("(<br>|<br/>|<br\\s+/>)", "\n");
+            if (plainText == null) {
+                plainText = Jsoup.clean(htmlBody, Whitelist.none().addTags("br"));
+                plainText = plainText.replaceAll("(<br>|<br/>|<br\\s+/>)", "\n");
+            }
 
             helper.setFrom(emailRequest.getSender());
             helper.setSubject(subject);
@@ -179,6 +193,7 @@ public class EmailService {
 
         freemarkerConfiguration.setObjectWrapper(jsonNodeObjectWrapper);
         Template template = freemarkerConfiguration.getTemplate(templatePath);
+
         return processTemplate(template, locale, modelMap);
     }
 
@@ -211,5 +226,10 @@ public class EmailService {
             .message(message)
             .success(success)
             .build();
+    }
+
+    public boolean templateExists(String templateId) {
+        String templatePath = templateId + ".ftl";
+        return new ClassPathResource("templates/" + templatePath).exists();
     }
 }

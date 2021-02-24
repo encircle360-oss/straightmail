@@ -4,12 +4,12 @@ spring:
       database: test
   mail:
     default-encoding: UTF-8
-    host: ${SMTP_HOST:""}
+    host: ${SMTP_HOST:localhost}
     username: ${SMTP_USER:""}
     password: ${SMTP_PASSWORD:""}
-    port: ${SMTP_PORT:587}
-    default-sender: ${DEFAULT_SENDER:""}
-    default-template: ${DEFAULT_TEMPLATE:"default"}
+    port: ${SMTP_PORT:1025}
+    default-sender: ${DEFAULT_SENDER:test@encircle360.com}
+    default-template: ${DEFAULT_TEMPLATE:default}
     properties:
       mail:
         smtp:

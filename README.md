@@ -31,7 +31,9 @@ You should also note that this service is ment to be an internal service and sho
 Let's send an email using our straightmail instance with template as files in our templates file directory. 
 Your template should be saved in two files, one for the subject and one for
 the body of an email. Template id is the name of the template file without ending, the subject template always 
-called templateId_subject.ftl (**important:** all HTML tags will be removed from subject while parsing)
+called templateId_subject.ftl (**important:** all HTML tags will be removed from subject while parsing).
+
+You can also add templateId_plain.ftl for plaintext usage of the template, please avoid to use HTML in this template. 
 ```
 curl -d '{   "recipients": ["test@encircle360.com"],   "cc": null,   "bcc": null,   "attachments": null,   "sender": "test@encircle360.com",   "model": {     "test": 200.8,     "text": "test text"   },   "locale": "de",   "subject": "test mail: ${text}",   "emailTemplateId": "default" }'  -H "Content-Type: application/json" -X POST http://localhost:50003/
 ```

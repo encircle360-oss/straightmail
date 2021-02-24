@@ -30,7 +30,7 @@ public class StraightmailApplication {
     @Bean
     public MessageSource messageSource() {
         ResourceBundleMessageSource messageSource = new ResourceBundleMessageSource();
-        messageSource.setBasenames("classpath:i18n/messages", "file:/resources/i18n/messages");
+        messageSource.setBasenames("classpath:i18n/messages", "file:/resources/i18n/messages", "i18n/messages");
         messageSource.setDefaultEncoding(StandardCharsets.UTF_8.name());
 
         return messageSource;
