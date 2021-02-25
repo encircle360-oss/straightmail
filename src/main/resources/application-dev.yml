@@ -5,6 +5,8 @@ spring:
     mongodb:
       uri: mongodb://localhost:27017/straightmail
       database: straightmail
+      host: localhost
+      port: 2701
   mail:
     default-encoding: UTF-8
     host: localhost
