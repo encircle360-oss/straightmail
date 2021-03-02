@@ -115,7 +115,7 @@ public class EmailService {
 
             // set plain text result by removing all html tags and convert br to \n
             if (plainText == null) {
-                plainText = Jsoup.clean(htmlBody, Whitelist.none().addTags("br", "a"));
+                plainText = Jsoup.clean(htmlBody, Whitelist.none().addTags("br", "a").addAttributes("a","href"));
                 plainText = plainText.replaceAll("(<br>|<br/>|<br\\s+/>)", "\n");
                 plainText = HtmlUtil.replaceHtmlLinkToPlainText(plainText);
             }
