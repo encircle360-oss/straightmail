@@ -22,6 +22,7 @@ import com.encircle360.oss.straightmail.dto.email.EmailResultDTO;
 import com.encircle360.oss.straightmail.dto.email.EmailTemplateFileRequestDTO;
 import com.encircle360.oss.straightmail.model.Template;
 import com.encircle360.oss.straightmail.service.template.TemplateLoader;
+import com.encircle360.oss.straightmail.util.HtmlUtil;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import freemarker.template.TemplateException;
@@ -36,13 +37,11 @@ public class EmailService {
     @Value("${spring.mail.default-sender}")
     private final String DEFAULT_SENDER = null;
 
-    private final JavaMailSender emailClient;
-
     private final FreemarkerService freemarkerService;
 
-    private final TemplateLoader templateLoader;
-
     private final Base64.Decoder decoder = Base64.getDecoder();
+    private final TemplateLoader templateLoader;
+    private final JavaMailSender emailClient;
 
     public <T extends EmailRequestDTO> EmailResultDTO sendMail(T emailRequest) {
         if (emailRequest == null) {
@@ -118,6 +117,7 @@ public class EmailService {
             if (plainText == null) {
                 plainText = Jsoup.clean(htmlBody, Whitelist.none().addTags("br", "a"));
                 plainText = plainText.replaceAll("(<br>|<br/>|<br\\s+/>)", "\n");
+                plainText = HtmlUtil.replaceHtmlLinkToPlainText(plainText);
             }
 
             helper.setFrom(emailRequest.getSender());
