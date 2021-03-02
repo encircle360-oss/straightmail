@@ -3,6 +3,7 @@ package com.encircle360.oss.straightmail.service;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.HashMap;
 
 import javax.mail.internet.MimeMessage;
 import javax.mail.util.ByteArrayDataSource;
@@ -21,6 +22,7 @@ import com.encircle360.oss.straightmail.dto.email.EmailResultDTO;
 import com.encircle360.oss.straightmail.dto.email.EmailTemplateFileRequestDTO;
 import com.encircle360.oss.straightmail.model.Template;
 import com.encircle360.oss.straightmail.service.template.TemplateLoader;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import freemarker.template.TemplateException;
 import lombok.RequiredArgsConstructor;
@@ -51,28 +53,29 @@ public class EmailService {
         String body = null;
         String subject = null;
 
-        try {
-            if (emailRequest instanceof EmailTemplateFileRequestDTO) {
-                String templateId = ((EmailTemplateFileRequestDTO) emailRequest).getEmailTemplateId();
-                Template template = templateLoader.loadTemplate(templateId);
-                if(template == null) {
-                    return result("Template not found", false);
-                }
-
-                subject = freemarkerService.parseTemplateFromString(template.getSubject(), emailRequest.getLocale(), emailRequest.getModel());
-                body = freemarkerService.parseTemplateFromString(template.getHtml(), emailRequest.getLocale(), emailRequest.getModel());
-                if (freemarkerService.templateExists(templateId)) {
-                    plainText = freemarkerService.parseTemplateFromString(template.getPlain(), emailRequest.getLocale(), emailRequest.getModel());
-                }
-            } else if (emailRequest instanceof EmailInlineTemplateRequestDTO) {
-                EmailInlineTemplateRequestDTO inlineTemplateRequest = (EmailInlineTemplateRequestDTO) emailRequest;
-                subject = freemarkerService.parseTemplateFromString(inlineTemplateRequest.getSubject(), inlineTemplateRequest.getLocale(), inlineTemplateRequest.getModel());
-                body = freemarkerService.parseTemplateFromString(inlineTemplateRequest.getEmailTemplate(), inlineTemplateRequest.getLocale(), inlineTemplateRequest.getModel());
-                if (inlineTemplateRequest.getPlainText() != null) {
-                    plainText = freemarkerService.parseTemplateFromString(inlineTemplateRequest.getPlainText(), inlineTemplateRequest.getLocale(), inlineTemplateRequest
-                        .getModel());
-                }
+        String locale = emailRequest.getLocale();
+        HashMap<String, JsonNode> model = emailRequest.getModel();
+        if (emailRequest instanceof EmailTemplateFileRequestDTO) {
+            String templateId = ((EmailTemplateFileRequestDTO) emailRequest).getEmailTemplateId();
+            Template template = templateLoader.loadTemplate(templateId);
+            if (template == null) {
+                return result("Template not found", false);
             }
+
+            subject = template.getSubject();
+            body = template.getHtml();
+            plainText = template.getPlain();
+        } else if (emailRequest instanceof EmailInlineTemplateRequestDTO) {
+            EmailInlineTemplateRequestDTO inlineTemplateRequest = (EmailInlineTemplateRequestDTO) emailRequest;
+            subject = inlineTemplateRequest.getSubject();
+            body = inlineTemplateRequest.getEmailTemplate();
+            plainText = inlineTemplateRequest.getPlainText();
+        }
+
+        try {
+            subject = freemarkerService.parseTemplateFromString(body, locale, model);
+            body = freemarkerService.parseTemplateFromString(body, locale, model);
+            plainText = freemarkerService.parseTemplateFromString(plainText, locale, model);
         } catch (IOException | TemplateException e) {
             log.error(e.getMessage());
         }
@@ -80,9 +83,6 @@ public class EmailService {
         if (subject == null || body == null) {
             return result("Error parsing Template", false);
         }
-
-        // remove all HTML from subject
-        subject = Jsoup.clean(subject, Whitelist.none());
 
         MimeMessage message = createMessage(emailRequest, subject, body, plainText);
         if (message == null) {
@@ -97,6 +97,14 @@ public class EmailService {
     private MimeMessage createMessage(EmailRequestDTO emailRequest, String subject, String htmlBody, String plainText) {
         MimeMessage message = emailClient.createMimeMessage();
 
+        // Do not send messages with null body or subject, must be set!
+        if (subject == null || htmlBody == null) {
+            return null;
+        }
+
+        // remove all HTML from subject
+        subject = Jsoup.clean(subject, Whitelist.none());
+
         if (emailRequest.getSender() == null) {
             emailRequest.setSender(DEFAULT_SENDER);
         }
@@ -108,7 +116,7 @@ public class EmailService {
 
             // set plain text result by removing all html tags and convert br to \n
             if (plainText == null) {
-                plainText = Jsoup.clean(htmlBody, Whitelist.none().addTags("br"));
+                plainText = Jsoup.clean(htmlBody, Whitelist.none().addTags("br", "a"));
                 plainText = plainText.replaceAll("(<br>|<br/>|<br\\s+/>)", "\n");
             }
 
