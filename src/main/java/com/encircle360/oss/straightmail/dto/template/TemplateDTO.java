@@ -12,6 +12,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
+@Schema(name = "Template")
 public class TemplateDTO {
 
     @Schema(name = "id", description = "Id of the template in database")

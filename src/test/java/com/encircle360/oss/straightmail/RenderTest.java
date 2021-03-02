@@ -11,10 +11,10 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MvcResult;
 
 import com.encircle360.oss.straightmail.config.MongoDbConfig;
-import com.encircle360.oss.straightmail.dto.TemplateRenderRequestDTO;
 import com.encircle360.oss.straightmail.dto.template.CreateUpdateTemplateDTO;
 import com.encircle360.oss.straightmail.dto.template.RenderedTemplateDTO;
 import com.encircle360.oss.straightmail.dto.template.TemplateDTO;
+import com.encircle360.oss.straightmail.dto.template.TemplateRenderRequestDTO;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 

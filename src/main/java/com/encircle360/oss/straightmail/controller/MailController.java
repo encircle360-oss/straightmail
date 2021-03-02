@@ -10,10 +10,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.encircle360.oss.straightmail.dto.EmailInlineTemplateRequestDTO;
-import com.encircle360.oss.straightmail.dto.EmailRequestDTO;
-import com.encircle360.oss.straightmail.dto.EmailResultDTO;
-import com.encircle360.oss.straightmail.dto.EmailTemplateFileRequestDTO;
+import com.encircle360.oss.straightmail.dto.email.EmailInlineTemplateRequestDTO;
+import com.encircle360.oss.straightmail.dto.email.EmailRequestDTO;
+import com.encircle360.oss.straightmail.dto.email.EmailResultDTO;
+import com.encircle360.oss.straightmail.dto.email.EmailTemplateFileRequestDTO;
 import com.encircle360.oss.straightmail.service.EmailService;
 
 import io.swagger.v3.oas.annotations.Operation;

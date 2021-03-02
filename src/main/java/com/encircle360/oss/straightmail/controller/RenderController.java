@@ -15,8 +15,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.encircle360.oss.straightmail.config.MongoDbConfig;
-import com.encircle360.oss.straightmail.dto.TemplateRenderRequestDTO;
 import com.encircle360.oss.straightmail.dto.template.RenderedTemplateDTO;
+import com.encircle360.oss.straightmail.dto.template.TemplateRenderRequestDTO;
 import com.encircle360.oss.straightmail.mapper.TemplateMapper;
 import com.encircle360.oss.straightmail.model.Template;
 import com.encircle360.oss.straightmail.service.FreemarkerService;

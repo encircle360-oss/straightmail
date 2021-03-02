@@ -8,8 +8,8 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import com.encircle360.oss.straightmail.dto.EmailInlineTemplateRequestDTO;
-import com.encircle360.oss.straightmail.dto.EmailTemplateFileRequestDTO;
+import com.encircle360.oss.straightmail.dto.email.EmailInlineTemplateRequestDTO;
+import com.encircle360.oss.straightmail.dto.email.EmailTemplateFileRequestDTO;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 

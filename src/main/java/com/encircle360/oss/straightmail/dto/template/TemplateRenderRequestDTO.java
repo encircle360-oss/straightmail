@@ -1,4 +1,4 @@
-package com.encircle360.oss.straightmail.dto;
+package com.encircle360.oss.straightmail.dto.template;
 
 import java.util.HashMap;
 

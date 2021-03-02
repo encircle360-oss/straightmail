@@ -1,4 +1,4 @@
-package com.encircle360.oss.straightmail.dto;
+package com.encircle360.oss.straightmail.dto.email;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;

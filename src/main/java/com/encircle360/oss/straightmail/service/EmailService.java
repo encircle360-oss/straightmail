@@ -14,11 +14,11 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
-import com.encircle360.oss.straightmail.dto.AttachmentDTO;
-import com.encircle360.oss.straightmail.dto.EmailInlineTemplateRequestDTO;
-import com.encircle360.oss.straightmail.dto.EmailRequestDTO;
-import com.encircle360.oss.straightmail.dto.EmailResultDTO;
-import com.encircle360.oss.straightmail.dto.EmailTemplateFileRequestDTO;
+import com.encircle360.oss.straightmail.dto.email.AttachmentDTO;
+import com.encircle360.oss.straightmail.dto.email.EmailInlineTemplateRequestDTO;
+import com.encircle360.oss.straightmail.dto.email.EmailRequestDTO;
+import com.encircle360.oss.straightmail.dto.email.EmailResultDTO;
+import com.encircle360.oss.straightmail.dto.email.EmailTemplateFileRequestDTO;
 import com.encircle360.oss.straightmail.model.Template;
 import com.encircle360.oss.straightmail.service.template.TemplateLoader;
 
@@ -55,6 +55,9 @@ public class EmailService {
             if (emailRequest instanceof EmailTemplateFileRequestDTO) {
                 String templateId = ((EmailTemplateFileRequestDTO) emailRequest).getEmailTemplateId();
                 Template template = templateLoader.loadTemplate(templateId);
+                if(template == null) {
+                    return result("Template not found", false);
+                }
 
                 subject = freemarkerService.parseTemplateFromString(template.getSubject(), emailRequest.getLocale(), emailRequest.getModel());
                 body = freemarkerService.parseTemplateFromString(template.getHtml(), emailRequest.getLocale(), emailRequest.getModel());
