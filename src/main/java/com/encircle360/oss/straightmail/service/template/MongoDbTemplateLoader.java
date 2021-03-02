@@ -11,12 +11,20 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 @Profile(MongoDbConfig.PROFILE)
-public class MongoDbTemplateLoader implements TemplateLoader {
+public class MongoDbTemplateLoader extends AbstractTemplateLoader {
 
     private final TemplateService templateService;
 
     @Override
     public Template loadTemplate(String templateId) {
-        return templateService.get(templateId);
+        if (templateId == null) {
+            return null;
+        }
+
+        Template template = templateService.get(templateId);
+        if (template == null) {
+            return loadFromFiles(templateId);
+        }
+        return template;
     }
 }
