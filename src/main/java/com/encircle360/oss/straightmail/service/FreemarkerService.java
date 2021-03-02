@@ -14,7 +14,7 @@ import org.springframework.ui.ModelMap;
 import org.springframework.ui.freemarker.FreeMarkerTemplateUtils;
 import org.springframework.web.servlet.support.RequestContext;
 
-import com.encircle360.oss.straightmail.dto.FakeLocaleHttpServletRequest;
+import com.encircle360.oss.straightmail.util.FakeLocaleHttpServletRequest;
 import com.encircle360.oss.straightmail.wrapper.JsonNodeObjectWrapper;
 import com.fasterxml.jackson.databind.JsonNode;
 

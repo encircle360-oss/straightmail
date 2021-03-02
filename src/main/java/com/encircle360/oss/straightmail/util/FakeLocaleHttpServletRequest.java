@@ -1,4 +1,4 @@
-package com.encircle360.oss.straightmail.dto;
+package com.encircle360.oss.straightmail.util;
 
 import java.io.BufferedReader;
 import java.io.IOException;
