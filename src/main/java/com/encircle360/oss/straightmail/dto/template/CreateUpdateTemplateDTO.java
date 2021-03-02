@@ -21,7 +21,7 @@ public class CreateUpdateTemplateDTO {
     @Schema(name = "name", description = "Name of the template in database")
     private String name;
 
-    @Schema(name = "id", description = "Subject of the template in database")
+    @Schema(name = "subject", description = "Subject of the template in database")
     private String subject;
 
     @NotBlank
