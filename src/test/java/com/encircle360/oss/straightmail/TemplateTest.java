@@ -5,7 +5,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.util.List;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
@@ -17,12 +19,20 @@ import com.encircle360.oss.straightmail.config.MongoDbConfig;
 import com.encircle360.oss.straightmail.dto.PageContainer;
 import com.encircle360.oss.straightmail.dto.template.CreateUpdateTemplateDTO;
 import com.encircle360.oss.straightmail.dto.template.TemplateDTO;
+import com.encircle360.oss.straightmail.repository.TemplateRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles(MongoDbConfig.PROFILE)
 public class TemplateTest extends AbstractTest {
+
+    @Autowired TemplateRepository templateRepository;
+
+    @BeforeEach
+    public void clean() {
+        templateRepository.deleteAll();
+    }
 
     @Test
     public void test_create_template() throws Exception {

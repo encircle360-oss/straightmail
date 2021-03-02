@@ -19,6 +19,8 @@ import com.encircle360.oss.straightmail.dto.EmailInlineTemplateRequestDTO;
 import com.encircle360.oss.straightmail.dto.EmailRequestDTO;
 import com.encircle360.oss.straightmail.dto.EmailResultDTO;
 import com.encircle360.oss.straightmail.dto.EmailTemplateFileRequestDTO;
+import com.encircle360.oss.straightmail.model.Template;
+import com.encircle360.oss.straightmail.service.template.TemplateLoader;
 
 import freemarker.template.TemplateException;
 import lombok.RequiredArgsConstructor;
@@ -28,12 +30,15 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 public class EmailService {
+
     @Value("${spring.mail.default-sender}")
     private final String DEFAULT_SENDER = null;
 
     private final JavaMailSender emailClient;
 
     private final FreemarkerService freemarkerService;
+
+    private final TemplateLoader templateLoader;
 
     private final Base64.Decoder decoder = Base64.getDecoder();
 
@@ -49,10 +54,12 @@ public class EmailService {
         try {
             if (emailRequest instanceof EmailTemplateFileRequestDTO) {
                 String templateId = ((EmailTemplateFileRequestDTO) emailRequest).getEmailTemplateId();
-                subject = freemarkerService.parseTemplateFromFile(templateId + "_subject", emailRequest.getLocale(), emailRequest.getModel());
-                body = freemarkerService.parseTemplateFromFile(templateId, emailRequest.getLocale(), emailRequest.getModel());
+                Template template = templateLoader.loadTemplate(templateId);
+
+                subject = freemarkerService.parseTemplateFromString(template.getSubject(), emailRequest.getLocale(), emailRequest.getModel());
+                body = freemarkerService.parseTemplateFromString(template.getHtml(), emailRequest.getLocale(), emailRequest.getModel());
                 if (freemarkerService.templateExists(templateId)) {
-                    plainText = freemarkerService.parseTemplateFromFile(templateId + "_subject", emailRequest.getLocale(), emailRequest.getModel());
+                    plainText = freemarkerService.parseTemplateFromString(template.getPlain(), emailRequest.getLocale(), emailRequest.getModel());
                 }
             } else if (emailRequest instanceof EmailInlineTemplateRequestDTO) {
                 EmailInlineTemplateRequestDTO inlineTemplateRequest = (EmailInlineTemplateRequestDTO) emailRequest;

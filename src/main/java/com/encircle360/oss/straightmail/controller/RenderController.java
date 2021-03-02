@@ -20,7 +20,7 @@ import com.encircle360.oss.straightmail.dto.template.RenderedTemplateDTO;
 import com.encircle360.oss.straightmail.mapper.TemplateMapper;
 import com.encircle360.oss.straightmail.model.Template;
 import com.encircle360.oss.straightmail.service.FreemarkerService;
-import com.encircle360.oss.straightmail.service.TemplateService;
+import com.encircle360.oss.straightmail.service.template.TemplateService;
 
 import freemarker.template.TemplateException;
 import io.swagger.v3.oas.annotations.Operation;

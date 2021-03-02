@@ -1,4 +1,4 @@
-package com.encircle360.oss.straightmail.service;
+package com.encircle360.oss.straightmail.service.template;
 
 import java.util.List;
 

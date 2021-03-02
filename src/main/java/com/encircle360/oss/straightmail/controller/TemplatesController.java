@@ -29,7 +29,7 @@ import com.encircle360.oss.straightmail.dto.template.CreateUpdateTemplateDTO;
 import com.encircle360.oss.straightmail.dto.template.TemplateDTO;
 import com.encircle360.oss.straightmail.mapper.TemplateMapper;
 import com.encircle360.oss.straightmail.model.Template;
-import com.encircle360.oss.straightmail.service.TemplateService;
+import com.encircle360.oss.straightmail.service.template.TemplateService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
