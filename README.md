@@ -83,6 +83,15 @@ docker run -p 50003:50003 -p 50004:50004 \
     --env MONGO_DATABASE=straigthmail \
     registry.gitlab.com/encircle360-oss/straightmail/straightmail:latest
 ```
+
+If you want to use authentication for mongodb use the following env variables 
+
+```
+SPRING_DATA_MONGODB_USERNAME
+SPRING_DATA_MONGODB_PASSWORD
+SPRING_DATA_MONGODB_AUTHENTICATION_DATABASE
+```
+
 ### Example Dockerfile
 
 Since straightmail will lookup for templates in `/resources/templates/` and i18n files in `/resources/i18n/` you can use the following Dockerfile as example to create your own docker image with your own templates and i18n.
