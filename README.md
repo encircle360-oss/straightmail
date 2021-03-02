@@ -65,6 +65,24 @@ As you can see in Dockerfile we provide i18n functionality. You can also provide
 In template files you can use:
 ```<@spring.message "message.key"/>``` to load messages from properties files. In the next section example Dockerfile, more information about templates and messages will be provided. 
 
+### MongoDB Support
+
+If you want to enable mongoDb support you can use ```mongo``` profile. Example docker run command
+
+```
+docker run -p 50003:50003 -p 50004:50004 \
+    --env SMTP_PASSWORD=bar \
+    --env SMTP_HOST=host.docker.internal \
+    --env SMTP_USER=foo \
+    --env SMTP_PORT=1025 \
+    --env DEFAULT_SENDER=test@encircle360.com \
+    --env SMTP_ENABLE_TLS=true \
+    --env SMTP_ENABLE_SSL=false \
+    --env SPRING_PROFILES_ACTIVE=mongo \
+    --env MONGO_URI=mongodb://localhost:27017/test \
+    --env MONGO_DATABASE=straigthmail \
+    registry.gitlab.com/encircle360-oss/straightmail/straightmail:latest
+```
 ### Example Dockerfile
 
 Since straightmail will lookup for templates in `/resources/templates/` and i18n files in `/resources/i18n/` you can use the following Dockerfile as example to create your own docker image with your own templates and i18n.

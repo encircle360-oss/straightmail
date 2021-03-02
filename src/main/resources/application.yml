@@ -1,8 +1,8 @@
 spring:
   data:
     mongodb:
-      database: test
-      uri: mongodb://localhost:27017/test
+      database: ${MONGO_DATABASE:test}
+      uri: ${MONGO_URI:mongodb://localhost:27017/test}
   application:
     name: straightmail
   mail:
