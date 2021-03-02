@@ -19,7 +19,7 @@ public class HtmlUtil {
                 href = hrefMatcher.group(1);
             }
 
-            htmlLike = htmlLike.replace(completeLink, text + "(" + href + ")");
+            htmlLike = htmlLike.replace(completeLink, text + " ( " + href + " )");
         }
         return htmlLike;
     }
