@@ -20,7 +20,7 @@ If you want to use SSL set `SMTP_ENABLE_SSL` to `true` an `SMTP_ENABLE_TLS` to `
 
 Now you can start using Straightmail for sending your email via simple rest calls.
 
-Open `http://localhost:50003/swagger-ui/` in your browser to visit the swagger and openAPI documentation which shows the available REST endpoints you can use to send emails.
+Open `http://localhost:50003/swagger-ui/index.html?url=/v3/api-docs#/` in your browser to visit the swagger and openAPI documentation which shows the available REST endpoints you can use to send emails.
 
 Note that you should start straightmail in `production` profile if you're in a production environment otherwise the swagger-ui will be be available and open to the world.
 To do this just switch the docker env variable to `--env SPRING_PROFILES_ACTIVE=production`.
@@ -65,9 +65,9 @@ As you can see in Dockerfile we provide i18n functionality. You can also provide
 In template files you can use:
 ```<@spring.message "message.key"/>``` to load messages from properties files. In the next section example Dockerfile, more information about templates and messages will be provided. 
 
-### MongoDB Support
+### MongoDB Support (optional)
 
-If you want to enable mongoDb support you can use ```mongo``` profile. Example docker run command
+MongoDb support can be enabled by spring profile and will give the ability of saving templates to database with a simple restFul controller. If you want to enable mongoDb support you can use ```mongo``` profile. Example docker run command
 
 ```
 docker run -p 50003:50003 -p 50004:50004 \
@@ -91,6 +91,10 @@ SPRING_DATA_MONGODB_USERNAME
 SPRING_DATA_MONGODB_PASSWORD
 SPRING_DATA_MONGODB_AUTHENTICATION_DATABASE
 ```
+
+You will see all template operations in swagger ui:
+`http://localhost:50003/swagger-ui/index.html?url=/v3/api-docs#/`
+
 
 ### Example Dockerfile
 
