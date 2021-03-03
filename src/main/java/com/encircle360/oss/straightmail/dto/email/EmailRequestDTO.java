@@ -1,9 +1,10 @@
-package com.encircle360.oss.straightmail.dto;
+package com.encircle360.oss.straightmail.dto.email;
 
 import java.util.HashMap;
 import java.util.List;
 
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 
 import com.encircle360.oss.straightmail.config.EmailRegex;
@@ -22,18 +23,15 @@ import lombok.experimental.SuperBuilder;
 @Schema(name = "EmailRequest", description = "Object for requesting an email sending")
 public abstract class EmailRequestDTO {
 
-    @NotBlank
-    @Pattern(regexp = EmailRegex.value)
+    @NotNull
     @Schema(name = "recipients", description = "The recipient of the send mail")
-    private List<String> recipients;
+    private List<@Pattern(regexp = EmailRegex.value) String> recipients;
 
-    @Pattern(regexp = EmailRegex.value)
     @Schema(name = "cc", description = "The carbon copy recipients of the send mail")
-    private List<String> cc;
+    private List<@Pattern(regexp = EmailRegex.value) String> cc;
 
-    @Pattern(regexp = EmailRegex.value)
     @Schema(name = "bcc", description = "The black carbon copy recipients of the send mail")
-    private List<String> bcc;
+    private List<@Pattern(regexp = EmailRegex.value) String> bcc;
 
     @Schema(name = "attachments", description = "Attachments on an email")
     private List<AttachmentDTO> attachments;
