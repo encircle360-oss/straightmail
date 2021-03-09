@@ -1,6 +1,9 @@
 package com.encircle360.oss.straightmail.service.template;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
@@ -18,6 +21,15 @@ public abstract class AbstractTemplateLoader implements TemplateLoader {
             try {
                 return new String(resource.getInputStream().readAllBytes());
             } catch (IOException e) {
+                log.error(e.getMessage());
+            }
+        }
+
+        Path filePath = Paths.get("/resources/templates/" + path);
+        if (Files.exists(filePath)) {
+            try {
+                return Files.readString(filePath);
+            } catch (Exception e) {
                 log.error(e.getMessage());
             }
         }
