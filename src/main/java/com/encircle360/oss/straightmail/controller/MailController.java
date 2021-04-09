@@ -28,17 +28,6 @@ public class MailController {
 
     private final EmailService emailService;
 
-    @Deprecated
-    @PostMapping("")
-    @Operation(
-        operationId = "sendEMailWithTemplateIdOldPath",
-        description = "Endpoint to send emails via client, DEPRECATED! Please use: /email",
-        deprecated = true
-    )
-    public ResponseEntity<EmailResultDTO> sendEMailWithTemplateIdOldPath(@RequestBody @Valid EmailTemplateFileRequestDTO emailFileRequest) {
-        return send(emailFileRequest);
-    }
-
     @PostMapping("/email")
     @Operation(operationId = "sendEMailWithTemplateId", description = "Endpoint to send emails via client")
     public ResponseEntity<EmailResultDTO> sendEMailWithTemplateId(@RequestBody @Valid EmailTemplateFileRequestDTO emailFileRequest) {
@@ -48,17 +37,6 @@ public class MailController {
     @PostMapping("/email/inline")
     @Operation(operationId = "sendEMailWithInlineTemplate", description = "Sends an email with the given contents from request")
     public ResponseEntity<EmailResultDTO> sendEMailWithInlineTemplate(@RequestBody @Valid EmailInlineTemplateRequestDTO emailRequestInlineTemplateDTO) {
-        return send(emailRequestInlineTemplateDTO);
-    }
-
-    @Deprecated
-    @PostMapping("/inline")
-    @Operation(
-        operationId = "sendEMailWithInlineTemplateOldPath",
-        description = "Sends an email with the given contents from request, DEPERCATED! Please use: /email/inline endpoint.",
-        deprecated = true
-    )
-    public ResponseEntity<EmailResultDTO> sendEMailWithInlineTemplateOldPath(@RequestBody @Valid EmailInlineTemplateRequestDTO emailRequestInlineTemplateDTO) {
         return send(emailRequestInlineTemplateDTO);
     }
 

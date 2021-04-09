@@ -72,7 +72,7 @@ public class EmailService {
         }
 
         try {
-            subject = freemarkerService.parseTemplateFromString(body, locale, model);
+            subject = freemarkerService.parseTemplateFromString(subject, locale, model);
             body = freemarkerService.parseTemplateFromString(body, locale, model);
             plainText = freemarkerService.parseTemplateFromString(plainText, locale, model);
         } catch (IOException | TemplateException e) {
