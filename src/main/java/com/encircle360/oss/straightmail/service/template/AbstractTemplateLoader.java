@@ -41,8 +41,7 @@ public abstract class AbstractTemplateLoader implements TemplateLoader {
         String subjectTemplatePath = templateId + "_subject.ftl";
         String plainTemplatePath = templateId + "_plain.ftl";
 
-        return Template
-            .builder()
+        return Template.builder()
             .id(templateId)
             .name(templateId)
             .subject(getFileContent(subjectTemplatePath))
