@@ -1,7 +1,17 @@
-image: docker:git
+image: docker:latest
 
 services:
-  - docker:dind
+  - name: docker:stable-dind
+    command: [ "--tls=false" ]
+
+variables:
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_TLS_CERTDIR: ""
+  DOCKER_DRIVER: overlay2
+  BUILDX_VERSION: "v0.7.0"
+  BUILDX_ARCH: "linux-amd64"
+  PLATFORMS: "linux/arm64,linux/amd64"
+  BUILDX_URL: https://github.com/docker/buildx/releases/download/$BUILDX_VERSION/buildx-$BUILDX_VERSION.$BUILDX_ARCH
 
 stages:
   - build
@@ -13,33 +23,43 @@ before_script:
 cache:
   paths:
     - .gradle/wrapper
+    - .gradle/caches
 
 gradle-build:
   stage: build
-  image: openjdk:14-jdk
+  image: openjdk:17-alpine
   script: "./gradlew build -x test"
   artifacts:
     paths:
       - build/libs/*.jar
 
-docker-build:
+docker-test:
   stage: package
+  needs:
+    - job: gradle-build
+      artifacts: true
+  except:
+    - master
+  before_script:
+    - wget -O /usr/bin/docker-buildx $BUILDX_URL
+    - chmod +x /usr/bin/docker-buildx
+  script:
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+    - docker-buildx create --use
+    - docker-buildx build --platform $PLATFORMS .
+
+docker-package:
+  stage: package
+  needs:
+    - job: gradle-build
+      artifacts: true
   only:
     - master
+  before_script:
+    - wget -O /usr/bin/docker-buildx $BUILDX_URL
+    - chmod +x /usr/bin/docker-buildx
   script:
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker pull $CONTAINER_IMAGE:latest || true
-    - docker build --cache-from $CONTAINER_IMAGE:latest -t $CI_REGISTRY_IMAGE:$(git describe --tags) -t $CI_REGISTRY_IMAGE:latest .
-    - docker push $CI_REGISTRY_IMAGE:latest
-    - docker push $CI_REGISTRY_IMAGE:$(git describe --tags)
-
-docker-build-staging:
-  stage: package
-  only:
-    - staging
-  script:
-    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker pull $CONTAINER_IMAGE:staging || true
-    - docker build --cache-from $CONTAINER_IMAGE:staging -t $CI_REGISTRY_IMAGE:$(git describe --tags)-staging -t $CI_REGISTRY_IMAGE:staging .
-    - docker push $CI_REGISTRY_IMAGE:staging
-    - docker push $CI_REGISTRY_IMAGE:$(git describe --tags)-staging
+    - docker-buildx create --use
+    - docker-buildx build --platform $PLATFORMS -t $CI_REGISTRY_IMAGE:latest --push .
+    - docker-buildx build --platform $PLATFORMS -t $CI_REGISTRY_IMAGE:${CI_COMMIT_SHA:0:8} --push .
