@@ -27,7 +27,7 @@ cache:
 
 gradle-build:
   stage: build
-  image: openjdk:17-alpine
+  image: openjdk:17-jdk
   script: "./gradlew build -x test"
   artifacts:
     paths:
