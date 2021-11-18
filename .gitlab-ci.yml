@@ -16,6 +16,7 @@ variables:
 stages:
   - build
   - package
+  - version
 
 before_script:
   - export GRADLE_USER_HOME=`pwd`/.gradle
@@ -66,13 +67,15 @@ docker-version:
     - docker-buildx build --platform $PLATFORMS -t $CI_REGISTRY_IMAGE:$LATEST_VERSION --push .
 
 create-badges:
-  stage: package
+  stage: version
   image: python:3.6.6
+  needs:
+    - job: docker-version
   only:
-    - master
+    - tags
   script:
     - echo "Python other dependencies installation"
-    - pip install anybadge #https://github.com/jongracecox/anybadge
+    - pip install anybadge
     - echo commits $COMMITS latest_version $LATEST_VERSION
     - mkdir badges
     - anybadge -o -l "latest version" -v $LATEST_VERSION -f badges/latestversion.svg -c green
