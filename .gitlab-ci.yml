@@ -12,6 +12,7 @@ variables:
   BUILDX_ARCH: "linux-amd64"
   PLATFORMS: "linux/arm64,linux/amd64"
   BUILDX_URL: https://github.com/docker/buildx/releases/download/$BUILDX_VERSION/buildx-$BUILDX_VERSION.$BUILDX_ARCH
+  DEFAULT_BRANCH: master
 
 stages:
   - build
@@ -70,8 +71,11 @@ create-badges:
   image: python:3.6.6
   needs:
     - job: docker-version
-  only:
-    - tags
+#  only:
+#    - tags
+  before_script:
+    - git config --global user.email "tech@encircle360.com"
+    - git config --global user.name "encircle360 tech"
   script:
     - echo "Python other dependencies installation"
     - pip install anybadge
@@ -81,7 +85,9 @@ create-badges:
     - anybadge -o -l "commits" -v $COMMITS -f badges/commits.svg -c lightgrey
     - anybadge -o -l "licence" -v "Apache License" -f badges/license.svg -c yellowgreen
     - anybadge -o -l "awesomeness" -v "110%" -f badges/awesomeness.svg -c orange
-    - ls -la
-  artifacts:
-    paths:
-      - badges/*.svg
+
+    - echo "Committing badges files to git"
+    - git add .
+    - git commit -m "Added build badges to $SERVICE_VERSION"
+    #- git push "https://${GITLAB_USER_NAME}:${$CI_JOB_TOKEN}@${CI_REPOSITORY_URL#*@}" "HEAD:${DEFAULT_BRANCH}" -o skip-ci
+    - git push "https://${GITLAB_USER_NAME}:${$CI_JOB_TOKEN}@${CI_REPOSITORY_URL#*@}" "HEAD:${CI_COMMIT_REF_NAME}" -o skip-ci
