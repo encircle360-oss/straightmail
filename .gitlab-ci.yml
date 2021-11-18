@@ -64,7 +64,8 @@ docker-version:
   script:
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
     - docker-buildx create --use
-    - docker-buildx build --platform $PLATFORMS -t $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG --push .
+    #- docker-buildx build --platform $PLATFORMS -t $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG --push .
+    - docker-buildx build --platform $PLATFORMS -t $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME --push .
 
 create-badges:
   stage: version
