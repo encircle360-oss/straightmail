@@ -12,11 +12,6 @@ variables:
   BUILDX_ARCH: "linux-amd64"
   PLATFORMS: "linux/arm64,linux/amd64"
   BUILDX_URL: https://github.com/docker/buildx/releases/download/$BUILDX_VERSION/buildx-$BUILDX_VERSION.$BUILDX_ARCH
-  DEFAULT_BRANCH: master
-
-  ### ONYL TEMP - REMOVE!!
-  CI_COMMIT_TAG: "0.2.2"
-  COMMITS: "10"
 
 stages:
   - build
@@ -60,8 +55,8 @@ docker-version:
   needs:
     - job: gradle-build
       artifacts: true
-#  only:
-#    - tags
+  only:
+    - tags
   before_script:
     - wget -O /usr/bin/docker-buildx $BUILDX_URL
     - chmod +x /usr/bin/docker-buildx
@@ -69,29 +64,3 @@ docker-version:
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
     - docker-buildx create --use
     - docker-buildx build --platform $PLATFORMS -t $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG --push .
-
-create-badges:
-  stage: build
-  image: python:3.6.6
-#  needs:
-#    - job: docker-version
-#  only:
-#    - tags
-  before_script:
-    - git config --global user.email "tech@encircle360.com"
-    - git config --global user.name "encircle360 tech"
-  script:
-    - echo "Python other dependencies installation"
-    - pip install anybadge
-    - echo commits $COMMITS latest_version $CI_COMMIT_TAG
-    - mkdir badges
-    - anybadge -o -l "latest version" -v $CI_COMMIT_TAG -f badges/latestversion.svg -c green
-    - anybadge -o -l "commits" -v $COMMITS -f badges/commits.svg -c lightgrey
-    - anybadge -o -l "licence" -v "Apache License" -f badges/license.svg -c yellowgreen
-    - anybadge -o -l "awesomeness" -v "110%" -f badges/awesomeness.svg -c orange
-
-    - echo "Committing badges files to git"
-    - git add .
-    - git commit -m "Added build badges to $SERVICE_VERSION"
-    #- git push "https://${GITLAB_USER_NAME}:${$CI_JOB_TOKEN}@${CI_REPOSITORY_URL#*@}" "HEAD:${DEFAULT_BRANCH}" -o skip-ci
-    - git push origin HEAD:$CI_COMMIT_REF_NAME -o skip-ci
