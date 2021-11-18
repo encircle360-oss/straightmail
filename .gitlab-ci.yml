@@ -94,4 +94,4 @@ create-badges:
     - git add .
     - git commit -m "Added build badges to $SERVICE_VERSION"
     #- git push "https://${GITLAB_USER_NAME}:${$CI_JOB_TOKEN}@${CI_REPOSITORY_URL#*@}" "HEAD:${DEFAULT_BRANCH}" -o skip-ci
-    - git push "https://${GITLAB_USER_NAME}:${$CI_JOB_TOKEN}@${CI_REPOSITORY_URL#*@}" "HEAD:${CI_COMMIT_REF_NAME}" -o skip-ci
+    - git push origin HEAD:$CI_COMMIT_REF_NAME -o skip-ci
