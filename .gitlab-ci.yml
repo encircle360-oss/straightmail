@@ -20,7 +20,6 @@ stages:
 
 before_script:
   - export GRADLE_USER_HOME=`pwd`/.gradle
-  - export COMMITS=$(git rev-list --all --count)
 
 cache:
   paths:
@@ -64,24 +63,3 @@ docker-version:
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
     - docker-buildx create --use
     - docker-buildx build --platform $PLATFORMS -t $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG --push .
-
-create-badges:
-  stage: version
-  image: python:3.6.6
-  needs:
-    - job: docker-version
-  only:
-    - tags
-  script:
-    - echo "Python other dependencies installation"
-    - pip install anybadge
-    - echo commits $COMMITS latest_version $CI_COMMIT_TAG
-    - mkdir badges
-    - anybadge -o -l "latest version" -v $CI_COMMIT_TAG -f badges/latestversion.svg -c green
-    - anybadge -o -l "commits" -v $COMMITS -f badges/commits.svg -c lightgrey
-    - anybadge -o -l "licence" -v "Apache License" -f badges/license.svg -c yellowgreen
-    - anybadge -o -l "awesomeness" -v "110%" -f badges/awesomeness.svg -c orange
-    - ls -la
-  artifacts:
-    paths:
-      - badges/*.svg
