@@ -35,7 +35,7 @@ gradle-build:
     paths:
       - build/libs/*.jar
 
-docker-package:
+docker-latest:
   stage: package
   needs:
     - job: gradle-build
