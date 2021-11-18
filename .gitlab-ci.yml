@@ -71,10 +71,10 @@ docker-version:
     - docker-buildx build --platform $PLATFORMS -t $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG --push .
 
 create-badges:
-  stage: version
+  stage: build
   image: python:3.6.6
-  needs:
-    - job: docker-version
+#  needs:
+#    - job: docker-version
 #  only:
 #    - tags
   before_script:
