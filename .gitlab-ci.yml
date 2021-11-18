@@ -19,6 +19,8 @@ stages:
 
 before_script:
   - export GRADLE_USER_HOME=`pwd`/.gradle
+  - export COMMITS=$(git rev-list --all --count)
+  - export LATEST_VERSION=$(git describe --tags)
 
 cache:
   paths:
@@ -32,21 +34,6 @@ gradle-build:
   artifacts:
     paths:
       - build/libs/*.jar
-
-docker-test:
-  stage: package
-  needs:
-    - job: gradle-build
-      artifacts: true
-  except:
-    - master
-  before_script:
-    - wget -O /usr/bin/docker-buildx $BUILDX_URL
-    - chmod +x /usr/bin/docker-buildx
-  script:
-    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker-buildx create --use
-    - docker-buildx build --platform $PLATFORMS .
 
 docker-package:
   stage: package
@@ -62,4 +49,37 @@ docker-package:
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
     - docker-buildx create --use
     - docker-buildx build --platform $PLATFORMS -t $CI_REGISTRY_IMAGE:latest --push .
-    - docker-buildx build --platform $PLATFORMS -t $CI_REGISTRY_IMAGE:${CI_COMMIT_SHA:0:8} --push .
+
+docker-version:
+  stage: package
+  needs:
+    - job: gradle-build
+      artifacts: true
+  only:
+    - tags
+  before_script:
+    - wget -O /usr/bin/docker-buildx $BUILDX_URL
+    - chmod +x /usr/bin/docker-buildx
+  script:
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+    - docker-buildx create --use
+    - docker-buildx build --platform $PLATFORMS -t $CI_REGISTRY_IMAGE:$LATEST_VERSION --push .
+
+create-badges:
+  stage: package
+  image: python:3.6.6
+  only:
+    - master
+  script:
+    - echo "Python other dependencies installation"
+    - pip install anybadge #https://github.com/jongracecox/anybadge
+    - echo commits $COMMITS latest_version $LATEST_VERSION
+    - mkdir badges
+    - anybadge -o -l "latest version" -v $LATEST_VERSION -f badges/latestversion.svg -c green
+    - anybadge -o -l "commits" -v $COMMITS -f badges/commits.svg -c lightgrey
+    - anybadge -o -l "licence" -v "Apache License" -f badges/license.svg -c yellowgreen
+    - anybadge -o -l "awesomeness" -v "110%" -f badges/awesomeness.svg -c orange
+    - ls -la
+  artifacts:
+    paths:
+      - badges/*.svg

@@ -1,3 +1,9 @@
+[![pipeline status](https://gitlab.com/encircle360-oss/straightmail/straightmail/badges/master/pipeline.svg)](https://gitlab.com/encircle360-oss/straightmail/straightmail/commits/master)
+[![latest version](https://gitlab.com/encircle360-oss/straightmail/straightmail/-/jobs/artifacts/master/raw/badges/latestversion.svg?job=create-badges)](https://gitlab.com/encircle360-oss/straightmail/straightmail/-/tags)
+[![commits](https://gitlab.com/encircle360-oss/straightmail/straightmail/-/jobs/artifacts/master/raw/badges/commits.svg?job=create-badges)](https://gitlab.com/encircle360-oss/straightmail/straightmail/-/commits)
+[![licence](https://gitlab.com/encircle360-oss/straightmail/straightmail/-/jobs/artifacts/master/raw/badges/license.svg?job=create-badges)](https://gitlab.com/encircle360-oss/straightmail/straightmail/-/blob/master/LICENSE)
+[![awesomeness](https://gitlab.com/encircle360-oss/straightmail/straightmail/-/jobs/artifacts/master/raw/badges/awesomeness.svg?job=create-badges)](https://encircle360.com)
+
 ## straightmail - mail sending APIs with template and i18n support
 
 ### Getting started
