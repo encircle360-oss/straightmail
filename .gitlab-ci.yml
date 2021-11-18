@@ -14,6 +14,10 @@ variables:
   BUILDX_URL: https://github.com/docker/buildx/releases/download/$BUILDX_VERSION/buildx-$BUILDX_VERSION.$BUILDX_ARCH
   DEFAULT_BRANCH: master
 
+  ### ONYL TEMP - REMOVE!!
+  CI_COMMIT_TAG: "0.2.2"
+  COMMITS: "10"
+
 stages:
   - build
   - package
@@ -64,8 +68,7 @@ docker-version:
   script:
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
     - docker-buildx create --use
-    #- docker-buildx build --platform $PLATFORMS -t $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG --push .
-    - docker-buildx build --platform $PLATFORMS -t $CI_REGISTRY_IMAGE:0.2.1 --push .
+    - docker-buildx build --platform $PLATFORMS -t $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG --push .
 
 create-badges:
   stage: version
