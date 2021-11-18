@@ -1,8 +1,4 @@
 [![pipeline status](https://gitlab.com/encircle360-oss/straightmail/straightmail/badges/master/pipeline.svg)](https://gitlab.com/encircle360-oss/straightmail/straightmail/commits/master)
-[![latest version](badges/latestversion.svg)](https://gitlab.com/encircle360-oss/straightmail/straightmail/-/tags)
-[![commits](badges/commits.svg)](https://gitlab.com/encircle360-oss/straightmail/straightmail/-/commits)
-[![licence](badges/license.svg)](https://gitlab.com/encircle360-oss/straightmail/straightmail/-/blob/master/LICENSE)
-[![awesomeness](badges/awesomeness.svg)](https://encircle360.com)
 
 ## straightmail - mail sending APIs with template and i18n support
 
