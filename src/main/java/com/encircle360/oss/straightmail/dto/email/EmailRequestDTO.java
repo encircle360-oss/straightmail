@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
@@ -46,5 +47,9 @@ public abstract class EmailRequestDTO {
 
     @Schema(name = "locale", description = "Locale country code", example = "de")
     private String locale;
+
+    @Builder.Default
+    @Schema(description = "If set to true, result will contain render result, otherwise render result will be null")
+    private boolean verbose = false;
 
 }

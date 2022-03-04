@@ -15,19 +15,19 @@ import lombok.experimental.SuperBuilder;
 @Schema(name = "RenderedTemplate", description = "template result with rendered content")
 public class RenderedTemplateDTO {
 
-    @Schema(name = "id", description = "Id of the template in database")
+    @Schema(name = "id", description = "Id of the template")
     private String id;
 
-    @Schema(name = "name", description = "Name of the template in database")
+    @Schema(name = "name", description = "Name of the template")
     private String name;
 
-    @Schema(name = "html", description = "Html content of the template in database")
+    @Schema(name = "html", description = "Html content of the result")
     private String html;
 
-    @Schema(name = "plain", description = "Plain content of the template in database")
+    @Schema(name = "plain", description = "Plain content of the result")
     private String plain;
 
-    @Schema(name = "locale", description = "Locale of the template in database")
+    @Schema(name = "locale", description = "Locale of the result")
     private String locale;
 
     @Schema(name = "tags", description = "List of tags which this template has.")

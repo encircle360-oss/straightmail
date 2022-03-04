@@ -8,6 +8,8 @@ import java.util.HashMap;
 import javax.mail.internet.MimeMessage;
 import javax.mail.util.ByteArrayDataSource;
 
+import com.encircle360.oss.straightmail.dto.email.*;
+import com.encircle360.oss.straightmail.dto.template.RenderedTemplateDTO;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,11 +17,6 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
-import com.encircle360.oss.straightmail.dto.email.AttachmentDTO;
-import com.encircle360.oss.straightmail.dto.email.EmailInlineTemplateRequestDTO;
-import com.encircle360.oss.straightmail.dto.email.EmailRequestDTO;
-import com.encircle360.oss.straightmail.dto.email.EmailResultDTO;
-import com.encircle360.oss.straightmail.dto.email.EmailTemplateFileRequestDTO;
 import com.encircle360.oss.straightmail.model.Template;
 import com.encircle360.oss.straightmail.service.template.TemplateLoader;
 import com.encircle360.oss.straightmail.util.HtmlUtil;
@@ -45,7 +42,7 @@ public class EmailService {
 
     public <T extends EmailRequestDTO> EmailResultDTO sendMail(T emailRequest) {
         if (emailRequest == null) {
-            return result("Request was empty", false);
+            return result("Request was empty", null, false);
         }
 
         String plainText = null;
@@ -54,18 +51,20 @@ public class EmailService {
 
         String locale = emailRequest.getLocale();
         HashMap<String, JsonNode> model = emailRequest.getModel();
-        if (emailRequest instanceof EmailTemplateFileRequestDTO) {
-            String templateId = ((EmailTemplateFileRequestDTO) emailRequest).getEmailTemplateId();
+        String templateId = null;
+        String templateName = null;
+        if (emailRequest instanceof EmailTemplateFileRequestDTO emailTemplateFileRequest) {
+            templateId = emailTemplateFileRequest.getEmailTemplateId();
             Template template = templateLoader.loadTemplate(templateId);
             if (template == null) {
-                return result("Template not found", false);
+                return result("Template not found", null, false);
             }
 
+            templateName = template.getName();
             subject = template.getSubject();
             body = template.getHtml();
             plainText = template.getPlain();
-        } else if (emailRequest instanceof EmailInlineTemplateRequestDTO) {
-            EmailInlineTemplateRequestDTO inlineTemplateRequest = (EmailInlineTemplateRequestDTO) emailRequest;
+        } else if (emailRequest instanceof EmailInlineTemplateRequestDTO inlineTemplateRequest) {
             subject = inlineTemplateRequest.getSubject();
             body = inlineTemplateRequest.getEmailTemplate();
             plainText = inlineTemplateRequest.getPlainText();
@@ -80,20 +79,36 @@ public class EmailService {
         }
 
         if (subject == null || body == null) {
-            return result("Error parsing Template", false);
+            return result("Error parsing Template", null, false);
         }
 
         MimeMessage message = createMessage(emailRequest, subject, body, plainText);
         if (message == null) {
-            return result("Error creating mimetype message, maybe some missing or invalid fields", false);
+            return result("Error creating mimetype message, maybe some missing or invalid fields",
+                    null,
+                    false);
         }
 
         emailClient.send(message);
+        RenderedTemplateDTO renderedTemplateDTO = null;
 
-        return result("Message was send to SMTP Server", true);
+        if (emailRequest.isVerbose()) {
+            renderedTemplateDTO = RenderedTemplateDTO
+                    .builder()
+                    .html(body)
+                    .plain(plainText)
+                    .name(templateName)
+                    .id(templateId)
+                    .build();
+        }
+
+        return result("Message was send to SMTP Server", renderedTemplateDTO, true);
     }
 
-    private MimeMessage createMessage(EmailRequestDTO emailRequest, String subject, String htmlBody, String plainText) {
+    private MimeMessage createMessage(EmailRequestDTO emailRequest,
+                                      String subject,
+                                      String htmlBody,
+                                      String plainText) {
         MimeMessage message = emailClient.createMimeMessage();
 
         // Do not send messages with null body or subject, must be set!
@@ -110,12 +125,13 @@ public class EmailService {
 
         try {
             MimeMessageHelper helper = new MimeMessageHelper(message,
-                MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED,
-                StandardCharsets.UTF_8.name());
+                    MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED,
+                    StandardCharsets.UTF_8.name());
 
             // set plain text result by removing all html tags and convert br to \n
             if (plainText == null) {
-                plainText = Jsoup.clean(htmlBody, Whitelist.none().addTags("br", "a").addAttributes("a","href"));
+                plainText = Jsoup.clean(htmlBody,
+                        Whitelist.none().addTags("br", "a").addAttributes("a", "href"));
                 plainText = plainText.replaceAll("(<br>|<br/>|<br\\s+/>)", "\n");
                 plainText = HtmlUtil.replaceHtmlLinkToPlainText(plainText);
             }
@@ -144,7 +160,8 @@ public class EmailService {
             if (emailRequest.getAttachments() != null && !emailRequest.getAttachments().isEmpty()) {
                 for (AttachmentDTO attachment : emailRequest.getAttachments()) {
                     byte[] fileBytes = decoder.decode(attachment.getContent());
-                    ByteArrayDataSource attachmentByteArrayDataSource = new ByteArrayDataSource(fileBytes, attachment.getMimeType());
+                    ByteArrayDataSource attachmentByteArrayDataSource = new ByteArrayDataSource(
+                            fileBytes, attachment.getMimeType());
                     helper.addAttachment(attachment.getFilename(), attachmentByteArrayDataSource);
                 }
             }
@@ -158,10 +175,21 @@ public class EmailService {
         return message;
     }
 
-    private EmailResultDTO result(String message, boolean success) {
+    private EmailResultDTO result(String message,
+                                  RenderedTemplateDTO renderedTemplate,
+                                  boolean success) {
+        if (renderedTemplate != null) {
+            return ExtendedEmailResultDTO
+                    .builder()
+                    .message(message)
+                    .success(success)
+                    .renderResult(renderedTemplate)
+                    .build();
+        }
+
         return EmailResultDTO.builder()
-            .message(message)
-            .success(success)
-            .build();
+                .message(message)
+                .success(success)
+                .build();
     }
 }
