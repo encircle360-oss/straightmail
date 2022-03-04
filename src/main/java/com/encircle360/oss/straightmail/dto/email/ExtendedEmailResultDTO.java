@@ -3,9 +3,10 @@ package com.encircle360.oss.straightmail.dto.email;
 import com.encircle360.oss.straightmail.dto.template.RenderedTemplateDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @Data
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
