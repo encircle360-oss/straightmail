@@ -1,15 +1,14 @@
 package com.encircle360.oss.straightmail.service;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-import java.util.HashMap;
-
-import javax.mail.internet.MimeMessage;
-import javax.mail.util.ByteArrayDataSource;
-
 import com.encircle360.oss.straightmail.dto.email.*;
 import com.encircle360.oss.straightmail.dto.template.RenderedTemplateDTO;
+import com.encircle360.oss.straightmail.model.Template;
+import com.encircle360.oss.straightmail.service.template.TemplateLoader;
+import com.encircle360.oss.straightmail.util.HtmlUtil;
+import com.fasterxml.jackson.databind.JsonNode;
+import freemarker.template.TemplateException;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Whitelist;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,14 +16,12 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
-import com.encircle360.oss.straightmail.model.Template;
-import com.encircle360.oss.straightmail.service.template.TemplateLoader;
-import com.encircle360.oss.straightmail.util.HtmlUtil;
-import com.fasterxml.jackson.databind.JsonNode;
-
-import freemarker.template.TemplateException;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import javax.mail.internet.MimeMessage;
+import javax.mail.util.ByteArrayDataSource;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.HashMap;
 
 @Slf4j
 @Service
@@ -102,7 +99,7 @@ public class EmailService {
                     .build();
         }
 
-        return result("Message was send to SMTP Server", renderedTemplateDTO, true);
+        return result("Message was send to SMTP Server", renderedTemplateDTO, subject, true);
     }
 
     private MimeMessage createMessage(EmailRequestDTO emailRequest,
@@ -178,12 +175,20 @@ public class EmailService {
     private EmailResultDTO result(String message,
                                   RenderedTemplateDTO renderedTemplate,
                                   boolean success) {
+        return result(message, renderedTemplate, null, success);
+    }
+
+    private EmailResultDTO result(String message,
+                                  RenderedTemplateDTO renderedTemplate,
+                                  String subject,
+                                  boolean success) {
         if (renderedTemplate != null) {
-            return ExtendedEmailResultDTO
+            return DetailedEmailResultDTO
                     .builder()
                     .message(message)
                     .success(success)
                     .renderResult(renderedTemplate)
+                    .subject(subject)
                     .build();
         }
 
