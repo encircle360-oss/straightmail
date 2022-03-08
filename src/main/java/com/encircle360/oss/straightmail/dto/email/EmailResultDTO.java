@@ -13,10 +13,10 @@ import lombok.experimental.SuperBuilder;
 @Schema(name = "EmailResult", description = "Result of email processing.")
 public class EmailResultDTO {
 
-    @Schema(name = "message", description = "")
+    @Schema(description = "Includes information about the status of the email.")
     private String message;
 
-    @Schema(name = "success", description = "")
+    @Schema(description = "Shows if message was sent or not")
     private boolean success;
 
 }

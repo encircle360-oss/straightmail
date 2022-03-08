@@ -13,14 +13,8 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-@Schema(name = "DetailedEmailResult", description = "Result of email processing.")
+@Schema(name = "DetailedEmailResult", description = "Detailed result of email processing.")
 public class DetailedEmailResultDTO extends EmailResultDTO {
-
-    @Schema(name = "message", description = "")
-    private String message;
-
-    @Schema(name = "success", description = "")
-    private boolean success;
 
     @Schema(description = "Subject of the sent email.")
     private String subject;
