@@ -25,27 +25,27 @@ import lombok.experimental.SuperBuilder;
 public abstract class EmailRequestDTO {
 
     @NotNull
-    @Schema(name = "recipients", description = "The recipient of the send mail")
+    @Schema(description = "The recipient of the send mail")
     private List<@Pattern(regexp = EmailRegex.value) String> recipients;
 
-    @Schema(name = "cc", description = "The carbon copy recipients of the send mail")
+    @Schema(description = "The carbon copy recipients of the send mail")
     private List<@Pattern(regexp = EmailRegex.value) String> cc;
 
-    @Schema(name = "bcc", description = "The black carbon copy recipients of the send mail")
+    @Schema(description = "The black carbon copy recipients of the send mail")
     private List<@Pattern(regexp = EmailRegex.value) String> bcc;
 
-    @Schema(name = "attachments", description = "Attachments on an email")
+    @Schema(description = "Attachments on an email")
     private List<AttachmentDTO> attachments;
 
     @NotBlank
     @Pattern(regexp = EmailRegex.value)
-    @Schema(name = "sender", description = "Sender of the email", example = "sender@encircle360.com")
+    @Schema(description = "Sender of the email", example = "sender@encircle360.com")
     private String sender;
 
-    @Schema(name = "model", description = "Contains contents for template, map key will be available in template")
+    @Schema(description = "Contains contents for template, map key will be available in template")
     private HashMap<String, JsonNode> model;
 
-    @Schema(name = "locale", description = "Locale country code", example = "de")
+    @Schema(description = "Locale country code", example = "de")
     private String locale;
 
     @Builder.Default

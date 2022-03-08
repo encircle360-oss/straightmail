@@ -17,10 +17,10 @@ import lombok.experimental.SuperBuilder;
 @Schema(name = "TemplateRenderRequest", description = "Request object for rendering a template from database")
 public class TemplateRenderRequestDTO {
 
-    @Schema(name = "templateId", description = "Contains the id of the template")
+    @Schema(description = "Contains the id of the template")
     private String templateId;
 
-    @Schema(name = "model", description = "Contains contents for template, map key will be available in template")
+    @Schema(description = "Contains contents for template, map key will be available in template")
     private HashMap<String, JsonNode> model;
 
 }

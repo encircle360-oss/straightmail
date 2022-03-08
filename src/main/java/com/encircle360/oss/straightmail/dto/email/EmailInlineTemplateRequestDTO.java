@@ -18,13 +18,13 @@ import lombok.experimental.SuperBuilder;
 public class EmailInlineTemplateRequestDTO extends EmailRequestDTO {
 
     @NotBlank
-    @Schema(name = "subject", description = "The subject of the email which will be send", example = "This is an urgent E-Mail")
+    @Schema(description = "The subject of the email which will be send", example = "This is an urgent E-Mail")
     private String subject;
 
-    @Schema(name = "emailTemplate", description = "Email template reference definition")
+    @Schema(description = "Email template reference definition")
     private String emailTemplate;
 
-    @Schema(name = "plainText", description = "Email template as plaintext without any html")
+    @Schema(description = "Email template as plaintext without any html")
     private String plainText;
 
 }

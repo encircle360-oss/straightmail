@@ -18,23 +18,23 @@ import lombok.experimental.SuperBuilder;
 public class CreateUpdateTemplateDTO {
 
     @NotBlank
-    @Schema(name = "name", description = "Name of the template in database")
+    @Schema(description = "Name of the template in database")
     private String name;
 
-    @Schema(name = "subject", description = "Subject of the template in database")
+    @Schema(description = "Subject of the template in database")
     private String subject;
 
     @NotBlank
-    @Schema(name = "html", description = "Html content of the template in database")
+    @Schema(description = "Html content of the template in database")
     private String html;
 
-    @Schema(name = "plain", description = "Plain content of the template in database")
+    @Schema(description = "Plain content of the template in database")
     private String plain;
 
-    @Schema(name = "locale", description = "Locale of the template in database")
+    @Schema(description = "Locale of the template in database")
     private String locale;
 
-    @Schema(name = "tags", description = "List of tags which this template has.")
+    @Schema(description = "List of tags which this template has.")
     private List<String> tags;
 
 }

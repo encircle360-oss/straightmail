@@ -17,19 +17,19 @@ import lombok.NoArgsConstructor;
 @Schema(name = "PageContainer")
 public class PageContainer<T> {
 
-    @Schema(name = "content", description = "contains the list with items from this page")
+    @Schema(description = "contains the list with items from this page")
     private List<T> content;
 
-    @Schema(name = "size", description = "The size of the current page")
+    @Schema(description = "The size of the current page")
     private int size;
 
-    @Schema(name = "page", description = "The current page")
+    @Schema(description = "The current page")
     private int page;
 
-    @Schema(name = "totalElements", description = "Total elements in collection")
+    @Schema(description = "Total elements in collection")
     private long totalElements;
 
-    @Schema(name = "sort", description = "Sort string with desc and asc param")
+    @Schema(description = "Sort string with desc and asc param")
     private String sort;
 
     public static <T> PageContainer<T> of(List<T> elements, Integer page, Integer size, long totalElements, String sort) {

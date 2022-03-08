@@ -16,9 +16,9 @@ import lombok.NoArgsConstructor;
 public class EmailTemplateDTO {
 
     @NotBlank
-    @Schema(name = "id", description = "Name of the template without file ending", example = "default")
+    @Schema(description = "Name of the template without file ending", example = "default")
     private String id;
 
-    @Schema(name = "locale", description = "Locale as string", example = "de")
+    @Schema(description = "Locale as string", example = "de")
     private String locale;
 }
