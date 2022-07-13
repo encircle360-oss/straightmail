@@ -42,9 +42,15 @@ public class EmailService {
             return result("Request was empty", null, false);
         }
 
-        String plainText = null;
-        String body = null;
+        // Templates
+        String plainTextTemplate = null;
+        String bodyTemplate = null;
+        String subjectTemplate = null;
+
+        // Rendered results from templates
         String subject = null;
+        String body = null;
+        String plainText = null;
 
         String locale = emailRequest.getLocale();
         HashMap<String, JsonNode> model = emailRequest.getModel();
@@ -58,24 +64,25 @@ public class EmailService {
             }
 
             templateName = template.getName();
-            subject = template.getSubject();
-            body = template.getHtml();
-            plainText = template.getPlain();
+            subjectTemplate = template.getSubject();
+            bodyTemplate = template.getHtml();
+            plainTextTemplate = template.getPlain();
         } else if (emailRequest instanceof EmailInlineTemplateRequestDTO inlineTemplateRequest) {
-            subject = inlineTemplateRequest.getSubject();
-            body = inlineTemplateRequest.getEmailTemplate();
-            plainText = inlineTemplateRequest.getPlainText();
+            subjectTemplate = inlineTemplateRequest.getSubject();
+            bodyTemplate = inlineTemplateRequest.getEmailTemplate();
+            plainTextTemplate = inlineTemplateRequest.getPlainText();
         }
 
         try {
-            subject = freemarkerService.parseTemplateFromString(subject, locale, model);
-            body = freemarkerService.parseTemplateFromString(body, locale, model);
-            plainText = freemarkerService.parseTemplateFromString(plainText, locale, model);
+            subject = freemarkerService.renderTemplateToString(subjectTemplate, locale, model);
+            body = freemarkerService.renderTemplateToString(bodyTemplate, locale, model);
+            plainText = freemarkerService.renderTemplateToString(plainTextTemplate, locale, model);
         } catch (IOException | TemplateException e) {
-            log.error(e.getMessage());
+            log.error("Error while rendering template to string.", e);
         }
 
         if (subject == null || body == null) {
+            log.error("Error parsing Template. Subject or body was null. Subject: {}, Body: {}", subject, body);
             return result("Error parsing Template", null, false);
         }
 
