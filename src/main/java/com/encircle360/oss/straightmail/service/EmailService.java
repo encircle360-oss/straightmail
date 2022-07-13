@@ -82,8 +82,8 @@ public class EmailService {
         }
 
         if (subject == null || body == null) {
-            log.error("Error parsing Template. Subject or body was null. Subject: {}, Body: {}", subject, body);
-            return result("Error parsing Template", null, false);
+            log.error("Couldn't render template. Rendering result for subject or body was null. Subject: {}, Body: {}", subject, body);
+            return result("Error while rendering template", null, false);
         }
 
         MimeMessage message = createMessage(emailRequest, subject, body, plainText);
