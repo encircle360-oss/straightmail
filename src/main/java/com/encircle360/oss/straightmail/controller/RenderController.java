@@ -47,8 +47,8 @@ public class RenderController {
         }
 
         try {
-            String renderedHtml = freemarkerService.parseTemplateFromString(template.getHtml(),template.getLocale(), templateRenderRequestDTO.getModel());
-            String renderedPlain = freemarkerService.parseTemplateFromString(template.getPlain(),template.getLocale(), templateRenderRequestDTO.getModel());
+            String renderedHtml = freemarkerService.renderTemplateToString(template.getHtml(),template.getLocale(), templateRenderRequestDTO.getModel());
+            String renderedPlain = freemarkerService.renderTemplateToString(template.getPlain(),template.getLocale(), templateRenderRequestDTO.getModel());
 
             RenderedTemplateDTO rendered = mapper.toRendered(template, renderedHtml, renderedPlain);
             return ResponseEntity.status(HttpStatus.OK).body(rendered);
