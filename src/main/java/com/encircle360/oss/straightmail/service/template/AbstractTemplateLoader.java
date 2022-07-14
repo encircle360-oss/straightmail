@@ -30,7 +30,7 @@ public abstract class AbstractTemplateLoader implements TemplateLoader {
             try {
                 return Files.readString(filePath);
             } catch (Exception e) {
-                log.error("Error while getting file content {} from filesystem", fullFsPath, e);
+                log.error("Error while getting file content {} from filesystem.", fullFsPath, e);
             }
         }
 
