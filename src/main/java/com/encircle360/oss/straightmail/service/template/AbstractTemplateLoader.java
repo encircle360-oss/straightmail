@@ -1,38 +1,40 @@
 package com.encircle360.oss.straightmail.service.template;
 
+import com.encircle360.oss.straightmail.model.Template;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.Resource;
-
-import com.encircle360.oss.straightmail.model.Template;
-
-import lombok.extern.slf4j.Slf4j;
-
 @Slf4j
 public abstract class AbstractTemplateLoader implements TemplateLoader {
 
     protected String getFileContent(String path) {
-        Resource resource = new ClassPathResource("templates/" + path);
-        if(resource.exists()) {
+        String fullClassPath = "templates/" + path;
+        Resource resource = new ClassPathResource(fullClassPath);
+        if (resource.exists()) {
             try {
                 return new String(resource.getInputStream().readAllBytes());
             } catch (IOException e) {
-                log.error(e.getMessage());
+                log.error("Error while getting file content from classpath {}.", fullClassPath, e);
             }
         }
 
-        Path filePath = Paths.get("/resources/templates/" + path);
+        String fullFsPath = "/resources/templates/" + path;
+        Path filePath = Paths.get(fullFsPath);
         if (Files.exists(filePath)) {
             try {
                 return Files.readString(filePath);
             } catch (Exception e) {
-                log.error(e.getMessage());
+                log.error("Error while getting file content {} from filesystem", fullFsPath, e);
             }
         }
+
+        log.error("Couldn't find template {} in classpath or filesystem.", path);
         return null;
     }
 
@@ -42,11 +44,11 @@ public abstract class AbstractTemplateLoader implements TemplateLoader {
         String plainTemplatePath = templateId + "_plain.ftl";
 
         return Template.builder()
-            .id(templateId)
-            .name(templateId)
-            .subject(getFileContent(subjectTemplatePath))
-            .plain(getFileContent(plainTemplatePath))
-            .html(getFileContent(baseTemplatePath))
-            .build();
+                .id(templateId)
+                .name(templateId)
+                .subject(getFileContent(subjectTemplatePath))
+                .plain(getFileContent(plainTemplatePath))
+                .html(getFileContent(baseTemplatePath))
+                .build();
     }
 }
