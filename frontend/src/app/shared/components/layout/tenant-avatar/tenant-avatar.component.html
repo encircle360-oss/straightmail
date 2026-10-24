@@ -1,0 +1,9 @@
+@if (tenant(); as t) {
+  @if (t.logoUrl) {
+    <img [src]="t.logoUrl" [alt]="t.displayName" class="tenant-avatar__img"/>
+  } @else {
+    {{ initials(t.displayName) }}
+  }
+} @else {
+  <i class="bi bi-building tenant-avatar__placeholder-icon"></i>
+}

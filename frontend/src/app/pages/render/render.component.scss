@@ -1,0 +1,68 @@
+.render-layout {
+  display: grid;
+  grid-template-columns: 450px 1fr;
+  gap: 24px;
+  align-items: start;
+
+  @media (max-width: 899px) {
+    display: block;
+  }
+}
+
+.render-form-panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+
+  @media (min-width: 900px) {
+    position: sticky;
+    top: 0;
+  }
+}
+
+// Mobile-only tab switcher between form and preview panels
+.render-mobile-tabs {
+  display: none;
+
+  @media (max-width: 899px) {
+    display: flex;
+    margin-bottom: 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+}
+
+.render-mobile-tab {
+  flex: 1;
+  padding: 8px 12px;
+  background: var(--bg-elevated);
+  border: none;
+  font-size: 0.89rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+
+  &.active {
+    background: var(--bg-surface);
+    color: var(--text-accent);
+    font-weight: 500;
+  }
+
+  & + & {
+    border-left: 1px solid var(--border);
+  }
+}
+
+// Hides a panel on mobile when the other tab is selected
+.render-panel--hidden {
+  @media (max-width: 899px) {
+    display: none !important;
+  }
+}
+
+.font-mono {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.94rem;
+}

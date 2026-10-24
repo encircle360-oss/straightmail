@@ -1,0 +1,97 @@
+<div class="table-wrapper">
+  @if (loading()()) {
+    <div class="table-loading">
+      {{ 'common.loading' | translate }}
+    </div>
+  } @else if (templates()().length === 0) {
+    <div class="table-empty">
+      <i class="bi bi-inbox table-empty__icon"></i>
+      <p>{{ 'templates.no_templates' | translate }}</p>
+    </div>
+  } @else {
+    <table class="table table-hover align-middle">
+      <thead>
+      <tr>
+        <th>{{ 'templates.name' | translate }}</th>
+        <th>{{ 'templates.locale' | translate }}</th>
+        <th class="col-tags">{{ 'templates.tags' | translate }}</th>
+        <th class="col-id">{{ 'templates.id' | translate }}</th>
+        <th class="text-end">{{ 'templates.actions' | translate }}</th>
+      </tr>
+      </thead>
+      <tbody>
+        @for (tpl of templates()(); track tpl.id + '|' + (tpl.gitBranch ?? '')) {
+          <tr>
+            <td>{{ tpl.name }}</td>
+            <td>
+              <span class="badge bg-secondary">{{ tpl.locale }}</span>
+            </td>
+            <td class="col-tags">
+              <div class="tag-badges">
+                @for (tag of sortedTags(tpl.tags); track tag; let i = $index) {
+                  @if (isSourceTag(tag)) {
+                    <span class="badge tag-badge tag-badge--source" [class.tag-badge--overflow]="i >= 2">
+                      <i class="bi {{ sourceTagIcon(tag) }} me-1"></i>{{ sourceTagKey(tag) | translate }}
+                    </span>
+                  } @else {
+                    <span class="badge tag-badge" [class.tag-badge--overflow]="i >= 2">{{ tag }}</span>
+                  }
+                }
+                @if (tpl.source === 'GIT' && tpl.gitBranch) {
+                  <span class="badge git-branch-badge">⎇ {{ tpl.gitBranch }}</span>
+                }
+                @if (hiddenTagCount(tpl.tags) > 0) {
+                  <span class="badge tag-badge tag-badge--more" [title]="hiddenTagsTooltip(tpl.tags)">
+                    +{{ hiddenTagCount(tpl.tags) }}
+                  </span>
+                }
+              </div>
+            </td>
+            <td class="col-id">
+              <span class="id-cell">
+                <code class="tpl-id" [title]="tpl.id">{{ shortId(tpl.id!) }}</code>
+                <button
+                  class="btn btn-copy"
+                  (click)="copyId(tpl.id!, $event)"
+                  [title]="'templates.copy_id' | translate"
+                  type="button"
+                >
+                  <i class="bi" [class.bi-clipboard]="!copiedIds().has(tpl.id!)"
+                     [class.bi-check-lg]="copiedIds().has(tpl.id!)"></i>
+                </button>
+              </span>
+            </td>
+            <td class="text-end">
+              <div class="action-btns">
+                @if (tpl.editable !== false) {
+                  <button
+                    (click)="edit.emit(tpl)"
+                    [title]="'templates.edit' | translate"
+                    class="btn btn-md btn-outline-secondary"
+                  >
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                  <button
+                    (click)="delete.emit(tpl)"
+                    [title]="'templates.delete' | translate"
+                    class="btn btn-md btn-outline-danger"
+                  >
+                    <i class="bi bi-trash"></i>
+                  </button>
+                } @else {
+                  <button
+                    (click)="view.emit(tpl)"
+                    [title]="'templates.view' | translate"
+                    class="btn btn-md btn-outline-secondary"
+                  >
+                    <i class="bi bi-eye"></i>
+                  </button>
+                }
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>

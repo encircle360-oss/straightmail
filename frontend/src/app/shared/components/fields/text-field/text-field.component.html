@@ -1,0 +1,17 @@
+<label class="form-label">
+  @if (icon()) {
+    <i [class]="icon()" style="margin-right: 6px"></i>
+  }
+  {{ label() | translate }}
+  @if (required()) {
+    <span class="text-danger">*</span>
+  }
+</label>
+<input
+  [formControl]="control()"
+  [class.is-invalid]="control().invalid && control().touched"
+  [placeholder]="placeholder() | translate"
+  [type]="type()"
+  class="form-control"
+/>
+<app-form-error [control]="control()" />

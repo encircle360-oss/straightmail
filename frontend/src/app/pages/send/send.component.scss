@@ -1,0 +1,21 @@
+.details-summary {
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 0.94rem;
+  font-weight: 500;
+  padding: 8px 0;
+  user-select: none;
+
+  &:hover {
+    color: var(--accent);
+  }
+}
+
+.details-body {
+  padding: 12px 0 0;
+}
+
+.font-mono {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.94rem;
+}

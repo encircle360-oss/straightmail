@@ -1,0 +1,73 @@
+<div class="table-wrapper">
+  @if (loading()) {
+    <div class="table-loading">
+      {{ 'common.loading' | translate }}
+    </div>
+  } @else if (tenants().length === 0) {
+    <div class="table-empty">
+      <i class="bi bi-building table-empty__icon"></i>
+      <p>{{ 'tenants.no_tenants' | translate }}</p>
+    </div>
+  } @else {
+    <table class="table table-hover align-middle">
+      <thead>
+      <tr>
+        <th>{{ 'tenants.slug' | translate }}</th>
+        <th>{{ 'tenants.name' | translate }}</th>
+        <th>{{ 'tenants.smtp_host' | translate }}</th>
+        <th>{{ 'tenants.git_repo' | translate }}</th>
+        <th>{{ 'tenants.active' | translate }}</th>
+        <th class="text-end">{{ 'tenants.actions' | translate }}</th>
+      </tr>
+      </thead>
+      <tbody>
+        @for (tenant of tenants(); track tenant.slug) {
+          <tr>
+            <td><code class="tenant-slug">{{ tenant.slug }}</code></td>
+            <td>{{ tenant.displayName }}</td>
+            <td class="col-truncate" [title]="tenant.smtpHost || ''">{{ tenant.smtpHost || '—' }}</td>
+            <td class="col-truncate" [title]="tenant.gitRepoUrl || ''">{{ tenant.gitRepoUrl || '—' }}</td>
+            <td>
+              @if (tenant.active) {
+                <i class="bi bi-check-circle-fill text-success" [title]="'tenants.active' | translate"></i>
+              } @else {
+                <i class="bi bi-dash-circle text-secondary" [title]="'tenants.inactive' | translate"></i>
+              }
+            </td>
+            <td class="text-end">
+              <div class="action-btns">
+                @if (tenant.editable !== false) {
+                  <button
+                    (click)="edit.emit(tenant)"
+                    [title]="'tenants.edit' | translate"
+                    class="btn btn-md btn-outline-secondary"
+                  >
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                }
+                @if (tenant.editable === false) {
+                  <button
+                    (click)="view.emit(tenant)"
+                    [title]="'tenants.view' | translate"
+                    class="btn btn-md btn-outline-secondary"
+                  >
+                    <i class="bi bi-eye"></i>
+                  </button>
+                }
+                @if (tenant.editable !== false && tenant.slug !== 'default') {
+                  <button
+                    (click)="delete.emit(tenant)"
+                    [title]="'common.delete' | translate"
+                    class="btn btn-md btn-outline-danger"
+                  >
+                    <i class="bi bi-trash"></i>
+                  </button>
+                }
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>

@@ -1,0 +1,39 @@
+<div [formGroup]="form()">
+  <label class="form-label">
+    @if (icon()) {
+      <i [class]="icon()" style="margin-right: 6px;"></i>
+    }
+    {{ label() | translate }}
+    @if (required()) {
+      <span class="text-danger">*</span>
+    }
+  </label>
+  @if (!disabled()) {
+    <div class="input-group">
+      <input
+        (keydown)="onKeydown($event)"
+        [formControlName]="inputName()"
+        [placeholder]="placeholder() | translate"
+        [type]="inputType()"
+        class="form-control"
+      />
+      <button (click)="add()" class="btn btn-outline-secondary" type="button">
+        <i class="bi bi-plus-lg me-1"></i>
+        {{ 'common.add' | translate }}
+      </button>
+    </div>
+  }
+  <div class="chip-list mt-2">
+    @for (ctrl of array.controls; track $index) {
+      <span class="chip">
+        {{ ctrl.value }}
+        @if (!disabled()) {
+          <button (click)="remove($index)" class="chip__remove" type="button">&times;</button>
+        }
+      </span>
+    }
+  </div>
+  @if (showRequiredError()) {
+    <div class="form-text text-danger">{{ 'common.required' | translate }}</div>
+  }
+</div>

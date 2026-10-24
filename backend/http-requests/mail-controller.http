@@ -1,0 +1,66 @@
+### Send email with template ID (from file system or MongoDB)
+POST http://localhost:50003/email
+Content-Type: application/json
+
+{
+  "recipients": [
+    "recipient@your-domain.tld"
+  ],
+  "sender": "sender@your-domain.tld",
+  "emailTemplateId": "default",
+  "subject": "Optional subject override",
+  "model": {
+    "test": 200.8,
+    "subject": "Test Subject",
+    "text": "Test message text"
+  },
+  "locale": "de",
+  "cc": [
+    "cc@your-domain.tld"
+  ],
+  "bcc": [
+    "bcc@your-domain.tld"
+  ]
+}
+
+### Send email with inline template
+POST http://localhost:50003/email/inline
+Content-Type: application/json
+
+{
+  "recipients": [
+    "recipient@your-domain.tld"
+  ],
+  "sender": "sender@your-domain.tld",
+  "subject": "Test Email with Inline Template",
+  "emailTemplate": "<h1>Hello ${name}!</h1><p>Your value is: ${value}</p>",
+  "model": {
+    "name": "John Doe",
+    "value": 42
+  },
+  "locale": "en",
+  "cc": [
+    "cc@your-domain.tld"
+  ],
+  "bcc": [
+    "bcc@your-domain.tld"
+  ]
+}
+
+### Send simple email with template ID (minimal)
+POST http://localhost:50003/email
+Content-Type: application/json
+
+{
+  "recipients": [
+    "test@your-domain.tld"
+  ],
+  "sender": "sender@your-domain.tld",
+  "locale": "en",
+  "verbose": false,
+  "emailTemplateId": "default",
+  "model": {
+    "subject": "Email Subject",
+    "text": "Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet."
+  }
+}

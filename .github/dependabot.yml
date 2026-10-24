@@ -1,0 +1,35 @@
+version: 2
+
+# Dependency updates for all three ecosystems in this repo. Security updates are opened by
+# Dependabot regardless of the schedule; the weekly interval covers ordinary version drift,
+# which is what let several pins here fall months behind before.
+updates:
+  - package-ecosystem: gradle
+    directory: /backend
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      # Spring Boot's BOM moves as a unit; separate PRs per starter are noise.
+      spring:
+        patterns:
+          - "org.springframework*"
+          - "io.spring*"
+
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      angular:
+        patterns:
+          - "@angular*"
+          - "@ngx-translate*"
+          - "@ngxs*"
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5

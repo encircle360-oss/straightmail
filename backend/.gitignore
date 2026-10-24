@@ -1,0 +1,5 @@
+# Local ng app
+src/main/resources/static
+
+# Local developer overrides (never commit real credentials)
+src/main/resources/application-local.yml

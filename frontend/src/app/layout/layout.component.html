@@ -1,0 +1,17 @@
+<div class="shell">
+  <app-sidebar (navClick)="closeSidebar()" [navItems]="navItems()" [open]="sidebarOpen()"/>
+  <div [class.sidebar-open]="sidebarOpen()" class="main">
+    <app-topbar (menuToggle)="toggleSidebar()"/>
+    <ng-progress ngProgressHttp [spinner]="false" [relative]="true" [flat]="true"/>
+    <main class="content">
+      <router-outlet/>
+    </main>
+    <app-footer/>
+  </div>
+  @if (sidebarOpen()) {
+    <div (click)="closeSidebar()" class="sidebar-backdrop"></div>
+  }
+</div>
+
+<!-- Global Toast Outlet -->
+<app-toast-container/>

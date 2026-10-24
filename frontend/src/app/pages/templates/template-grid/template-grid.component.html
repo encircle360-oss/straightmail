@@ -1,0 +1,65 @@
+@if (loading()()) {
+  <div class="grid-loading">
+    {{ 'common.loading' | translate }}
+  </div>
+} @else if (templates()().length === 0) {
+  <div class="grid-empty">
+    <i class="bi bi-inbox grid-empty__icon"></i>
+    <p>{{ 'templates.no_templates' | translate }}</p>
+  </div>
+} @else {
+  <div class="template-grid">
+    @for (tpl of templates()(); track tpl.id + '|' + (tpl.gitBranch ?? '')) {
+      <div
+        class="template-card"
+        (click)="onCardClick(tpl)"
+        [attr.aria-label]="tpl.name"
+      >
+        @if (tpl.editable !== false) {
+          <button
+            class="template-card__delete btn btn-sm btn-outline-danger"
+            (click)="$event.stopPropagation(); delete.emit(tpl)"
+            [title]="'templates.delete' | translate"
+          >
+            <i class="bi bi-trash"></i>
+          </button>
+        }
+
+        <div class="template-card__body">
+          <div class="template-card__header">
+            <span class="template-card__name">{{ tpl.name }}</span>
+            <span class="badge bg-secondary template-card__locale">{{ tpl.locale }}</span>
+          </div>
+
+          <div class="template-card__tags">
+            @for (tag of sortedTags(tpl.tags); track tag) {
+              @if (isSourceTag(tag)) {
+                <span class="badge tag-badge tag-badge--source">
+                  <i class="bi {{ sourceTagIcon(tag) }} me-1"></i>{{ sourceTagKey(tag) | translate }}
+                </span>
+              } @else {
+                <span class="badge tag-badge">{{ tag }}</span>
+              }
+            }
+            @if (tpl.source === 'GIT' && tpl.gitBranch) {
+              <span class="badge git-branch-badge">⎇ {{ tpl.gitBranch }}</span>
+            }
+          </div>
+
+          <div class="template-card__meta">
+            <code class="tpl-id" [title]="tpl.id">{{ shortId(tpl.id!) }}</code>
+            <button
+              class="btn btn-copy"
+              (click)="copyId(tpl.id!, $event)"
+              [title]="'templates.copy_id' | translate"
+              type="button"
+            >
+              <i class="bi" [class.bi-clipboard]="!copiedIds().has(tpl.id!)"
+                 [class.bi-check-lg]="copiedIds().has(tpl.id!)"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+}

@@ -1,0 +1,27 @@
+:host {
+  display: block;
+}
+
+::ng-deep .cm-editor {
+  border: 1px solid #e7e2d9;
+  border-radius: 6px;
+  background: #fff;
+  min-height: var(--editor-rows, 168px);
+  max-height: 600px;
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+
+  &.cm-focused {
+    outline: none;
+    border-color: #c2410c;
+    box-shadow: 0 0 0 3px rgba(194, 65, 12, 0.13);
+  }
+}
+
+::ng-deep .cm-scroller {
+  font-family: 'DM Mono', 'Fira Code', monospace;
+  font-size: 0.83rem;
+}
+
+:host.is-invalid ::ng-deep .cm-editor {
+  border-color: #dc2626;
+}

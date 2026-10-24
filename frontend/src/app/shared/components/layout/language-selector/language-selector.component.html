@@ -1,0 +1,7 @@
+<div class="lang-selector">
+  <i class="bi bi-globe lang-selector__icon"></i>
+  <select (change)="switchLanguage($any($event.target).value)" [value]="currentLang()" class="lang-selector__select">
+    <option value="de">DE</option>
+    <option value="en">EN</option>
+  </select>
+</div>

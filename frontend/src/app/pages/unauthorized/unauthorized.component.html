@@ -1,0 +1,70 @@
+<div class="unauthorized">
+  <div class="unauthorized__card">
+    <div class="unauthorized__code">401</div>
+    <h1 class="unauthorized__title">Unauthorized</h1>
+    <p class="unauthorized__desc">
+      Your session has expired or you do not have permission to access this resource.
+    </p>
+    @if (authMode === 'oidc') {
+      <button (click)="login()" class="unauthorized__btn" type="button">
+        Sign in again
+      </button>
+    }
+  </div>
+</div>
+
+<style>
+  .unauthorized {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: var(--bs-body-bg, #fff);
+    padding: 2rem;
+  }
+
+  .unauthorized__card {
+    text-align: center;
+    max-width: 380px;
+  }
+
+  .unauthorized__code {
+    font-size: 6rem;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    color: var(--bs-secondary-color, #6c757d);
+    margin-bottom: 1rem;
+  }
+
+  .unauthorized__title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+
+  .unauthorized__desc {
+    color: var(--bs-secondary-color, #6c757d);
+    font-size: 0.875rem;
+    margin-bottom: 2rem;
+  }
+
+  .unauthorized__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 1.25rem;
+    background: var(--bs-body-color, #212529);
+    color: var(--bs-body-bg, #fff);
+    border: none;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+
+  .unauthorized__btn:hover {
+    opacity: 0.85;
+  }
+</style>

@@ -1,0 +1,17 @@
+<div [class.page-header--large]="!!kicker()" class="page-header">
+  @if (kicker()) {
+    <span class="page-header__kicker">{{ kicker() }}</span>
+  }
+  <div class="page-header__title-row">
+    <div class="page-header__title-left">
+      @if (icon()) {
+        <app-nav-icon aria-hidden="true" [icon]="icon()!" class="page-header__icon"/>
+      }
+      <h1 class="page-title">{{ title() | translate }}</h1>
+    </div>
+    <ng-content/>
+  </div>
+  @if (showRule()) {
+    <div class="page-header__rule"></div>
+  }
+</div>

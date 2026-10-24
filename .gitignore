@@ -1,8 +1,10 @@
-.gradle
-build/
-!gradle/wrapper/gradle-wrapper.jar
-!**/src/main/**
-!**/src/test/**
+# Backend (Gradle)
+/.gradle/
+backend/.gradle
+backend/build/
+!backend/gradle/wrapper/gradle-wrapper.jar
+!backend/**/src/main/**
+!backend/**/src/test/**
 
 ### STS ###
 .apt_generated
@@ -23,12 +25,26 @@ out/
 ### NetBeans ###
 /nbproject/private/
 /nbbuild/
-/dist/
-/nbdist/
 /.nb-gradle/
+
+# Frontend (Angular)
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+frontend/playwright-report/
+frontend/test-results/
 
 ### other ###
 .vscode/
 .DS_Store
 *.hprof
+.claude
+Plans
+/tmp
 
+# Docker local data
+data/
+docker/data/
+
+# Local git worktrees for parallel sessions
+.worktrees/

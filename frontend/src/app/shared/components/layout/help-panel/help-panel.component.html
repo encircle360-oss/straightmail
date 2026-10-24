@@ -1,0 +1,103 @@
+<div class="offcanvas-header">
+  <h5 class="offcanvas-title">{{ 'help.title' | translate }}</h5>
+  <button (click)="activeOffcanvas.dismiss()" class="btn-close" type="button"></button>
+</div>
+<div class="offcanvas-body">
+  <section [class.help-section--active]="activeSection() === 'templates'" class="help-section mb-4">
+    <h4 class="mb-3 d-flex align-items-center">
+      <i class="bi bi-file-earmark-text text-primary me-2"></i>
+      {{ 'help.templates_title' | translate }}
+    </h4>
+    <p class="text-muted">{{ 'help.templates_text' | translate }}</p>
+  </section>
+
+  <hr class="my-4 opacity-10" />
+
+  <section [class.help-section--active]="activeSection() === 'send'" class="help-section mb-4">
+    <h4 class="mb-3 d-flex align-items-center">
+      <i class="bi bi-envelope text-primary me-2"></i>
+      {{ 'help.send_title' | translate }}
+    </h4>
+    <p class="text-muted">{{ 'help.send_text' | translate }}</p>
+  </section>
+
+  <hr class="my-4 opacity-10" />
+
+  <section [class.help-section--active]="activeSection() === 'render'" class="help-section mb-4">
+    <h4 class="mb-3 d-flex align-items-center">
+      <i class="bi bi-eye text-primary me-2"></i>
+      {{ 'help.render_title' | translate }}
+    </h4>
+    <p class="text-muted">{{ 'help.render_text' | translate }}</p>
+  </section>
+
+  <hr class="my-4 opacity-10" />
+
+  <section class="help-section mb-4">
+    <h4 class="mb-3 d-flex align-items-center">
+      <i class="bi bi-save text-primary me-2"></i>
+      {{ 'help.persistence_title' | translate }}
+    </h4>
+    <p class="text-muted">{{ 'help.persistence_text' | translate }}</p>
+  </section>
+
+  <hr class="my-4 opacity-10" />
+
+  <section class="help-section mb-4">
+    <h4 class="mb-3 d-flex align-items-center">
+      <i class="bi bi-file-earmark-code text-primary me-2"></i>
+      {{ 'help.sample_title' | translate }}
+    </h4>
+    <p class="text-muted">{{ 'help.sample_text' | translate }}</p>
+  </section>
+
+  <hr class="my-4 opacity-10" />
+
+  <section class="help-section mb-4">
+    <h4 class="mb-3 d-flex align-items-center">
+      <i class="bi bi-braces text-primary me-2"></i>
+      {{ 'help.highlight_title' | translate }}
+    </h4>
+    <p class="text-muted">{{ 'help.highlight_text' | translate }}</p>
+  </section>
+
+  <hr class="my-4 opacity-10" />
+
+  <section class="help-section mb-4">
+    <h4 class="mb-3 d-flex align-items-center">
+      <i class="bi bi-code-slash text-primary me-2"></i>
+      {{ 'help.freemarker_title' | translate }}
+    </h4>
+    <p class="text-muted">{{ 'help.freemarker_text' | translate }}</p>
+  </section>
+
+  <hr class="my-4 opacity-10" />
+
+  <section [class.help-section--active]="activeSection() === 'dashboard'" class="help-section mb-4">
+    <h4 class="mb-3 d-flex align-items-center">
+      <i class="bi bi-speedometer2 text-primary me-2"></i>
+      {{ 'help.dashboard_title' | translate }}
+    </h4>
+    <p class="text-muted">{{ 'help.dashboard_text' | translate }}</p>
+  </section>
+
+  <hr class="my-4 opacity-10" />
+
+  <section [class.help-section--active]="activeSection() === 'tenants'" class="help-section mb-4">
+    <h4 class="mb-3 d-flex align-items-center">
+      <i class="bi bi-building text-primary me-2"></i>
+      {{ 'help.tenants_title' | translate }}
+    </h4>
+    <p class="text-muted">{{ 'help.tenants_text' | translate }}</p>
+  </section>
+
+  <hr class="my-4 opacity-10" />
+
+  <section class="help-section mb-4">
+    <h4 class="mb-3 d-flex align-items-center">
+      <i class="bi bi-shield-lock text-primary me-2"></i>
+      {{ 'help.auth_title' | translate }}
+    </h4>
+    <p class="text-muted">{{ 'help.auth_text' | translate }}</p>
+  </section>
+</div>

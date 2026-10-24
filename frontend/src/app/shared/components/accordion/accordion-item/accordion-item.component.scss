@@ -1,0 +1,12 @@
+.accordion-item {
+  border-color: var(--gray-400) !important;
+}
+
+.accordion-button:not(.collapsed) {
+  background-color: var(--gray-400) !important;
+  color: white !important;
+
+  &::after {
+    filter: brightness(0) invert(1);
+  }
+}

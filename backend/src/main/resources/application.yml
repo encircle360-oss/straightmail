@@ -1,0 +1,90 @@
+spring:
+  main:
+    allow-bean-definition-overriding: true
+  application:
+    name: straightmail
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration
+      - org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration
+      - org.springframework.boot.data.jpa.autoconfigure.DataJpaRepositoriesAutoConfiguration
+      - org.springframework.boot.liquibase.autoconfigure.LiquibaseAutoConfiguration
+  mail:
+    default-encoding: UTF-8
+    host: ${SMTP_HOST:""}
+    username: ${SMTP_USER:""}
+    password: ${SMTP_PASSWORD:""}
+    port: ${SMTP_PORT:""}
+    default-sender: ${DEFAULT_SENDER:}
+    default-template: ${DEFAULT_TEMPLATE:default}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: ${SMTP_ENABLE_TLS:false}
+          ssl:
+            enable: ${SMTP_ENABLE_SSL:false}
+    protocol: smtp
+    test-connection: false
+  freemarker:
+    template-loader-path:
+      - file:/resources/templates
+      - classpath:templates
+
+server:
+  port: 50003
+  # Required for Spring Security to recognise HTTPS behind a TLS terminator and emit HSTS.
+  forward-headers-strategy: framework
+management:
+  server:
+    port: 50004
+  endpoints:
+    web:
+      exposure:
+        # Explicit rather than relying on the framework default, so a future Boot version
+        # cannot widen this surface silently. The management port carries no authentication.
+        include: ${MANAGEMENT_ENDPOINTS:health}
+
+---
+
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200}
+
+encryption:
+  key: ${ENCRYPTION_KEY:GENERATE_SOME_RANDOM_KEY_HERE} # openssl rand -base64 32
+
+jwt:
+  tenant-claim: ${JWT_TENANT_CLAIM:tenant_id}
+  tenant-ids-claim: ${JWT_TENANT_IDS_CLAIM:tenant_ids}
+
+auth:
+  mode: ${AUTH_MODE:oidc}
+  issuer-uri: ${OIDC_ISSUER_URI:http://localhost:8090/realms/straightmail}
+  jwk-uri: ${OIDC_JWK_URI:}
+
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          audiences: ${OIDC_AUDIENCE:straightmail}
+
+api:
+  prefix: ${API_PREFIX:/api}
+  url: ${API_URL:/api}
+  key: ${API_KEY:}
+
+tenants:
+  default-id: ${TENANTS_DEFAULT_ID:default}
+
+templates:
+  git-sync:
+    enabled: ${TEMPLATE_GIT_SYNC_ENABLED:true}
+    cron: ${TEMPLATE_GIT_SYNC_CRON:0 0 * * * *}
+    lock-at-least: ${TEMPLATE_GIT_SYNC_LOCK_MIN:PT1M}
+    lock-at-most: ${TEMPLATE_GIT_SYNC_LOCK_MAX:PT2M}
+    base-path: ${TEMPLATE_GIT_SYNC_BASE_PATH:/directory/git/templates}
+  file:
+    enabled: ${TEMPLATE_FILE_ENABLED:true}
+    base-path: ${TEMPLATE_FILE_PATH:/directory/files/templates}

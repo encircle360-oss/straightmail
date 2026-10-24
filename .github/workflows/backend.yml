@@ -1,0 +1,88 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [ "master", "main" ]
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend.yml"
+  pull_request:
+    branches: [ "master", "main" ]
+    paths:
+      - "backend/**"
+      - ".github/workflows/backend.yml"
+
+permissions:
+  contents: read
+
+# Build-and-test gate only. The image for ghcr.io/<repo>/backend is published solely by
+# monorepo.yml, which builds the JAR with the Angular console embedded; publishing the
+# backend-only JAR under the same tags from here meant the image nondeterministically carried
+# either the fresh console or a stale one.
+
+jobs:
+  build:
+    name: Build JAR
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Build with Gradle (skip frontend)
+        run: ./gradlew build -x test
+        env:
+          SKIP_FRONTEND_BUILD: "true"
+
+  test:
+    name: Run Tests
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Run tests
+        run: ./gradlew test
+        env:
+          SKIP_FRONTEND_BUILD: "true"
+
+      - name: Upload test reports
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: test-reports
+          path: |
+            backend/build/reports/tests/test/
+            backend/build/reports/jacoco/
+          retention-days: 3

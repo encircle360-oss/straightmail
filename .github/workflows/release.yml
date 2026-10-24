@@ -2,7 +2,7 @@ name: Release
 
 on:
   push:
-    branches: [master]
+    branches: [master, main]
     tags: ['v*.*.*']
 
 # Only one release flow at a time; never cancel a tagged release mid-flight
@@ -13,6 +13,8 @@ concurrency:
 permissions:
   contents: read
   packages: write
+  # Required to upload the container scan results to code scanning
+  security-events: write
   # Required so the GitHub-hosted runner can request OIDC tokens for
   # build provenance and SBOM attestations
   id-token: write
@@ -30,17 +32,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up JDK 21
+      - name: Set up JDK 25
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '21'
+          java-version: '25'
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
       - name: Build bootJar
-        run: ./gradlew --no-daemon bootJar -x test
+        # gradlew, settings.gradle and the Dockerfile all live under backend/, not at the repo root.
+        working-directory: backend
+        env:
+          # The image only carries the backend JAR; the frontend is built by its own workflow.
+          SKIP_FRONTEND_BUILD: "true"
+        run: |
+          chmod +x ./gradlew
+          ./gradlew --no-daemon bootJar -x test
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -74,8 +83,10 @@ jobs:
         id: build
         uses: docker/build-push-action@v6
         with:
-          context: .
-          file: ./Dockerfile
+          # Scope the build context to backend/ so the repo's docker/ dev stacks and their
+          # placeholder credentials never enter the image build context.
+          context: ./backend
+          file: ./backend/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
@@ -84,6 +95,25 @@ jobs:
           sbom: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Scan image for known vulnerabilities
+        # 0.28.0 aufloest GitHub nicht mehr, das Tag existiert nicht mehr im Action-Repo.
+        # Der Release-Lauf vom 2026-09-17 starb daran schon in "Set up job", also bevor
+        # ein einziger Schritt lief: Actions werden vor dem ersten Schritt aufgeloest.
+        # v0.36.0 kennt alle fuenf hier benutzten Eingaben unveraendert.
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
+          format: sarif
+          output: trivy-results.sarif
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+
+      - name: Upload scan results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif
+          category: container-image
 
       - name: Attest build provenance
         uses: actions/attest-build-provenance@v2

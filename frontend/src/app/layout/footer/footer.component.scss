@@ -1,0 +1,41 @@
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 12px 32px;
+  border-top: 1px solid var(--border-base);
+  background: var(--bg-base);
+}
+
+.footer__badge {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--accent);
+  letter-spacing: 0.05em;
+  text-decoration: none;
+  transition: color 0.2s ease, text-shadow 0.2s ease;
+
+  &:hover {
+    color: var(--accent);
+    text-shadow: 0 0 4px var(--accent-glow);
+
+    .footer__logo {
+      opacity: 1;
+
+      &.accent {
+        filter: brightness(0) saturate(100%) invert(29%) sepia(87%) saturate(2256%) hue-rotate(213deg) brightness(98%) contrast(93%) drop-shadow(0 0 2px var(--accent-glow));
+      }
+    }
+  }
+}
+
+.footer__logo {
+  height: auto;
+  width: 100px;
+  opacity: 0.7;
+  transition: opacity 0.2s ease, filter 0.2s ease;
+}

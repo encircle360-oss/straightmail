@@ -1,0 +1,67 @@
+<div class="not-found">
+  <div class="not-found__card">
+    <div class="not-found__code">404</div>
+    <h1 class="not-found__title">Page Not Found</h1>
+    <p class="not-found__desc">
+      The page you are looking for does not exist or has been moved.
+    </p>
+    <a routerLink="/dashboard" class="not-found__btn">Back to Dashboard</a>
+  </div>
+</div>
+
+<style>
+  .not-found {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: var(--bs-body-bg, #fff);
+    padding: 2rem;
+  }
+
+  .not-found__card {
+    text-align: center;
+    max-width: 380px;
+  }
+
+  .not-found__code {
+    font-size: 6rem;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    color: var(--bs-secondary-color, #6c757d);
+    margin-bottom: 1rem;
+  }
+
+  .not-found__title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+
+  .not-found__desc {
+    color: var(--bs-secondary-color, #6c757d);
+    font-size: 0.875rem;
+    margin-bottom: 2rem;
+  }
+
+  .not-found__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 1.25rem;
+    background: var(--bs-body-color, #212529);
+    color: var(--bs-body-bg, #fff);
+    border: none;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    transition: opacity 0.15s;
+  }
+
+  .not-found__btn:hover {
+    opacity: 0.85;
+  }
+</style>

@@ -1,0 +1,105 @@
+<app-page-header [title]="'tenants.view_title' | translate" icon="building">
+  <button class="btn btn-outline-secondary btn-md" (click)="back()">
+    <i class="bi bi-arrow-left me-2"></i>
+    {{ 'common.back' | translate }}
+  </button>
+</app-page-header>
+
+<div class="container-fluid">
+  <div class="tenant-detail">
+
+    <!-- Identity card -->
+    <div class="card mb-4">
+      <div class="card-body d-flex align-items-center gap-3">
+        <app-tenant-avatar [tenant]="tenant" size="lg"/>
+        <div>
+          <h5 class="mb-1">{{ tenant.displayName }}</h5>
+          <div class="d-flex align-items-center flex-wrap gap-2">
+            <code class="text-muted small">{{ tenant.slug }}</code>
+            @if (tenant.active) {
+              <i class="bi bi-check-circle-fill text-success" [title]="'tenants.active' | translate"></i>
+            } @else {
+              <i class="bi bi-dash-circle text-secondary" [title]="'tenants.inactive' | translate"></i>
+            }
+            @if (tenant.editable === false) {
+              <span class="badge text-bg-secondary">{{ 'tenants.config_badge' | translate }}</span>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SMTP section -->
+    <div class="card mb-4">
+      <div class="card-header fw-semibold">
+        <i class="bi bi-envelope me-2"></i>{{ 'tenants.smtp_section' | translate }}
+      </div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-sm-3">{{ 'tenants.field_smtp_host' | translate }}</dt>
+          <dd class="col-sm-9">{{ tenant.smtpHost || '—' }}</dd>
+
+          <dt class="col-sm-3">{{ 'tenants.field_smtp_port' | translate }}</dt>
+          <dd class="col-sm-9">{{ tenant.smtpPort || '—' }}</dd>
+
+          <dt class="col-sm-3">{{ 'tenants.field_smtp_user' | translate }}</dt>
+          <dd class="col-sm-9">{{ tenant.smtpUser || '—' }}</dd>
+
+          <dt class="col-sm-3">{{ 'tenants.field_smtp_sender' | translate }}</dt>
+          <dd class="col-sm-9">{{ tenant.smtpSender || '—' }}</dd>
+
+          <dt class="col-sm-3">{{ 'tenants.field_smtp_tls' | translate }}</dt>
+          <dd class="col-sm-9">{{ (tenant.smtpTls ? 'tenants.yes' : 'tenants.no') | translate }}</dd>
+
+          <dt class="col-sm-3">{{ 'tenants.field_smtp_ssl' | translate }}</dt>
+          <dd class="col-sm-9">{{ (tenant.smtpSsl ? 'tenants.yes' : 'tenants.no') | translate }}</dd>
+        </dl>
+      </div>
+    </div>
+
+    <!-- Git Sync section -->
+    <div class="card mb-4">
+      <div class="card-header fw-semibold">
+        <i class="bi bi-git me-2"></i>{{ 'tenants.git_section' | translate }}
+      </div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-sm-3">{{ 'tenants.field_git_repo_url' | translate }}</dt>
+          <dd class="col-sm-9">{{ tenant.gitRepoUrl || '—' }}</dd>
+
+          <dt class="col-sm-3">{{ 'tenants.field_git_branches' | translate }}</dt>
+          <dd class="col-sm-9">
+            @if (tenant.gitBranches?.length) {
+              @for (branch of tenant.gitBranches; track branch) {
+                <span class="badge text-bg-secondary me-1">{{ branch }}</span>
+              }
+            } @else {
+              —
+            }
+          </dd>
+        </dl>
+      </div>
+    </div>
+
+    <!-- Security section -->
+    <div class="card mb-4">
+      <div class="card-header fw-semibold">
+        <i class="bi bi-shield-lock me-2"></i>{{ 'tenants.tab_security' | translate }}
+      </div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-sm-3">{{ 'tenants.field_api_key' | translate }}</dt>
+          <dd class="col-sm-9">
+            @if (tenant.hasApiKey) {
+              <i class="bi bi-check-circle-fill text-success me-1"></i>
+              {{ 'tenants.api_key_set' | translate }}
+            } @else {
+              —
+            }
+          </dd>
+        </dl>
+      </div>
+    </div>
+
+  </div>
+</div>

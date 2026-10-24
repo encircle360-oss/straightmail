@@ -1,0 +1,64 @@
+<div class="status-card">
+  <div [class]="'status-card__pip ' + pipClass"></div>
+  <div class="status-card__body">
+    @if (tenant(); as t) {
+      <div class="status-card__tenant">
+        <app-tenant-avatar [tenant]="t" size="md"/>
+        <div class="status-card__tenant-info">
+          <span class="status-card__tenant-name">{{ t.displayName }}</span>
+          <div class="status-card__tenant-meta">
+            <code class="status-card__tenant-slug">{{ syncStatus().tenantId }}</code>
+            <div class="status-card__tenant-indicators">
+              @if (t.smtpHost) {
+                <i class="bi bi-envelope-fill" [title]="'tenants.smtp_host' | translate"></i>
+              }
+              @if (t.gitRepoUrl) {
+                <i class="bi bi-git" [title]="'tenants.git_repo' | translate"></i>
+              }
+              @if (t.hasApiKey) {
+                <i class="bi bi-key-fill" [title]="'tenants.has_api_key' | translate"></i>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+  <div class="status-card__right">
+    <span [class]="'status-badge ' + badgeClass">
+      <span [class]="'status-badge__dot' + (syncStatus().result === 'NEVER' ? ' status-badge__dot--pulse' : '')"></span>
+      @if (syncing()) {
+        {{ 'dashboard.syncing' | translate }}
+      } @else {
+        {{ badgeKey | translate }}
+        @if (relativeTime) {
+          <span class="status-badge__time">· {{ relativeTime }}</span>
+        }
+      }
+    </span>
+    @if (canSync()) {
+      <button
+        (click)="sync.emit(syncStatus().tenantId)"
+        [disabled]="syncing()"
+        [title]="'dashboard.trigger_sync' | translate"
+        [attr.aria-label]="'dashboard.trigger_sync' | translate"
+        class="btn-refresh"
+      >
+        <svg
+          fill="none"
+          height="13"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="1.5"
+          viewBox="0 0 13 13"
+          width="13"
+        >
+          <path d="M12 1.5v3.5H8.5"/>
+          <path d="M1 11.5v-3.5H4.5"/>
+          <path d="M2.1 4.8A5 5 0 0 1 11 4.6M10.9 8.2A5 5 0 0 1 2 8.4"/>
+        </svg>
+      </button>
+    }
+  </div>
+</div>

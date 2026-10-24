@@ -1,0 +1,121 @@
+plugins {
+    id "org.springframework.boot" version "4.1.2"
+    id "io.spring.dependency-management" version "1.1.7"
+    id "java"
+    id "jacoco"
+}
+
+group = 'com.encircle360.oss.straightmail'
+version '0.5.0'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
+repositories {
+    // mavenCentral first: a stale or poisoned artifact in the local ~/.m2 must not win
+    // over the published one on a developer machine or a self-hosted runner.
+    mavenCentral()
+    mavenLocal()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+    implementation 'org.springframework.boot:spring-boot-starter-freemarker'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    runtimeOnly 'org.postgresql:postgresql'
+    runtimeOnly 'org.xerial:sqlite-jdbc'
+    implementation 'org.hibernate.orm:hibernate-community-dialects'
+    implementation 'org.liquibase:liquibase-core'
+    // Spring Boot 4 modularization: Liquibase auto-configuration extracted into its own module
+    implementation 'org.springframework.boot:spring-boot-liquibase'
+
+    // jsoup for cleaning html mail to text
+    implementation group: 'org.jsoup', name: 'jsoup', version: '1.23.2'
+
+    // lombok & mapstruct
+    compileOnly "org.projectlombok:lombok:1.18.48"
+    annotationProcessor 'org.projectlombok:lombok:1.18.48'
+    testCompileOnly 'org.projectlombok:lombok:1.18.48'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.48'
+
+    implementation 'org.mapstruct:mapstruct:1.6.3'
+    annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
+    testAnnotationProcessor "org.mapstruct:mapstruct-processor:1.6.3"
+
+    // Testcontainers for integration testing (MailHog)
+    testImplementation 'org.testcontainers:testcontainers'
+    testImplementation 'org.testcontainers:testcontainers-junit-jupiter'
+
+    // Jackson 3 (Spring Boot 4): java.time support is built-in, no separate jsr310 module needed.
+
+    // OpenAPI documentation - compatible with Spring Boot 4.x (Jackson 3)
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.1'
+
+    // JGit for Git template sync
+    implementation 'org.eclipse.jgit:org.eclipse.jgit:7.8.0.202609011348-r'
+
+    // ShedLock for distributed scheduling (HA-safe git-sync)
+    implementation 'net.javacrumbs.shedlock:shedlock-spring:7.10.1'
+    implementation 'net.javacrumbs.shedlock:shedlock-provider-jdbc-template:7.10.1'
+
+    // Observability: Micrometer tracing with OpenTelemetry bridge and OTLP exporter
+    implementation 'io.micrometer:micrometer-tracing-bridge-otel'
+    implementation 'io.opentelemetry:opentelemetry-exporter-otlp'
+
+    testImplementation('org.springframework.boot:spring-boot-starter-test')
+    // Spring Boot 4 modularization: MockMvc / WebMvc test slice extracted into its own starter
+    testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+}
+
+test {
+    useJUnitPlatform()
+    // Enable Mockito inline mock maker for JDK 21+ compatibility
+    jvmArgs '-XX:+EnableDynamicAgentLoading'
+}
+
+jar {
+    enabled = false
+}
+
+def skipFrontendBuild = System.getenv("SKIP_FRONTEND_BUILD")?.trim()?.equalsIgnoreCase("true") == true ||
+        project.findProperty("skipFrontendBuild")?.toString()?.trim()?.equalsIgnoreCase("true") == true
+def frontendDir = file("${projectDir}/../frontend")
+def frontendDist = file("${frontendDir}/dist/browser")
+def staticDir = file("${projectDir}/src/main/resources/static")
+
+if (!skipFrontendBuild) {
+    tasks.register('npmInstall', Exec) {
+        workingDir frontendDir
+        commandLine 'sh', '-c', 'npm ci'
+        inputs.file("${frontendDir}/package-lock.json")
+        outputs.dir("${frontendDir}/node_modules")
+    }
+
+    tasks.register('npmBuild', Exec) {
+        dependsOn 'npmInstall'
+        workingDir frontendDir
+        commandLine 'sh', '-c', 'npm run build'
+        inputs.dir("${frontendDir}/src")
+        inputs.file("${frontendDir}/angular.json")
+        outputs.dir(frontendDist)
+    }
+
+    tasks.register('copyFrontendDist', Copy) {
+        dependsOn 'npmBuild'
+        from frontendDist
+        into staticDir
+    }
+
+    processResources.dependsOn 'copyFrontendDist'
+}
+
+clean {
+    delete staticDir
+}

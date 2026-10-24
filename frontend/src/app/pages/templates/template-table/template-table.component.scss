@@ -1,0 +1,126 @@
+.table-wrapper {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.table-loading,
+.table-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  color: var(--text-muted);
+  font-size: 0.94rem;
+  gap: 12px;
+}
+
+.table-empty {
+  &__icon {
+    font-size: 2.22rem;
+    opacity: 0.4;
+  }
+}
+
+.tpl-id {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.89rem;
+  color: var(--accent);
+  background: var(--accent-dim);
+  border-radius: var(--radius-sm);
+  padding: 2px 6px;
+}
+
+.tag-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.tag-badge {
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  font-family: var(--font-mono), monospace;
+  font-size: 0.83rem;
+}
+
+.git-branch-badge {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  font-family: var(--font-mono), monospace;
+  font-size: 0.83rem;
+}
+
+.action-btns {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.table thead th {
+  font-size: 0.83rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  font-weight: 500;
+  border-bottom: 1px solid var(--border);
+  padding: 10px 16px;
+  background: var(--bg-elevated);
+}
+
+.table tbody td {
+  padding: 10px 16px;
+  border-color: var(--border-subtle);
+}
+
+.id-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-copy {
+  background: none;
+  border: none;
+  padding: 0 2px;
+  color: var(--text-muted);
+  font-size: 0.83rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: color var(--transition);
+
+  &:hover {
+    color: var(--accent);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent-border);
+    border-radius: var(--radius-sm);
+  }
+}
+
+.tag-badge--overflow {
+  display: none;
+}
+
+.tag-badge--more {
+  background: var(--bg-overlay);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  cursor: default;
+}
+
+// At xl (≥1200px) show all tags and hide the overflow counter badge
+@media (min-width: 1200px) {
+  .tag-badge--overflow {
+    display: inline-flex;
+  }
+
+  .tag-badge--more {
+    display: none;
+  }
+}

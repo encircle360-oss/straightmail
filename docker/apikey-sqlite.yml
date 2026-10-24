@@ -1,0 +1,100 @@
+# =============================================================================
+# Mode: API-Key Auth + SQLite + Database Templates
+# =============================================================================
+# Auth:      API-Key  (X-API-KEY header)
+# Tenant:    X-Tenant-ID header (resolved against DB)
+# Templates: stored in SQLite DB (full CRUD via UI/API)
+# Database:  SQLite (WAL mode, persisted in named volume)
+# Services:  backend + mailpit (frontend served by backend on :50003)
+#
+# Start:  docker compose -f compose/apikey-sqlite.yml up
+# API:    http://localhost:50003/api
+#         Headers: X-API-KEY: dev-api-key  +  X-Tenant-ID: acme-1
+# UI:     http://localhost:50003
+# Mails:  http://localhost:8025 (Mailpit web UI)
+#
+# Tenants are reconciled from TENANTS_CONFIG_* on every backend start.
+# To add tenants, duplicate the TENANTS_CONFIG_0_* block with index 1, 2, …
+# =============================================================================
+
+services:
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: straightmail-apikey-mailpit
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:1025:1025"
+      - "127.0.0.1:8025:8025"
+    healthcheck:
+      # The mailpit image ships no curl; readyz is its own built-in health command.
+      test: [ "CMD", "/mailpit", "readyz" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - straightmail
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: straightmail-apikey-backend
+    restart: unless-stopped
+    # Without this the first "docker compose up" races its dependencies and crash-loops.
+    depends_on:
+      mailpit:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: database
+      AUTH_MODE: api-key
+      API_KEY: "dev-api-key-change-me"
+      # Stable dev encryption key — change for any non-local environment
+      ENCRYPTION_KEY: "bVsu6U/TNLrOyWN25si6/ZiyRxbgvBBfhTPebiyFuMY="   # local development only — generate your own with: openssl rand -base64 32
+      DB_URL: "jdbc:sqlite:/data/straightmail.db?journal_mode=WAL"
+      SMTP_HOST: mailpit
+      SMTP_PORT: 1025
+      DEFAULT_SENDER: "test@straightmail.local"
+      CORS_ALLOWED_ORIGINS: "http://localhost:4200"
+      # -----------------------------------------------------------------------
+      # Tenant configuration (TenantReconciliationService — runs at startup)
+      # Tenants listed here are created/updated in the DB automatically.
+      # Tenants NOT listed here are deleted from the DB.
+      # -----------------------------------------------------------------------
+      TENANTS_CONFIG_0_ID: "acme-1"
+      TENANTS_CONFIG_0_DISPLAY_NAME: "Acme 1"
+      TENANTS_CONFIG_0_SMTP_HOST: "mailpit"
+      TENANTS_CONFIG_0_SMTP_PORT: "1025"
+      TENANTS_CONFIG_0_SMTP_SENDER: "acme-1@straightmail.local"
+      TENANTS_CONFIG_1_ID: "acme-2"
+      TENANTS_CONFIG_1_DISPLAY_NAME: "Acme 2"
+      TENANTS_CONFIG_1_SMTP_HOST: "mailpit"
+      TENANTS_CONFIG_1_SMTP_PORT: "1025"
+      TENANTS_CONFIG_1_SMTP_SENDER: "acme-2@straightmail.local"
+      # -----------------------------------------------------------------------
+      # Template sources
+      # -----------------------------------------------------------------------
+      TEMPLATE_FILE_ENABLED: "true"
+      TEMPLATE_GIT_SYNC_ENABLED: "true"
+      # Without this the provider reads its default path and silently lists zero templates.
+      TEMPLATES_FILE_BASE_PATH: /resources/templates
+      TEMPLATES_GIT_SYNC_BASE_PATH: /git
+    volumes:
+      # Writable paths are named volumes: they inherit the image's ownership, so the non-root
+      # container can write to them. A host bind mount would arrive root-owned on Linux.
+      - straightmail-apikey-sqlite:/data
+      - straightmail-apikey-git:/git
+      - ./data/files:/resources/templates:ro
+    ports:
+      - "127.0.0.1:50003:50003"
+      - "127.0.0.1:50004:50004"
+    networks:
+      - straightmail
+
+networks:
+  straightmail:
+    driver: bridge
+
+volumes:
+  straightmail-apikey-sqlite:
+  straightmail-apikey-git:

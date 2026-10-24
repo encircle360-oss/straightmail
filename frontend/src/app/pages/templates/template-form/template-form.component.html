@@ -1,0 +1,83 @@
+<app-page-header
+  icon="edit"
+  [title]="(isEdit ? 'templates.edit_title' : 'templates.create_title') | translate"
+>
+  <div class="d-flex gap-2">
+    <button (click)="cancel()" class="btn btn-outline-secondary btn-md" type="button">
+      <i class="bi bi-x-lg me-2"></i>
+      {{ 'common.cancel' | translate }}
+    </button>
+    <app-loading-button
+      (click)="submit()"
+      [loading]="loading()"
+      icon="bi-check-lg"
+      label="common.save"
+      loadingLabel="templates.saving"
+      type="button"
+      variant="btn-primary btn-md"
+    />
+  </div>
+</app-page-header>
+
+<div class="container-fluid">
+  @if (isEdit && template) {
+    <p class="text-muted mt-0 mb-3">
+      <code>#{{ template.id }}</code>
+    </p>
+  }
+
+  <form [formGroup]="form" novalidate>
+
+    <div class="row g-3 mb-3">
+      <!-- Name -->
+      <div class="col-12">
+        <app-text-field
+          [control]="form.controls.name"
+          [required]="true"
+          icon="bi bi-card-heading"
+          label="templates.field_name"
+        />
+      </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+      <!-- Locale -->
+      <div class="col-md-4">
+        <app-select-field [control]="form.controls.locale" icon="bi bi-globe2" label="templates.field_locale">
+          @for (loc of localeOptions; track loc) {
+            <option [value]="loc">{{ loc }}</option>
+          }
+        </app-select-field>
+      </div>
+      <!-- Subject -->
+      <div class="col-md-8">
+        <app-text-field [control]="form.controls.subject" icon="bi bi-text-left" label="templates.field_subject"/>
+      </div>
+    </div>
+
+    <!-- Tags -->
+    <div class="mb-3">
+      <app-chip-field
+        [form]="form"
+        arrayName="tags"
+        icon="bi bi-tags"
+        inputName="tagInput"
+        label="templates.field_tags"
+        placeholder="templates.field_tags_placeholder"
+      />
+    </div>
+
+    <!-- HTML & Plain Text Accordions -->
+    <div class="d-flex flex-column mb-3 gap-3">
+      <app-accordion-item [defaultCollapsed]="false" [stateKey]="accordionKey('html')" icon="bi bi-code-slash"
+                          label="templates.field_html">
+        <app-html-body-field [control]="form.controls.html" [label]="''" [rows]="12"/>
+      </app-accordion-item>
+      <app-accordion-item [defaultCollapsed]="true" [stateKey]="accordionKey('plain')" icon="bi bi-file-text"
+                          label="templates.field_plain">
+        <app-textarea-field [control]="form.controls.plain" [label]="''" [mono]="true" [rows]="6"/>
+      </app-accordion-item>
+    </div>
+
+  </form>
+</div>

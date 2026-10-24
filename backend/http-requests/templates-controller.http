@@ -1,0 +1,105 @@
+### List all templates (paginated, default page 0, size 10)
+GET http://localhost:50003/templates
+
+### List templates with pagination parameters
+GET http://localhost:50003/templates?page=0&size=20
+
+### List templates with sorting
+GET http://localhost:50003/templates?sort=id&page=0&size=10
+
+### List templates filtered by tags
+GET http://localhost:50003/templates?tag=newsletter&tag=marketing&page=0&size=10
+
+### Get template by ID
+GET http://localhost:50003/templates/test
+
+### Get template by ID - should return 404
+GET http://localhost:50003/templates/non-existent-id
+
+### Create new template
+POST http://localhost:50003/templates
+Content-Type: application/json
+
+{
+  "id": "my-new-template",
+  "name": "My new template",
+  "html": "<html><body><h1>Hello ${name}!</h1><p>${message}</p></body></html>",
+  "plain": "Hello ${name}!\n${message}",
+  "subject": "Welcome ${name}",
+  "locale": "en",
+  "tags": [
+    "welcome",
+    "onboarding"
+  ]
+}
+
+### Create newsletter template
+POST http://localhost:50003/templates
+Content-Type: application/json
+
+{
+  "id": "newsletter-template",
+  "name": "Newsletter Template",
+  "html": "<html><body><h1>${title}</h1><div>${content}</div><footer>Unsubscribe: ${unsubscribeLink}</footer></body></html>",
+  "plain": "${title}\n\n${content}\n\nUnsubscribe: ${unsubscribeLink}",
+  "subject": "Newsletter: ${title}",
+  "locale": "en",
+  "tags": [
+    "newsletter",
+    "marketing"
+  ]
+}
+
+### Create template with German locale
+POST http://localhost:50003/templates
+Content-Type: application/json
+
+{
+  "id": "german-welcome",
+  "name": "German Welcome",
+  "html": "<html><body><h1>Willkommen ${name}!</h1><p>${nachricht}</p></body></html>",
+  "plain": "Willkommen ${name}!\n${nachricht}",
+  "subject": "Willkommen bei uns, ${name}",
+  "locale": "de",
+  "tags": [
+    "welcome",
+    "german"
+  ]
+}
+
+### Update existing template
+PUT http://localhost:50003/templates/my-new-template
+Content-Type: application/json
+
+{
+  "id": "my-new-template",
+  "name": "My new template",
+  "html": "<html><body><h1>Hello ${name}!</h1><p>${message}</p><p>Updated content</p></body></html>",
+  "plain": "Hello ${name}!\n${message}\nUpdated content",
+  "subject": "Welcome ${name} - Updated",
+  "locale": "en",
+  "tags": [
+    "welcome",
+    "onboarding",
+    "updated"
+  ]
+}
+
+### Delete template by ID
+DELETE http://localhost:50003/templates/my-new-template
+
+### Delete template - should return 404 if not found
+DELETE http://localhost:50003/templates/non-existent-template
+
+### Create minimal template (only required fields)
+POST http://localhost:50003/templates
+Content-Type: application/json
+
+{
+  "id": "minimal-template",
+  "name": "Minimal Template",
+  "html": "<html><body>${content}</body></html>",
+  "plain": "${content}",
+  "subject": "${subject}",
+  "locale": "en"
+}

@@ -1,0 +1,37 @@
+<svg height="256" viewBox="0 0 256 256" width="256" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" x2="100%" y1="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#231f1c;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#1c1917;stop-opacity:1"/>
+    </linearGradient>
+    <linearGradient id="iconGrad" x1="0%" x2="100%" y1="0%" y2="0%">
+      <stop offset="0%" style="stop-color:#c2410c;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#fb923c;stop-opacity:1"/>
+    </linearGradient>
+    <filter height="160%" id="iconGlow" width="160%" x="-30%" y="-30%">
+      <feGaussianBlur result="blur" stdDeviation="2.5"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter height="200%" id="glowBg" width="200%" x="-50%" y="-50%">
+      <feGaussianBlur result="blur" stdDeviation="8"/>
+    </filter>
+  </defs>
+
+  <!-- Background card -->
+  <rect fill="url(#bgGrad)" height="256" width="256"/>
+
+  <!-- Subtle glow ellipse behind icon -->
+  <ellipse cx="42" cy="32" fill="#c2410c" filter="url(#glowBg)" opacity="0.18" rx="22" ry="18"/>
+
+  <!-- bi-send icon, scaled to 28×28, centered at (42, 32) -->
+  <!-- Original viewBox 0 0 16 16 → scale factor = 28/16 = 1.75, translate to center: 42 - 14 = 28, 32 - 14 = 18 -->
+  <g filter="url(#iconGlow)" transform="translate(48, 64) scale(9)">
+    <path
+      d="M15.854.146a.5.5 0 0 1 .11.54l-5.819 14.547a.75.75 0 0 1-1.329.124l-3.178-4.995L.643 7.184a.75.75 0 0 1 .124-1.33L15.314.037a.5.5 0 0 1 .54.11ZM6.636 10.07l2.761 4.338L14.13 2.576zm6.787-8.201L1.591 6.602l4.339 2.76z"
+      fill="url(#iconGrad)"
+    />
+  </g>
+</svg>

@@ -1,0 +1,57 @@
+<app-page-header [title]="'tenants.title' | translate" icon="building">
+  <div class="d-flex align-items-center gap-2">
+    <div
+      class="btn-group d-none d-md-flex"
+      role="group"
+      [attr.aria-label]="'tenants.view_toggle' | translate"
+    >
+      <button
+        class="btn btn-md"
+        [class.btn-secondary]="viewMode() === 'grid'"
+        [class.btn-outline-secondary]="viewMode() !== 'grid'"
+        (click)="setViewMode('grid')"
+        [title]="'tenants.view_grid' | translate"
+      >
+        <i class="bi bi-grid-3x3-gap"></i>
+      </button>
+      <button
+        class="btn btn-md"
+        [class.btn-secondary]="viewMode() === 'list'"
+        [class.btn-outline-secondary]="viewMode() !== 'list'"
+        (click)="setViewMode('list')"
+        [title]="'tenants.view_list' | translate"
+      >
+        <i class="bi bi-list-ul"></i>
+      </button>
+    </div>
+    @if (isDbMode()) {
+      <button class="btn btn-primary btn-md" (click)="openCreate()">
+        <i class="bi bi-plus-lg me-2"></i>
+        {{ 'tenants.new' | translate }}
+      </button>
+    }
+  </div>
+</app-page-header>
+
+<div class="container-fluid">
+  <!-- Grid: always on mobile, on md+ only when viewMode is 'grid' -->
+  <app-tenant-grid
+    class="d-block"
+    [class.d-md-none]="viewMode() === 'list'"
+    [tenants]="tenants()"
+    [loading]="loading()"
+    (delete)="confirmDelete($event)"
+  />
+
+  <!-- Table: only on md+ when viewMode is 'list' -->
+  @if (viewMode() === 'list') {
+    <app-tenant-table
+      class="d-none d-md-block"
+      [tenants]="tenants()"
+      [loading]="loading()"
+      (edit)="openEdit($event)"
+      (view)="openView($event)"
+      (delete)="confirmDelete($event)"
+    />
+  }
+</div>

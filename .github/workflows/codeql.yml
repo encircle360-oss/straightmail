@@ -1,0 +1,65 @@
+name: CodeQL
+
+# Static analysis for both halves of the monorepo. The backend renders untrusted FreeMarker
+# templates and resolves caller-supplied template paths, which is exactly the class of bug
+# (injection, path traversal) that CodeQL's java-kotlin queries cover.
+on:
+  push:
+    branches: [ "master", "main" ]
+  pull_request:
+    branches: [ "master", "main" ]
+  schedule:
+    # Weekly, so newly published queries reach existing code without waiting for a push.
+    - cron: '0 3 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: Analyze ${{ matrix.language }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: java-kotlin
+            build-mode: manual
+          - language: javascript-typescript
+            build-mode: none
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+          queries: security-extended
+
+      - name: Set up Java
+        if: matrix.language == 'java-kotlin'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - name: Build backend for analysis
+        if: matrix.language == 'java-kotlin'
+        working-directory: backend
+        env:
+          SKIP_FRONTEND_BUILD: "true"
+        run: |
+          chmod +x ./gradlew
+          ./gradlew --no-daemon compileJava
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: /language:${{ matrix.language }}

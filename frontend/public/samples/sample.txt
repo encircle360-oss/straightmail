@@ -1,0 +1,15 @@
+Welcome, ${name!""}!
+
+Thank you for signing up. Your account is ready and you can now start using all features.
+
+If you have any questions, just reply to this email — we're always happy to help.
+
+Get Started: ${ctaUrl!""}
+
+---
+
+You received this email because you registered at ${appName!""}.
+If this wasn't you, you can safely ignore this message.
+
+© ${year!""} ${appName!""}
+Unsubscribe: ${unsubscribeUrl!""}

@@ -1,0 +1,15 @@
+.app-logo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 16px;
+  margin-bottom: 2px;
+}
+
+.app-logo__text {
+  font-family: var(--font-logo), sans-serif;
+  font-weight: 600;
+  font-size: 1.11rem;
+  color: #e7e5e4;
+  letter-spacing: -0.01em;
+}

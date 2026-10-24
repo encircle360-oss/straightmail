@@ -1,0 +1,248 @@
+<app-page-header
+  icon="edit"
+  [title]="(isEdit ? 'tenants.edit_title' : 'tenants.create_title') | translate"
+>
+  <div class="d-flex gap-2">
+    <button (click)="cancel()" class="btn btn-outline-secondary btn-md" type="button">
+      <i class="bi bi-x-lg me-2"></i>
+      {{ 'common.cancel' | translate }}
+    </button>
+    <app-loading-button
+      (click)="submit()"
+      [loading]="saving()"
+      icon="bi-check-lg"
+      label="common.save"
+      loadingLabel="tenants.saving"
+      type="button"
+      variant="btn-primary btn-md"
+    />
+  </div>
+</app-page-header>
+
+<div class="container-fluid">
+  @if (isEdit && tenant) {
+    <p class="text-muted mt-0 mb-3">
+      <code>{{ tenant.slug }}</code>
+    </p>
+  }
+
+  <form [formGroup]="form" novalidate>
+    <!-- ── General fields ────────────────────────────────────────────────────────── -->
+    @if (!isEdit) {
+      <div class="mb-3">
+        <label class="form-label">{{ 'tenants.field_slug' | translate }}</label>
+        <input
+          type="text"
+          class="form-control"
+          formControlName="slug"
+          [placeholder]="'tenants.field_slug_placeholder' | translate"
+        />
+      </div>
+    }
+    <div class="mb-3">
+      <label class="form-label">{{ 'tenants.field_display_name' | translate }}</label>
+      <input type="text" class="form-control" name="displayName" formControlName="displayName" />
+    </div>
+    <div class="mb-3">
+      <label class="form-label">{{ 'tenants.field_logo_url' | translate }}</label>
+      <input
+        type="url"
+        class="form-control"
+        formControlName="logoUrl"
+        placeholder="https://example.com/logo.png"
+      />
+    </div>
+    <div class="mb-3">
+      <label class="form-label">{{ 'tenants.field_brand_color' | translate }}</label>
+      @if (form.value.brandColor) {
+        <div class="d-flex align-items-center gap-2">
+          <input
+            type="color"
+            class="form-control form-control-color"
+            formControlName="brandColor"
+          />
+          <button
+            type="button"
+            class="btn btn-sm btn-outline-secondary"
+            (click)="form.patchValue({ brandColor: null }); form.controls.brandColor.markAsDirty()"
+            [title]="'common.clear' | translate"
+          >
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+      } @else {
+        <div>
+          <button
+            type="button"
+            class="btn btn-sm btn-outline-secondary"
+            (click)="
+              form.patchValue({ brandColor: '#3a86ff' }); form.controls.brandColor.markAsDirty()
+            "
+          >
+            <i class="bi bi-palette me-2"></i>{{ 'tenants.field_brand_color_set' | translate }}
+          </button>
+        </div>
+      }
+    </div>
+    @if (isEdit) {
+      <div class="mb-3 form-check">
+        <input type="checkbox" class="form-check-input" id="activeCheck" formControlName="active" />
+        <label class="form-check-label" for="activeCheck">
+          {{ 'tenants.active' | translate }}
+        </label>
+      </div>
+    }
+
+    <!-- ── Configuration tabs ─────────────────────────────────────────────────────── -->
+    <ul
+      ngbNav
+      [activeId]="activeTab()"
+      (activeIdChange)="setActiveTab($event)"
+      class="nav-tabs mt-4 mb-3"
+    >
+      <li ngbNavItem="smtp">
+        <button ngbNavLink>
+          {{ 'tenants.tab_smtp' | translate }}
+          @if (smtpHasError()) {
+            <i class="bi bi-exclamation-circle-fill text-danger ms-1" style="font-size: 10px"></i>
+          }
+        </button>
+      </li>
+      <li ngbNavItem="git">
+        <button ngbNavLink>
+          {{ 'tenants.tab_git' | translate }}
+          @if (gitHasError()) {
+            <i class="bi bi-exclamation-circle-fill text-danger ms-1" style="font-size: 10px"></i>
+          }
+        </button>
+      </li>
+      <li ngbNavItem="security">
+        <button ngbNavLink>
+          {{ 'tenants.tab_security' | translate }}
+          @if (securityHasError()) {
+            <i class="bi bi-exclamation-circle-fill text-danger ms-1" style="font-size: 10px"></i>
+          }
+        </button>
+      </li>
+    </ul>
+
+    <!-- ── SMTP Tab ───────────────────────────────────────────────────────────────── -->
+    @if (activeTab() === 'smtp') {
+      <div class="row">
+        <div class="col-8 mb-3">
+          <label class="form-label">{{ 'tenants.field_smtp_host' | translate }}</label>
+          <input type="text" class="form-control" formControlName="smtpHost" />
+        </div>
+        <div class="col-4 mb-3">
+          <label class="form-label">{{ 'tenants.field_smtp_port' | translate }}</label>
+          <input type="number" class="form-control" formControlName="smtpPort" />
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-6 mb-3">
+          <label class="form-label">{{ 'tenants.field_smtp_user' | translate }}</label>
+          <input type="text" class="form-control" formControlName="smtpUser" />
+        </div>
+        <div class="col-6 mb-3">
+          <label class="form-label">{{ 'tenants.field_smtp_password' | translate }}</label>
+          <input
+            type="password"
+            class="form-control"
+            formControlName="smtpPassword"
+            autocomplete="new-password"
+            [placeholder]="isEdit ? ('tenants.password_placeholder' | translate) : ''"
+          />
+        </div>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">{{ 'tenants.field_smtp_sender' | translate }}</label>
+        <input type="email" class="form-control" formControlName="smtpSender" />
+      </div>
+      <div class="d-flex gap-3 mb-3">
+        <div class="form-check">
+          <input
+            type="checkbox"
+            class="form-check-input"
+            id="smtpTlsCheck"
+            formControlName="smtpTls"
+          />
+          <label class="form-check-label" for="smtpTlsCheck">
+            {{ 'tenants.field_smtp_tls' | translate }}
+          </label>
+        </div>
+        <div class="form-check">
+          <input
+            type="checkbox"
+            class="form-check-input"
+            id="smtpSslCheck"
+            formControlName="smtpSsl"
+          />
+          <label class="form-check-label" for="smtpSslCheck">
+            {{ 'tenants.field_smtp_ssl' | translate }}
+          </label>
+        </div>
+      </div>
+    }
+
+    <!-- ── Git Sync Tab ───────────────────────────────────────────────────────────── -->
+    @if (activeTab() === 'git') {
+      <div class="mb-3">
+        <label class="form-label">{{ 'tenants.field_git_repo_url' | translate }}</label>
+        <input type="text" class="form-control" formControlName="gitRepoUrl" />
+      </div>
+      <div class="mb-3">
+        <label class="form-label">{{ 'tenants.field_git_token' | translate }}</label>
+        <input
+          type="password"
+          class="form-control"
+          formControlName="gitToken"
+          autocomplete="new-password"
+          [placeholder]="isEdit ? ('tenants.password_placeholder' | translate) : ''"
+        />
+      </div>
+      <app-chip-field
+        [form]="form"
+        arrayName="gitBranches"
+        inputName="gitBranchInput"
+        icon="bi bi-git"
+        label="tenants.field_git_branches"
+        placeholder="tenants.field_git_branches_placeholder"
+      />
+      @if (tenantSyncStatus()) {
+        <div class="mt-3">
+          <app-git-sync-card
+            [syncStatus]="tenantSyncStatus()!"
+            [syncing]="syncingTenant()"
+            (sync)="onGitSync()"
+          />
+        </div>
+      }
+    }
+
+    <!-- ── Security Tab ───────────────────────────────────────────────────────────── -->
+    @if (activeTab() === 'security') {
+      <div class="mb-3">
+        <label class="form-label">{{ 'tenants.field_api_key' | translate }}</label>
+        <input
+          type="password"
+          class="form-control"
+          formControlName="apiKey"
+          autocomplete="new-password"
+          [placeholder]="
+            isEdit && tenant?.hasApiKey ? ('tenants.password_placeholder' | translate) : ''
+          "
+        />
+        @if (isEdit && tenant?.hasApiKey) {
+          <div class="form-text">
+            <i class="bi bi-check-circle-fill text-success me-1"></i>
+            {{ 'tenants.api_key_set' | translate }}
+          </div>
+        }
+      </div>
+    }
+
+    @if (formError()) {
+      <div class="alert alert-danger mt-3">{{ formError() }}</div>
+    }
+  </form>
+</div>

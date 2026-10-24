@@ -1,0 +1,67 @@
+{
+  "name": "straightmail-admin",
+  "version": "0.5.0",
+  "scripts": {
+    "ng": "ng",
+    "prestart": "node scripts/set-version.js",
+    "start": "ng serve",
+    "prebuild": "node scripts/set-version.js",
+    "build": "ng build",
+    "watch": "ng build --watch --configuration development",
+    "test": "ng test",
+    "prestart:e2e": "node scripts/set-version.js",
+    "start:e2e": "ng serve --configuration=e2e --port 4299",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:debug": "playwright test --debug"
+  },
+  "private": true,
+  "packageManager": "npm@12.2.1",
+  "engines": {
+    "node": "^22.22.3 || ^24.15.0 || >=26.0.0"
+  },
+  "dependencies": {
+    "@angular/animations": "^22.2.3",
+    "@angular/cdk": "^22.2.4",
+    "@angular/common": "^22.2.3",
+    "@angular/compiler": "^22.2.3",
+    "@angular/core": "^22.2.3",
+    "@angular/forms": "^22.2.3",
+    "@angular/localize": "^22.2.3",
+    "@angular/platform-browser": "^22.2.3",
+    "@angular/router": "^22.2.3",
+    "@codemirror/lang-html": "^6.4.12",
+    "@codemirror/lang-json": "^6.0.2",
+    "@ng-bootstrap/ng-bootstrap": "^21.0.0",
+    "@ngx-translate/core": "^18.0.0",
+    "@ngx-translate/http-loader": "^18.0.0",
+    "@ngxs/devtools-plugin": "^22.0.0",
+    "@ngxs/logger-plugin": "^22.0.0",
+    "@ngxs/storage-plugin": "^22.0.0",
+    "@ngxs/store": "^22.0.0",
+    "@popperjs/core": "^2.11.8",
+    "angular-auth-oidc-client": "^22.0.2",
+    "bootstrap": "^5.3.8",
+    "bootstrap-icons": "^1.13.2",
+    "codemirror": "^6.0.2",
+    "ngx-progressbar": "^14.0.0",
+    "rxjs": "~7.8.2",
+    "ts-md5": "^2.0.1",
+    "tslib": "^2.8.1"
+  },
+  "devDependencies": {
+    "@angular/build": "^22.2.4",
+    "@angular/cli": "^22.2.4",
+    "@angular/compiler-cli": "^22.2.3",
+    "@playwright/test": "^1.64.1",
+    "@types/node": "^26.6.5",
+    "jsdom": "^30.1.3",
+    "prettier": "^3.9.10",
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.5"
+  },
+  "overrides": {
+    "vite": "8.3.5"
+  }
+}

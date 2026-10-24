@@ -1,0 +1,107 @@
+name: Cleanup Old Packages
+
+# GHCR retention for this repository, self-contained.
+#
+# Why this is not a reusable workflow pulled from another repo: it runs with
+# `packages: write` against straightmail's own registry, so its content belongs where it
+# is reviewed — in this repository, in the same pull request as the images it prunes.
+#
+# Why a cleanup action rather than "delete all untagged versions":
+# Images are built with docker/build-push-action and buildx, which attaches an SLSA
+# provenance attestation by default. The pushed artifact is therefore an OCI *index*
+# (which carries the tag) plus *untagged* child manifests (the platform manifest and the
+# attestation). Deleting "all untagged versions" removes the platform manifest of the
+# current `latest`: the tag still resolves, the index is still there, and `docker pull`
+# fails with "manifest unknown". dataaxiom/ghcr-cleanup-action resolves child manifests
+# before applying the rules, so children of kept images stay and children of deleted
+# parents go with them.
+#
+# Two things in this repo depend on the exclusions below:
+#   * backend.yml and monorepo.yml use a registry build cache
+#     (…/straightmail/backend:buildcache und …/straightmail/monorepo:buildcache).
+#     Without protecting those tags,
+#     every build after the first one is a cold build.
+#   * release.yml uses actions/attest-build-provenance with subject-name, which creates
+#     sha256-<digest> referrer tags. delete-orphaned-images removes those once the parent
+#     digest is gone.
+#
+# straightmail-app deploys via update-strategy newest-build with tag-filter
+# regexp:^[0-9a-f]{7}$ — the 7-hex commit tags are the deploy path, and keep-n-tagged 15
+# leaves rollback room across the last 15 builds.
+
+on:
+  schedule:
+    - cron: '0 2 * * 0'   # Sundays 02:00 UTC
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: 'Only log, delete nothing'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  # GHCR package names without the owner prefix; nested names are fine.
+  # straightmail/monorepo kam am 2026-09-17 dazu: monorepo.yml pusht das kombinierte
+  # Image seither dorthin statt nach /backend. Fehlt es hier, waechst es unbegrenzt.
+  PACKAGES: straightmail,straightmail/backend,straightmail/monorepo
+  # Number of newest tagged images to keep. Never set this to 0 — the action reads 0 as
+  # "delete every tagged image", which would empty the package.
+  KEEP_TAGGED: '15'
+  # `latest` and `buildcache` are protected unconditionally below; these are the extras.
+  # v* and numeric tags are release tags and must survive retention.
+  EXTRA_EXCLUDE_TAGS: 'v*,[0-9]*.[0-9]*'
+
+jobs:
+  images:
+    name: Images — straightmail + backend + monorepo
+    runs-on: ubuntu-latest
+    steps:
+      - name: Compose guarded action inputs
+        id: guard
+        env:
+          IN_KEEP: ${{ env.KEEP_TAGGED }}
+          IN_EXCLUDE: ${{ env.EXTRA_EXCLUDE_TAGS }}
+        run: |
+          set -euo pipefail
+
+          # Invariant 1 — keep-n-tagged is never 0 and never non-numeric.
+          KEEP="${IN_KEEP:-10}"
+          case "$KEEP" in ''|*[!0-9]*) KEEP=10 ;; esac
+          if [ "$KEEP" -lt 1 ]; then KEEP=1; fi
+          echo "keep=$KEEP" >> "$GITHUB_OUTPUT"
+
+          # Invariant 2 — latest and buildcache are always protected.
+          # latest: what a deployment resolves to a digest.
+          # buildcache: the registry cache that backend.yml and monorepo.yml write to.
+          EXCLUDE="latest,buildcache"
+          if [ -n "${IN_EXCLUDE}" ]; then
+            EXCLUDE="${EXCLUDE},${IN_EXCLUDE}"
+          fi
+
+          echo "exclude=$EXCLUDE" >> "$GITHUB_OUTPUT"
+          echo "Effective exclude-tags: $EXCLUDE"
+          echo "Effective keep-n-tagged: $KEEP"
+
+      # Keep the newest tagged images and clear untagged leftovers. No older-than here,
+      # so keep-n-tagged counts across all images rather than only the older ones.
+      - name: Retention — keep newest tagged, drop untagged leftovers
+        uses: dataaxiom/ghcr-cleanup-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          packages: ${{ env.PACKAGES }}
+          keep-n-tagged: ${{ steps.guard.outputs.keep }}
+          exclude-tags: ${{ steps.guard.outputs.exclude }}
+          delete-untagged: true
+          delete-ghost-images: true
+          delete-partial-images: true
+          delete-orphaned-images: true
+          validate: true
+          # ROLLOUT GATE: the "github.event_name == 'schedule' ||" part keeps the SCHEDULED
+          # run in dry-run mode. Remove it (leaving "inputs.dry-run || false") only once a
+          # manual dry-run has been reviewed for this repository.
+          dry-run: ${{ github.event_name == 'schedule' || inputs.dry-run }}
+          log-level: info

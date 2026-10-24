@@ -1,0 +1,52 @@
+<div class="status-card">
+  <div [class]="'pip--' + status()" class="status-card__pip"></div>
+  <div class="status-card__body">
+    <span class="status-card__name">straightmail API</span>
+    @if (!environment.production) {
+      <span class="status-card__host">{{ base() }}</span>
+    }
+  </div>
+  <div class="status-card__right">
+    @switch (status()) {
+      @case ('checking') {
+        <span class="status-badge status-badge--checking">
+          <span class="status-badge__dot status-badge__dot--pulse"></span>
+          checking
+        </span>
+      }
+      @case ('up') {
+        <span class="status-badge status-badge--up">
+          <span class="status-badge__dot"></span>
+          operational
+        </span>
+      }
+      @case ('down') {
+        <span class="status-badge status-badge--down">
+          <span class="status-badge__dot"></span>
+          unreachable
+        </span>
+      }
+    }
+    <button
+      (click)="refresh.emit()"
+      aria-label="Refresh API status"
+      class="btn-refresh"
+      title="Refresh status"
+    >
+      <svg
+        fill="none"
+        height="13"
+        stroke="currentColor"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="1.5"
+        viewBox="0 0 13 13"
+        width="13"
+      >
+        <path d="M12 1.5v3.5H8.5"/>
+        <path d="M1 11.5v-3.5H4.5"/>
+        <path d="M2.1 4.8A5 5 0 0 1 11 4.6M10.9 8.2A5 5 0 0 1 2 8.4"/>
+      </svg>
+    </button>
+  </div>
+</div>
