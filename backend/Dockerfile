@@ -1,9 +1,12 @@
-FROM eclipse-temurin:25-jdk AS builder
+# Base images are pinned by digest so a build is reproducible and a vulnerable JDK cannot slip in
+# through a stale tag cache. Both digests are Temurin 25.0.5.1+2 (fix for CVE-2026-114938 and the
+# other November 2026 OpenJDK CVEs). Renovate bumps the digest whenever the 25 tags are rebuilt.
+FROM eclipse-temurin:25-jdk@sha256:ce2ef9d2d67a68de5e196d4de9d743327c44a10b57fe02ec39f572c652cacfd3 AS builder
 WORKDIR /build
 COPY build/libs/straightmail-*.jar application.jar
 RUN java -Djarmode=tools -jar application.jar extract --layers --destination extracted
 
-FROM eclipse-temurin:25-jre
+FROM eclipse-temurin:25-jre@sha256:4ed132f6832e9804b123e89a849a7b4502756ae64a4ee08ebab939d9d5d0a9fa
 WORKDIR /app
 
 # Pull Ubuntu security fixes the base image has not been rebuilt with yet. The base also ships
