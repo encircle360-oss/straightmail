@@ -62,8 +62,8 @@ dependencies {
     implementation 'org.eclipse.jgit:org.eclipse.jgit:7.8.1.202611041320-r'
 
     // ShedLock for distributed scheduling (HA-safe git-sync)
-    implementation 'net.javacrumbs.shedlock:shedlock-spring:7.10.1'
-    implementation 'net.javacrumbs.shedlock:shedlock-provider-jdbc-template:7.10.1'
+    implementation 'net.javacrumbs.shedlock:shedlock-spring:7.11.0'
+    implementation 'net.javacrumbs.shedlock:shedlock-provider-jdbc-template:7.11.0'
 
     // Observability: Micrometer tracing with OpenTelemetry bridge and OTLP exporter
     implementation 'io.micrometer:micrometer-tracing-bridge-otel'
