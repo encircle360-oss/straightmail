@@ -52,7 +52,7 @@ jobs:
           java-version: '25'
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v5
+        uses: gradle/actions/setup-gradle@v6
 
       - name: Build bootJar
         # gradlew, settings.gradle and the Dockerfile all live under backend/, not at the repo root.
