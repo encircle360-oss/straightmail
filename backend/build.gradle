@@ -56,7 +56,7 @@ dependencies {
     // Jackson 3 (Spring Boot 4): java.time support is built-in, no separate jsr310 module needed.
 
     // OpenAPI documentation - compatible with Spring Boot 4.x (Jackson 3)
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.1'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.2.1'
 
     // JGit for Git template sync
     implementation 'org.eclipse.jgit:org.eclipse.jgit:7.8.1.202611041320-r'
