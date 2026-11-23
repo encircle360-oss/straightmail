@@ -17,7 +17,7 @@
     "test:e2e:debug": "playwright test --debug"
   },
   "private": true,
-  "packageManager": "npm@12.2.1",
+  "packageManager": "npm@12.2.3",
   "engines": {
     "node": "^22.22.3 || ^24.15.0 || >=26.0.0"
   },
