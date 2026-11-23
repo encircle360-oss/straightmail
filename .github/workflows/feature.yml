@@ -43,7 +43,7 @@ jobs:
           SKIP_FRONTEND_BUILD: "true"
 
       - name: Upload test reports
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: backend-test-reports
@@ -84,7 +84,7 @@ jobs:
       - name: Run E2E Tests
         run: npx playwright test
 
-      - uses: actions/upload-artifact@v6
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: playwright-report

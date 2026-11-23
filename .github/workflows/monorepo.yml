@@ -63,7 +63,7 @@ jobs:
           SKIP_FRONTEND_BUILD: "true"
 
       - name: Upload combined JAR artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: combined-jar
           path: backend/build/libs/*.jar
@@ -110,7 +110,7 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Download combined JAR
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: combined-jar
           path: backend/build/libs/
