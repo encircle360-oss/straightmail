@@ -5,7 +5,7 @@
 buildscript {
     dependencies {
         constraints {
-            classpath('org.apache.commons:commons-lang3:3.21.0') {
+            classpath('org.apache.commons:commons-lang3:3.22.0') {
                 because 'CVE-2025-48924: versions before 3.18.0 recurse without bound on long inputs'
             }
         }
