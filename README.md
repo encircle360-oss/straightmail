@@ -7,8 +7,8 @@
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Java 25](https://img.shields.io/badge/Java-25-orange?logo=openjdk&logoColor=white)](https://www.oracle.com/java/)
-[![Spring Boot](https://img.shields.io/badge/Spring_Boot-4.0-6DB33F?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
-[![Angular](https://img.shields.io/badge/Angular-22.1-DD0031?logo=angular&logoColor=white)](https://angular.io)
+[![Spring Boot](https://img.shields.io/badge/Spring_Boot-4.2-6DB33F?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![Angular](https://img.shields.io/badge/Angular-22.3-DD0031?logo=angular&logoColor=white)](https://angular.io)
 [![Matrix](https://img.shields.io/badge/Matrix-Join%20Chat-0dbd8b?logo=matrix&logoColor=white)](https://matrix.to/#/#oss:encircle360.com)
 
 **straightmail** is a mail sending API with template and i18n support, combined with a modern Angular administration
@@ -66,46 +66,42 @@ straightmail/
 
 ## Getting Started
 
-### Migrating from 0.4.0
+### Migrating from 0.4.x
 
-If you're upgrading straightmail from an older version, check this migration guide first:
+If you're upgrading straightmail from 0.4.0 or 0.4.1, check this migration guide first:
 
 <details>
 <summary><strong>Migration Guide</strong></summary>
 
 ### What changed
 
-|                  | 0.4.0                                   | 0.5.0                                                              |
-|------------------|-----------------------------------------|--------------------------------------------------------------------|
-| `ENCRYPTION_KEY` | not required                            | **required** — `openssl rand -base64 32`                           |
-| Auth modes       | not implemented                         | OIDC (default), `api-key`, `none`                                  |
-| Admin UI         | separate build required                 | bundled in backend image (only Monorepo), served at `:50003`       |
-| Test mail server | MailHog (`mailhog/mailhog`)             | **Mailpit** (`axllent/mailpit`)                                    |
-| Database         | not implemented                         | optional — API-only mode needs no database                         |
-| File templates   | mount volume or baked into custom image | mount volume + `TEMPLATES_FILE_BASE_PATH: /templates`              |
-| Tenant config    | implicit (single tenant)                | declare via `tenants.config` (required without `database` profile) |
-| Java runtime     | 21 (Temurin)                            | **25** — only relevant if you run the JAR yourself                 |
-| FreeMarker       | unrestricted                            | **sandboxed** — `?new` and `?api` are rejected                     |
-| Template paths   | resolved as given                       | confined to the tenant directory — `../` escapes return `404`      |
-| Tenant read API  | —                                       | `GET /v1/tenants` and `/v1/tenants/{slug}` require `ROLE_ADMIN`    |
-| Actuator         | framework default                       | only `health`; widen via `MANAGEMENT_ENDPOINTS`                    |
-| Security headers | none beyond Spring defaults             | CSP, `Referrer-Policy`, HSTS on every filter chain                 |
+|                     | 0.4.x                                             | 0.5.0                                                                                                                  |
+|---------------------|---------------------------------------------------|------------------------------------------------------------------------------------------------------------------------|
+| API paths           | `POST /email`, `/email/inline`, `/render`         | **`POST /api/v1/email`, `/api/v1/email/inline`, `/api/v1/render`** — the old paths answer `403`                        |
+| Authentication      | none                                              | **`AUTH_MODE` defaults to `oidc`** — without `AUTH_MODE: none` and without a reachable OIDC issuer the app does not start |
+| `ENCRYPTION_KEY`    | not used                                          | **required** — Base64 of exactly 32 bytes (`openssl rand -base64 32`), otherwise the app does not start                |
+| API docs            | `/v3/api-docs`                                    | `/api/v3/api-docs` (`/v3/api-docs` answers `404`); Swagger UI stays at `/swagger-ui/index.html`                        |
+| Derived plain text  | links rendered as `text ( url )`                  | links rendered as `text(url)`; whitespace can differ — affects mails without `_plain.ftl`                              |
+| Container image     | `ghcr.io/encircle360-oss/straightmail`            | same image, still backend only; the Admin UI ships only in `…/straightmail/monorepo` — see [Images](#images)           |
+| Base image          | `eclipse-temurin:21-jre`, runs as root            | Temurin 25 JRE, runs as user `straightmail` (UID 10001), application in `/app` instead of `/straightmail.jar`          |
+| FreeMarker          | unrestricted                                      | **sandboxed** — `?new`, `?api` and the Spring form-binding macros fail                                                 |
+| Template paths      | resolved as given                                 | confined to the template root — a `templateId` that escapes it is not found                                            |
+| Actuator (`:50004`) | framework default                                 | only `health` (with the `liveness` and `readiness` groups); widen via `MANAGEMENT_ENDPOINTS`                            |
+| Security headers    | none beyond Spring defaults                       | CSP, `Referrer-Policy`, HSTS on every filter chain                                                                     |
 
 Your existing `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_ENABLE_TLS`,
-`SMTP_ENABLE_SSL`, and `DEFAULT_SENDER` values carry over unchanged.
+`SMTP_ENABLE_SSL`, and `DEFAULT_SENDER` values carry over unchanged, and `SMTP_PORT` still defaults
+to `587`. The request fields (`emailTemplateId`, `sender`, `senderName`, `model`, `locale`,
+`attachments`, …) are unchanged; only the paths moved.
 
-Everything below the runtime row can break a working 0.4.0 setup. Read
-[Sandboxed template rendering](#sandboxed-template-rendering) and
-[Security defaults in 0.5.0](#security-defaults-in-050) before you upgrade.
+The prefix `/api` comes from `API_PREFIX`; `/v1` is fixed. Requests to the 0.4.x paths are not API
+requests any more and are rejected by CSRF protection with `403`.
 
 ---
 
 ### Without Admin UI — API-only (minimal)
 
-> **Required:** You must declare at least one tenant. Add `TENANTS_CONFIG_0_ID` and `TENANTS_CONFIG_0_DISPLAY_NAME`
-> — without a tenant entry, requests will fail at tenant resolution.
-
-Add `ENCRYPTION_KEY`, `AUTH_MODE: none`, and the tenant identity to your existing setup.
+This is the shortest path for a 0.4.x setup: file templates, no database, no authentication.
 
 ```yaml
 services:
@@ -114,10 +110,8 @@ services:
     ports:
       - "50003:50003"
     environment:
-      ENCRYPTION_KEY: "<openssl rand -base64 32>"   # new — required
-      AUTH_MODE: none                                 # new — open access
-      TENANTS_CONFIG_0_ID: default                    # new — required
-      TENANTS_CONFIG_0_DISPLAY_NAME: Default          # new — required
+      AUTH_MODE: none                                 # new — the default is oidc
+      ENCRYPTION_KEY: "<openssl rand -base64 32>"     # new — required
       SMTP_HOST: <your-mail-server>
       SMTP_PORT: <port>
       SMTP_USER: <username>
@@ -127,29 +121,34 @@ services:
       SMTP_ENABLE_SSL: "false"
 ```
 
+Then point your clients at `/api/v1/email`, `/api/v1/email/inline` and `/api/v1/render`. No tenant
+has to be declared in this mode — see [Tenants and SMTP](#tenants-and-smtp).
+
 ---
 
 ### With Admin UI
 
-The Admin UI is now bundled in the backend image and served at `http://localhost:50003`.
-Activate the `database` Spring profile to enable template CRUD and tenant management.
+The Admin UI is only contained in `ghcr.io/encircle360-oss/straightmail/monorepo`, which is
+published as `latest` and by commit SHA, not by version. It is served at `http://localhost:50003`.
+Activate the `database` Spring profile to enable template CRUD and tenant management. The SQLite
+file lives on a named volume so the non-root process can write to it.
 
 **Option A — API-Key auth (recommended for quick migration)**
 
 ```yaml
 services:
   straightmail:
-    image: ghcr.io/encircle360-oss/straightmail:0.5.0
+    image: ghcr.io/encircle360-oss/straightmail/monorepo:latest
     ports:
       - "50003:50003"
     volumes:
-      - ./data:/data
+      - straightmail-data:/data
     environment:
+      SPRING_PROFILES_ACTIVE: database
+      DB_URL: "jdbc:sqlite:/data/straightmail.db?journal_mode=WAL"
       AUTH_MODE: api-key
       API_KEY: "<your-secure-api-key>"
       ENCRYPTION_KEY: "<openssl rand -base64 32>"
-      TENANTS_CONFIG_0_ID: default
-      TENANTS_CONFIG_0_DISPLAY_NAME: Default
       SMTP_HOST: <your-mail-server>
       SMTP_PORT: <port>
       SMTP_USER: <username>
@@ -157,26 +156,31 @@ services:
       DEFAULT_SENDER: <noreply@example.com>
       SMTP_ENABLE_TLS: "true"
       SMTP_ENABLE_SSL: "false"
+
+volumes:
+  straightmail-data:
 ```
 
-Access the UI at `http://localhost:50003`. Send API requests with `X-API-KEY: <your-secure-api-key>`.
+Access the UI at `http://localhost:50003`. Send API requests with `X-API-KEY: <your-secure-api-key>`
+and `X-Tenant-ID: default` — the global key carries no tenant, and a request without `X-Tenant-ID`
+answers `400`.
 
 **Option B — OIDC auth (production)**
 
 ```yaml
 services:
   straightmail:
-    image: ghcr.io/encircle360-oss/straightmail:0.5.0
+    image: ghcr.io/encircle360-oss/straightmail/monorepo:latest
     ports:
       - "50003:50003"
     volumes:
-      - ./data:/data
+      - straightmail-data:/data
     environment:
+      SPRING_PROFILES_ACTIVE: database
+      DB_URL: "jdbc:sqlite:/data/straightmail.db?journal_mode=WAL"
       AUTH_MODE: oidc
       OIDC_ISSUER_URI: https://<your-keycloak>/realms/<realm>
       ENCRYPTION_KEY: "<openssl rand -base64 32>"
-      TENANTS_CONFIG_0_ID: default
-      TENANTS_CONFIG_0_DISPLAY_NAME: Default
       SMTP_HOST: <your-mail-server>
       SMTP_PORT: <port>
       SMTP_USER: <username>
@@ -184,57 +188,78 @@ services:
       DEFAULT_SENDER: <noreply@example.com>
       SMTP_ENABLE_TLS: "true"
       SMTP_ENABLE_SSL: "false"
+
+volumes:
+  straightmail-data:
 ```
 
-For a production SQLite setup, see [`docker/oidc-sqlite.yml`](docker/oidc-sqlite.yml).
+The issuer must be reachable from the container at startup; if the container can only reach your
+identity provider under an internal name, set `OIDC_JWK_URI` to the internal JWK set URL. Tokens
+must carry the audience `straightmail` (`OIDC_AUDIENCE`) and a tenant claim (`tenant_id` or
+`tenant_ids`) — see [Authentication](#authentication).
 
-For a production PostgreSQL setup, see [`docker/oidc-postgres.yml`](docker/oidc-postgres.yml).
+For a SQLite setup with Keycloak, see [`docker/oidc-sqlite.yml`](docker/oidc-sqlite.yml); for
+PostgreSQL, see [`docker/oidc-postgres.yml`](docker/oidc-postgres.yml). Both are local development
+stacks — [`docker/README.md`](docker/README.md) lists what a real deployment has to change.
 
 ---
 
-### Migrating template and i18n files
+### Templates and translations
 
-In 0.4.0, templates and translations were typically baked into a custom image:
+In 0.4.x, templates and translations were typically baked into a custom image:
 
 ```dockerfile
-FROM ghcr.io/encircle360-oss/straightmail:0.4.0
-ADD backend/templates /resources/templates
+FROM ghcr.io/encircle360-oss/straightmail:0.4.1
+ADD templates /resources/templates
 ADD i18n /resources/i18n
 ```
 
-In 0.5.0, mount your local directories instead — no custom image needed:
+The same Dockerfile works with `FROM ghcr.io/encircle360-oss/straightmail:0.5.0`, and so does
+mounting the two directories as volumes. What 0.5.0 does with the files depends on their layout.
 
-```yaml
-    volumes:
-      - ./templates:/templates             # FreeMarker templates
-      - ./i18n:/resources/i18n             # translation bundles
-    environment:
-      TEMPLATES_FILE_BASE_PATH: /templates
-```
+**Flat layout (0.4.x)** — `/resources/templates/<id>.ftl`. `POST /api/v1/email` still finds these
+templates: when no template source knows the ID, it falls back to the 0.4.x lookup, first
+`classpath:templates/<id>.ftl`, then `/resources/templates/<id>.ftl`. `POST /api/v1/render` and the
+template listing (`GET /api/v1/templates`) do not use this fallback and answer `404` / list nothing.
 
-Add these `volumes` and `environment` entries to whichever Compose snippet you use above.
-
-**⚠️ Breaking change — tenant subdirectory required:** In 0.5.0, templates must live inside a subdirectory
-named after the tenant ID. Move your existing template files into a `{tenantId}/` folder before mounting:
+**Tenant layout** — `<TEMPLATE_FILE_PATH>/<tenant>/<id>.ftl`, read by the file template source,
+which is enabled by default. All endpoints see these templates. Set `TEMPLATE_FILE_PATH`: its
+default `/directory/files/templates` does not exist in the image.
 
 ```
 templates/
 └── default/
     ├── welcome.ftl
     ├── welcome_subject.ftl
-    └── welcome_plain.ftl
+    └── welcome_plain.ftl     # optional
 ```
 
-The subdirectory name must match your tenant ID (e.g. `default` for `TENANTS_CONFIG_0_ID: default`).
-Subdirectories within the tenant folder are supported — `default/emails/welcome.ftl` gets the template ID `emails/welcome`.
+```yaml
+    volumes:
+      - ./templates:/templates:ro
+    environment:
+      TEMPLATE_FILE_PATH: /templates
+```
 
-**⚠️ Breaking change — template IDs cannot leave the tenant directory:** a `templateId` that resolves
-outside its own tenant folder is rejected with `404`, both in the URL and in the JSON body of
-`/v1/render` and `/v1/email`. If a 0.4.0 setup addressed templates through a relative path, flatten
-those paths into the tenant folder. A `../` that normalises back inside the same tenant still resolves.
+The directory name is the tenant ID; without authentication that is `default` (`TENANTS_DEFAULT_ID`).
+Subdirectories are supported — `default/emails/welcome.ftl` gets the template ID `emails/welcome`.
+Keep the tenant layout outside `/resources/templates` when several tenants share one instance: the
+flat fallback reads any path below `/resources/templates`, another tenant's folder included.
 
-**`_plain.ftl` is now optional.** A template without its plain-text variant renders and sends as
-HTML only; the `plain` field of the render result stays `null`. In 0.4.0 the missing file was an error.
+**Includes do not follow the tenant layout.** `<#include>` and `<#import>` resolve through
+`spring.freemarker.template-loader-path` — `file:/resources/templates`, then `classpath:templates` —
+not through the tenant directory. If you move templates that include other files into the tenant
+layout, keep the included files under `/resources/templates` as well, or point the loader path at
+the new location (environment variable `SPRING_FREEMARKER_TEMPLATELOADERPATH`, comma-separated).
+
+**Template IDs cannot leave the template root.** A `templateId` that resolves outside its tenant
+folder (tenant layout) or outside `/resources/templates` (flat layout) is not read: `/api/v1/render`
+answers `404`, `/api/v1/email` answers `400`. A `../` that normalises back
+inside the same folder still resolves.
+
+**Translations.** Message bundles (`messages.properties`, `messages_de.properties`, …) are read from
+`I18N_PATH` (default `/resources/i18n`) first; the built-in bundles answer every key that directory
+does not define. A missing directory is skipped.
 
 ---
 
@@ -242,24 +267,28 @@ HTML only; the `plain` field of the render result stays `null`. In 0.4.0 the mis
 
 **⚠️ Breaking change — this one fails at render time, not at startup.** Tenants author their own
 templates, so FreeMarker now runs with `TemplateClassResolver.ALLOWS_NOTHING_RESOLVER` and the
-`?api` built-in disabled. Two things stop working:
+`?api` built-in disabled. Two built-ins stop working:
 
-| Built-in | 0.4.0                                   | 0.5.0                    |
+| Built-in | 0.4.x                                   | 0.5.0                    |
 |----------|-----------------------------------------|--------------------------|
 | `?new`   | instantiated any class on the classpath | rejected for every class |
 | `?api`   | exposed the underlying Java API         | disabled                 |
 
-A template that still uses them fails the request with `500` and logs:
+A template that still uses them fails the request and logs:
 
 ```
 freemarker.core._MiscTemplateException: Instantiating freemarker.template.utility.Execute
 is not allowed in the template for security reasons.
 ```
 
+Templates also no longer see Spring's `RequestContext`: `springMacroRequestContext` only offers
+message and URL lookups, so `<@spring.message>` keeps working while the form-binding macros
+(`spring.bind`, `spring.formInput`, …) fail.
+
 Check your templates before upgrading:
 
 ```bash
-rg -n '\?new|\?api' templates/
+rg -n '\?new|\?api|spring\.bind|spring\.form' templates/
 ```
 
 The background: `?new` could instantiate `freemarker.template.utility.Execute`, which runs OS
@@ -269,10 +298,9 @@ re-enable it. Templates that need Java behaviour must get it from the model pass
 
 ---
 
-### Configuring tenants
+### Tenants and SMTP
 
-Without the `database` profile, tenant existence is validated against `tenants.config` — a list of
-statically declared tenants provisioned at startup. You must declare at least the `default` tenant.
+Without the `database` profile, tenants are declared statically in `tenants.config`:
 
 **YAML form** (e.g. mounted `application.yml`):
 
@@ -291,11 +319,26 @@ environment:
   TENANTS_CONFIG_0_DISPLAY_NAME: Default
 ```
 
-SMTP credentials are set globally via `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`,
-`DEFAULT_SENDER`, `SMTP_ENABLE_TLS`, and `SMTP_ENABLE_SSL` — they apply to all tenants.
+Whether you need an entry depends on the auth mode:
 
-> With the `database` profile active, `TenantReconciliationService` provisions the `default` tenant
-> automatically — `tenants.config` is then optional and only needed to pre-provision additional tenants.
+- **`none`** — a request without `X-Tenant-ID` uses the default tenant (`TENANTS_DEFAULT_ID`,
+  default `default`) without any check, so no entry is needed. A request that sends `X-Tenant-ID`
+  must name a declared tenant, otherwise it answers `404`.
+- **`api-key`** and **`oidc`** — the tenant from `X-Tenant-ID` or from the JWT claim must be declared,
+  otherwise the request answers `404`.
+
+Declaring a tenant also changes how its mail is sent. For a tenant without an entry, straightmail
+uses Spring Boot's mail sender built from the global `SMTP_*` variables, as 0.4.x did. For a tenant
+with an entry, straightmail builds the sender itself: from the entry's own `smtpHost`, `smtpPort`,
+`smtpUser`, `smtpPassword`, `smtpTls`, `smtpSsl` when the entry sets `smtpHost`, otherwise from the
+global `SMTP_*` values as a whole. That sender announces SMTP AUTH only when a username is set,
+always uses SSL on port 465, and applies no `spring.mail.properties.*` other than the TLS and SSL
+flags. An entry's `smtpSender` overrides the `sender` of every request.
+
+> With the `database` profile active, tenants live in the database. The schema migration creates
+> the `default` tenant, and `TenantReconciliationService` creates every `tenants.config` entry whose
+> tenant does not exist yet. Existing tenants — `default` included — are not updated from the config;
+> change them through the API or the Admin UI.
 
 ---
 
@@ -303,16 +346,16 @@ SMTP credentials are set globally via `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SM
 
 Four defaults changed in ways an existing integration can notice.
 
-**Tenant reads are admin-only.** `GET /v1/tenants` and `GET /v1/tenants/{slug}` now answer `403`
+**Tenant reads are admin-only.** `GET /api/v1/tenants` and `GET /api/v1/tenants/{slug}` answer `403`
 unless the caller holds `ROLE_ADMIN`. In OIDC mode that role comes from `realm_access.roles`, so the
 Admin UI's tenant pages stay empty until your identity provider actually issues it. In API-key mode
-the global `API_KEY` counts as admin while a per-tenant key does not. `GET /v1/tenants/me` is
-unchanged and still returns the caller's own tenants — scripts that only needed their own tenant
-should move to it.
+the global `API_KEY` counts as admin while a per-tenant key does not. `GET /api/v1/tenants/me` returns
+the caller's own tenants — scripts that only need their own tenant should use it.
 
 **Actuator exposes `health` only.** `/actuator/info`, `/actuator/metrics` and everything else on
 `:50004` answer `404`. Set `MANAGEMENT_ENDPOINTS` to a comma-separated list to widen it again — but
 note the management port carries no authentication of its own, so it does not belong on a public interface.
+`/actuator/health/liveness` and `/actuator/health/readiness` are available for container probes.
 
 **Every response carries security headers.** All three filter chains send a Content-Security-Policy,
 `Referrer-Policy: same-origin` and HSTS. The policy is derived from the deployment: the configured
@@ -368,11 +411,12 @@ For the rest of the deployment hardening — profiles, credentials, port exposur
 
 ### Local Development
 
-**Prerequisites:** JDK 25 (Temurin), Node.js 22, Docker. The Gradle wrapper (9.7.1) is in the repo.
+**Prerequisites:** JDK 25 (Temurin), Node.js 22.22+, 24.15+ or 26 (CI uses 26), Docker. The Gradle
+wrapper (9.9.2) is in the repo.
 
 **One-time setup — backend local config:**
 
-The backend reads local overrides from `backend/src/main/resources/application-local.yml`,
+The `local` Spring profile reads overrides from `backend/src/main/resources/application-local.yml`,
 which is gitignored. Create it from the example and generate an encryption key:
 
 ```bash
@@ -390,9 +434,12 @@ with the generated value. Adjust SMTP, auth, and tenant settings as needed.
 
 ```bash
 cd backend
-./gradlew bootRun
+SPRING_PROFILES_ACTIVE=local ./gradlew bootRun
 # API available at http://localhost:50003/api/
 ```
+
+Nothing activates the `local` profile by default; add `database` (`local,database`) for template
+CRUD and tenant management. `bootRun` also builds the Admin UI unless `SKIP_FRONTEND_BUILD=true` is set.
 
 **Terminal 2 — Frontend:**
 
@@ -407,21 +454,23 @@ npm start
 
 The `docker/` directory contains four ready-to-use Compose stacks:
 
-| Stack               | Auth            | Database   | Templates       |
-|---------------------|-----------------|------------|-----------------|
-| `minimal.yml`       | None (open)     | —          | File-based only |
-| `apikey-sqlite.yml` | API-Key         | SQLite     | File + Database |
-| `oidc-sqlite.yml`   | OIDC / Keycloak | SQLite     | File + Database |
-| `oidc-postgres.yml` | OIDC / Keycloak | PostgreSQL | File + Database |
+| Stack               | Auth            | Database   | Templates                  |
+|---------------------|-----------------|------------|----------------------------|
+| `minimal.yml`       | None (open)     | —          | File + Git-sync            |
+| `apikey-sqlite.yml` | API-Key         | SQLite     | File + Git-sync + Database |
+| `oidc-sqlite.yml`   | OIDC / Keycloak | SQLite     | File + Git-sync + Database |
+| `oidc-postgres.yml` | OIDC / Keycloak | PostgreSQL | File + Git-sync + Database |
 
 All four stacks publish their ports on `127.0.0.1` and ship development credentials. They are meant
 for local work only — [`docker/README.md`](docker/README.md) lists what a real deployment has to change.
 
-**Prerequisite:** Build the backend JAR first:
+**Prerequisite:** Build the backend JAR first — the stacks build their image from it:
 
 ```bash
 cd backend && ./gradlew bootJar
 ```
+
+`bootJar` embeds the Admin UI unless `SKIP_FRONTEND_BUILD=true` is set.
 
 Start a stack (example — OIDC + SQLite):
 
@@ -430,7 +479,7 @@ cd docker && docker compose -f oidc-sqlite.yml up
 ```
 
 > **Encryption key:** Each stack sets `services.backend.environment.ENCRYPTION_KEY`
-> in its compose file. The default is a placeholder — generate a real 32-byte key
+> in its compose file. The value is a development key — generate a real 32-byte key
 > with `openssl rand -base64 32` and replace it before any shared or production use.
 > See [docker/README.md → Encryption Key](docker/README.md#encryption-key).
 
@@ -450,35 +499,39 @@ Skip the Angular build (backend-only):
 SKIP_FRONTEND_BUILD=true ./gradlew build
 ```
 
+### Images
+
+| Image                                           | Contents                    | Tags                                                                    |
+|-------------------------------------------------|-----------------------------|-------------------------------------------------------------------------|
+| `ghcr.io/encircle360-oss/straightmail`          | backend only, no Admin UI   | `0.5.0`, `0.5`, `0` from the tag `v0.5.0`; `latest` from the default branch |
+| `ghcr.io/encircle360-oss/straightmail/monorepo` | backend with the Admin UI   | `latest` and the 7-character commit SHA — no version tags               |
+
+Both are multi-arch (`linux/amd64`, `linux/arm64`) and carry an SBOM and build provenance.
+
 ## CI / CD
 
-Five GitHub Actions workflows automate builds, tests, and releases across the monorepo.
-
-| Workflow    | Trigger                                    | Purpose                                              |
-|-------------|--------------------------------------------|------------------------------------------------------|
-| Feature CI  | push to `feature/**`, `fix/**`, `chore/**` | Build + test both components before a PR             |
-| Backend CI  | push / PR to `main` (`backend/**`)         | Build, test, publish backend image                   |
-| Frontend CI | push / PR to `main` (`frontend/**`)        | Unit tests + Playwright E2E                          |
-| Monorepo CI | push to `main`                             | Full build + combined image to `ghcr.io`             |
-| Release     | push to `master` or `v*.*.*` tag           | Production image with SBOM & provenance attestations |
-
-See [`.github/workflows/README.md`](.github/workflows/README.md) for trigger details, job breakdown, and required
-permissions.
+GitHub Actions build and test every pull request, publish the monorepo image on every push to
+`master` / `main`, and publish the release image on every `v*.*.*` tag. Dependency updates come from
+Dependabot. See [`.github/workflows/README.md`](.github/workflows/README.md) for each workflow, its
+triggers and its required permissions.
 
 ## Template Sources
 
-straightmail supports three independent template sources that can be combined:
+straightmail supports three template sources that can be combined:
 
-| Source   | Description                                                     | Enabled by default                     |
-|----------|-----------------------------------------------------------------|----------------------------------------|
-| Database | Templates stored in SQLite / PostgreSQL (full CRUD via UI/API)  | Yes (profile `database`)               |
-| File     | Read-only `.ftl` files mounted from the host filesystem         | Yes (`TEMPLATE_FILE_ENABLED=true`)     |
-| Git-sync | Templates cloned from a per-tenant Git repository on a schedule | Yes (`TEMPLATE_GIT_SYNC_ENABLED=true`) |
+| Source   | Description                                                     | Enabled                                         |
+|----------|-----------------------------------------------------------------|-------------------------------------------------|
+| Database | Templates stored in SQLite / PostgreSQL (full CRUD via UI/API)  | only with the `database` profile                |
+| File     | Read-only `.ftl` files from a directory per tenant              | by default (`TEMPLATE_FILE_ENABLED=true`)       |
+| Git-sync | Templates cloned from a per-tenant Git repository on a schedule | by default (`TEMPLATE_GIT_SYNC_ENABLED=true`)   |
+
+`POST /api/v1/email` additionally falls back to the 0.4.x flat layout under `/resources/templates` —
+see [Templates and translations](#templates-and-translations).
 
 ### File Templates
 
-Place FreeMarker templates under `templates/{tenant-id}/` in the project root. The directory is mounted into the
-container at `/resources/templates`.
+Place FreeMarker templates in one directory per tenant below `TEMPLATE_FILE_PATH`. The Compose stacks
+mount `docker/data/files` there.
 
 ```
 templates/
@@ -490,56 +543,64 @@ templates/
     └── ...
 ```
 
-| Environment variable    | Default                | Description                          |
-|-------------------------|------------------------|--------------------------------------|
-| `TEMPLATE_FILE_ENABLED` | `false`                | Enable file-based template source    |
-| `TEMPLATE_FILE_PATH`    | `/resources/templates` | Root directory scanned for templates |
+| Environment variable    | Default                     | Description                                                       |
+|-------------------------|-----------------------------|-------------------------------------------------------------------|
+| `TEMPLATE_FILE_ENABLED` | `true`                      | Enable the file template source                                   |
+| `TEMPLATE_FILE_PATH`    | `/directory/files/templates` | Root directory with one sub-directory per tenant; set it — the default does not exist in the image |
 
 ### Git-Sync Templates
 
-When enabled, the backend periodically clones a Git repository per tenant and loads `.ftl` files from the working tree.
-The Git repo URL and optional access token are configured per tenant via the UI or API (stored encrypted in the
-database).
+When enabled, the backend clones a Git repository per tenant at startup and on a schedule, and loads
+`.ftl` files from the working tree. With the `database` profile the repository URL and optional
+access token are configured per tenant via the UI or API (stored encrypted in the database); without
+it they come from `gitRepoUrl`, `gitToken` and `gitBranches` in `tenants.config`.
 
-| Environment variable        | Default       | Description                                          |
-|-----------------------------|---------------|------------------------------------------------------|
-| `TEMPLATE_GIT_SYNC_ENABLED` | `false`       | Enable Git-sync template source                      |
-| `GIT_SYNC_CRON`             | `0 0 * * * *` | Cron expression for the sync job (hourly by default) |
-| `GIT_SYNC_LOCK_MIN`         | `PT50M`       | Minimum lock duration (ShedLock)                     |
-| `GIT_SYNC_LOCK_MAX`         | `PT1H`        | Maximum lock duration (ShedLock)                     |
+| Environment variable          | Default                    | Description                                                    |
+|-------------------------------|----------------------------|----------------------------------------------------------------|
+| `TEMPLATE_GIT_SYNC_ENABLED`   | `true`                     | Enable the Git-sync template source                            |
+| `TEMPLATE_GIT_SYNC_BASE_PATH` | `/directory/git/templates` | Working copies; the image prepares a writable `/git`           |
+| `TEMPLATE_GIT_SYNC_CRON`      | `0 0 * * * *`              | Cron expression for the sync job (hourly by default)           |
+| `TEMPLATE_GIT_SYNC_LOCK_MIN`  | `PT1M`                     | Minimum lock duration (ShedLock, `database` profile)           |
+| `TEMPLATE_GIT_SYNC_LOCK_MAX`  | `PT2M`                     | Maximum lock duration (ShedLock, `database` profile)           |
 
 Both sources are enabled in all Docker Compose variants. To disable one, set the corresponding variable to `"false"`.
 
 ## Authentication
 
-straightmail supports two authentication modes configured at startup:
+straightmail supports three authentication modes configured at startup:
 
-| Mode       | `AUTH_MODE` value | Description                                                                                                                                              |
-|------------|-------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| OIDC / JWT | `oidc` (default)  | JWT from an OIDC provider (e.g. Keycloak). Roles are derived from `realm_access.roles` → `ROLE_*`. The tenant is resolved from a configurable JWT claim. |
-| API-Key    | `api-key`         | `X-API-KEY` request header carrying a global or per-tenant SHA-256 hash. The tenant is determined by a key lookup in the database.                       |
-| None       | `none`            | All endpoints are open. Suitable for internal services with network-level protection.                                                                    |
+| Mode       | `AUTH_MODE` value | Description                                                                                                                                                                  |
+|------------|-------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| OIDC / JWT | `oidc` (default)  | JWT from an OIDC provider (e.g. Keycloak). Roles are derived from `realm_access.roles` → `ROLE_*`. The tenant is resolved from a JWT claim; a token without one gets `403`. |
+| API-Key    | `api-key`         | `X-API-KEY` header with the global `API_KEY` or a per-tenant key (stored as a SHA-256 hash, `database` profile only). The global key needs `X-Tenant-ID`.                     |
+| None       | `none`            | All endpoints are open. Suitable for internal services with network-level protection.                                                                                       |
 
 Key environment variables:
 
-| Variable               | Default | Description                                                                |
-|------------------------|---------|----------------------------------------------------------------------------|
-| `AUTH_MODE`            | `oidc`  | Authentication mode: `oidc`, `api-key`, or `none`                          |
-| `JWT_TENANT_CLAIM`     | —       | JWT claim that contains the single tenant ID                               |
-| `JWT_TENANT_IDS_CLAIM` | —       | JWT claim that contains a list of accessible tenant IDs                    |
-| `API_KEY`              | —       | Global API key (SHA-256 hash) used when the `database` profile is inactive |
+| Variable               | Default                                   | Description                                                              |
+|------------------------|-------------------------------------------|--------------------------------------------------------------------------|
+| `AUTH_MODE`            | `oidc`                                    | Authentication mode: `oidc`, `api-key`, or `none`                        |
+| `OIDC_ISSUER_URI`      | `http://localhost:8090/realms/straightmail` | Issuer the `iss` claim must match; discovered at startup unless `OIDC_JWK_URI` is set |
+| `OIDC_JWK_URI`         | —                                         | JWK set URL to use instead of discovery (e.g. a container-internal name) |
+| `OIDC_AUDIENCE`        | `straightmail`                            | Accepted `aud` values, comma-separated                                   |
+| `JWT_TENANT_CLAIM`     | `tenant_id`                               | JWT claim that contains the single tenant ID                             |
+| `JWT_TENANT_IDS_CLAIM` | `tenant_ids`                              | JWT claim that contains a list of accessible tenant IDs                  |
+| `API_KEY`              | —                                         | Global API key, compared as given; required in `api-key` mode            |
 
-**Roles.** Tenant administration requires `ROLE_ADMIN`: every write in `/v1/tenants`, plus the reads
-`GET /v1/tenants` and `GET /v1/tenants/{slug}`. In OIDC mode the role must appear in the token's
-`realm_access.roles` — an otherwise valid token without it gets `403` and the Admin UI's tenant pages
-stay empty. In API-key mode the global `API_KEY` is admin, a per-tenant key is not. `GET /v1/tenants/me`
-is open to any authenticated caller and returns only their own tenants.
+**Roles.** Tenant administration requires `ROLE_ADMIN`: every write in `/api/v1/tenants`, plus the
+reads `GET /api/v1/tenants` and `GET /api/v1/tenants/{slug}`. In OIDC mode the role must appear in the
+token's `realm_access.roles` — an otherwise valid token without it gets `403` and the Admin UI's tenant
+pages stay empty. In API-key mode the global `API_KEY` is admin, a per-tenant key is not. In `none`
+mode every caller is admin. `GET /api/v1/tenants/me` is open to any authenticated caller and returns
+only their own tenants.
 
 Deployment-level settings:
 
 | Variable                           | Default  | Description                                                                    |
 |------------------------------------|----------|--------------------------------------------------------------------------------|
-| `ENCRYPTION_KEY`                   | —        | **Required.** AES-256 key, Base64-encoded (`openssl rand -base64 32`). A value that is not valid Base64 aborts startup |
+| `ENCRYPTION_KEY`                   | —        | **Required.** AES-256 key, Base64 of exactly 32 bytes (`openssl rand -base64 32`). A missing, non-Base64 or wrong-length value aborts startup |
+| `API_PREFIX`                       | `/api`   | Path prefix of every REST endpoint                                             |
+| `I18N_PATH`                        | `/resources/i18n` | Directory with external `messages*.properties`, read before the built-in bundles |
 | `MANAGEMENT_ENDPOINTS`             | `health` | Comma-separated actuator endpoints exposed on `:50004`                         |
 | `SECURITY_CONTENT_SECURITY_POLICY` | derived  | Replaces the generated CSP wholesale; the default adds `auth.issuer-uri` to `connect-src`, `frame-src` and `form-action`. Needed to show remote images in template previews — see [Security defaults in 0.5.0](#security-defaults-in-050) |
 
@@ -547,47 +608,51 @@ Deployment-level settings:
 
 The backend behaviour is controlled by Spring profiles set via `SPRING_PROFILES_ACTIVE`:
 
-| Profile      | Effect                                                                                                                                                                                                                                |
-|--------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `database`   | Activates database storage for templates and SMTP config, enables the Tenant-CRUD API (`/v1/tenants`), and per-tenant Git-sync. Without this profile the backend runs file-only with a global SMTP config from environment variables. |
-| `production` | Disables Swagger UI / API docs (`/swagger-ui`, `/v3/api-docs`), tunes Tomcat thread pool (`max=50`, `min-spare=10`).                                                                                                                  |
-| `dev`        | Local development overrides (localhost SMTP relay).                                                                                                                                                                                   |
+| Profile      | Effect                                                                                                                                                                                                 |
+|--------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `database`   | Activates database storage for templates and tenants (SQLite by default, `DB_URL`), the template and tenant CRUD APIs, and per-tenant API keys. Without this profile tenants come from `tenants.config`. |
+| `production` | Disables Swagger UI and the API docs, tunes the Tomcat thread pool (`max=50`, `min-spare=10`).                                                                                                          |
+| `local`      | Reads `application-local.yml` (gitignored) for local development — see [Local Development](#local-development).                                                                                        |
 
 Example — full local stack:
 
 ```bash
-SPRING_PROFILES_ACTIVE=dev,database ./gradlew bootRun
+SPRING_PROFILES_ACTIVE=local,database ./gradlew bootRun
 ```
 
 ## Multi-Tenancy
 
-When running with the `database` profile, straightmail is fully multi-tenant:
+With the `database` profile, straightmail is fully multi-tenant:
 
 - **Per-tenant SMTP** — Each tenant configures its own SMTP server, credentials, and sender address via the UI or API.
 - **Per-tenant Git-sync** — Each tenant can point to an independent Git repository for template storage, synced on a
   configurable cron schedule (ShedLock protected for HA setups).
-- **Infrastructure-as-code provisioning** — Tenants declared under `tenants.config.*` in `application.yml` are
-  automatically created or updated at startup (`TenantReconciliationService`). The `default` tenant is never removed,
-  enabling zero-touch tenant provisioning without manual API calls.
-- **Encryption at rest** — All secrets (SMTP password, Git token, API key) are encrypted using AES-256-GCM by the
-  built-in `EncryptionService`. Secrets are never returned in plain text by the API.
+- **Infrastructure-as-code provisioning** — Tenants declared under `tenants.config.*` are created at startup when they
+  do not exist yet (`TenantReconciliationService`); existing tenants are left unchanged. The `default` tenant is
+  created by the schema migration and cannot be deleted.
+- **Secrets at rest** — SMTP password and Git token are encrypted with AES-256-GCM by `EncryptionService`; per-tenant
+  API keys are stored as SHA-256 hashes. Secrets are never returned in plain text by the API.
+
+Without the `database` profile, per-tenant SMTP and Git-sync settings come from `tenants.config` — see
+[Tenants and SMTP](#tenants-and-smtp).
 
 ## Documentation
 
 - [Backend README](backend/README.md)
 - [Frontend README](frontend/README.md)
-- [API Endpoints](http://localhost:50003/swagger-ui.html)
+- API documentation of a running instance: Swagger UI at `http://localhost:50003/swagger-ui/index.html`,
+  OpenAPI document at `http://localhost:50003/api/v3/api-docs`
 
 ## Ports
 
-| Service     | Port(s)     | Note                                                                          |
-|-------------|-------------|-------------------------------------------------------------------------------|
-| Backend API | 50003       | serves the API and the bundled Admin UI                                       |
-| Management  | 50004       | actuator, `health` only by default, **no authentication** — keep it internal  |
-| Frontend    | 4200        | dev server only                                                               |
-| PostgreSQL  | 5432        |                                                                               |
-| Mailpit     | 1025 / 8025 |                                                                               |
-| pgAdmin     | 5050        |                                                                               |
+| Service     | Port(s)     | Note                                                                                       |
+|-------------|-------------|--------------------------------------------------------------------------------------------|
+| Backend API | 50003       | serves the API, and the Admin UI when the JAR embeds it                                    |
+| Management  | 50004       | actuator, `health` only by default, **no authentication** — keep it internal              |
+| Frontend    | 4200        | dev server only                                                                            |
+| Keycloak    | 8090        | OIDC Compose stacks                                                                        |
+| PostgreSQL  | 5432        | `oidc-postgres.yml`                                                                        |
+| Mailpit     | 1025 / 8025 | Compose stacks                                                                             |
 
 ## encircle360 OSS Matrix Channel
 
