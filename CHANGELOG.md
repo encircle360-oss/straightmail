@@ -19,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `ghcr.io/encircle360-oss/straightmail/monorepo`, the image with the Admin UI, is also built for
   release tags and gets version tags starting with the next release. 0.5.0 exists there only as the
   commit tag `0397766` and, until the next release, as `latest`
+- Dependabot offers TypeScript only patch updates, since Angular 22.3 accepts `>=6.0 <6.1`, and
+  updates the Angular packages (`@angular/*`, `@angular-devkit/*`, `@schematics/angular`) in one
+  pull request of their own, apart from the other npm minor and patch updates
 
 ### Fixed
 

@@ -1,7 +1,8 @@
 version: 2
 
 # Minor and patch updates are grouped into one pull request per ecosystem; major updates
-# arrive as individual pull requests.
+# arrive as individual pull requests. In /frontend the Angular packages form a group of their
+# own for every update type.
 updates:
   - package-ecosystem: gradle
     directory: /backend
@@ -17,7 +18,20 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    # @angular/build and @angular/compiler-cli 22.3 accept only typescript >=6.0 <6.1, so only
+    # patch updates are installable. TypeScript moves to a new minor or major together with
+    # Angular, through `ng update`.
+    ignore:
+      - dependency-name: typescript
+        update-types: [version-update:semver-major, version-update:semver-minor]
     groups:
+      # The Angular packages pin each other to the exact same version and must update together.
+      # A dependency joins the first group that matches it, so this group comes first.
+      angular:
+        patterns:
+          - '@angular/*'
+          - '@angular-devkit/*'
+          - '@schematics/angular'
       npm-minor-and-patch:
         update-types: [minor, patch]
 
