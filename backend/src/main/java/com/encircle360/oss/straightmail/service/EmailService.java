@@ -1,10 +1,11 @@
 package com.encircle360.oss.straightmail.service;
 
+import com.encircle360.oss.straightmail.config.DatabaseConfig;
 import com.encircle360.oss.straightmail.config.TenantProperties;
 import com.encircle360.oss.straightmail.dto.email.*;
 import com.encircle360.oss.straightmail.dto.template.RenderedTemplateDTO;
 import com.encircle360.oss.straightmail.model.Template;
-import com.encircle360.oss.straightmail.service.template.loader.TemplateLoader;
+import com.encircle360.oss.straightmail.service.template.loader.FileTemplateLoader;
 import com.encircle360.oss.straightmail.service.template.provider.CompositeTemplateProvider;
 import com.encircle360.oss.straightmail.tenant.TenantContext;
 import com.encircle360.oss.straightmail.tenant.mail.ConfigBasedMailSenderFactory;
@@ -21,6 +22,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.safety.Safelist;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -35,14 +37,18 @@ import java.util.Optional;
 /**
  * Core service responsible for composing and dispatching email messages.
  *
- * <p>Supports two operating modes depending on active Spring profiles:
+ * <p>Templates are resolved through {@link CompositeTemplateProvider} for the tenant in
+ * {@link TenantContext}. Only in single-tenant operation — {@code database} profile inactive and at most
+ * one tenant declared in {@code tenants.config} — does a miss fall back to the flat 0.4.x layout
+ * through {@link FileTemplateLoader}; otherwise a miss is "template not found".
+ *
+ * <p>SMTP configuration depends on the active Spring profiles:
  * <ul>
- *   <li><b>File-based mode</b> (no {@code database} profile): resolves templates via {@link TemplateLoader}
- *       and uses per-tenant SMTP configuration from {@link ConfigBasedMailSenderFactory} (falling back to
- *       the global {@link JavaMailSender} configured in {@code application.yml}).</li>
- *   <li><b>Database mode</b> ({@code database} profile active): resolves templates via
- *       {@link CompositeTemplateProvider}, uses per-tenant SMTP configuration from
- *       {@link TenantMailSenderFactory}, and reads the current tenant from {@link TenantContext}.</li>
+ *   <li><b>File-based mode</b> (no {@code database} profile): per-tenant SMTP configuration from
+ *       {@link ConfigBasedMailSenderFactory}, falling back to the global {@link JavaMailSender}
+ *       configured in {@code application.yml}.</li>
+ *   <li><b>Database mode</b> ({@code database} profile active): per-tenant SMTP configuration from
+ *       {@link TenantMailSenderFactory}.</li>
  * </ul>
  *
  * <p>In both modes the tenant's configured {@code smtpSender} is authoritative: it always overrides
@@ -69,8 +75,8 @@ public class EmailService {
     private final TenantProperties tenantProperties;
     private final ConfigBasedMailSenderFactory configMailSenderFactory;
 
-    // Non-DB fallback (used when database profile is not active)
-    private final ObjectProvider<TemplateLoader> templateLoader;
+    private final FileTemplateLoader flatLayoutLoader;
+    private final Environment environment;
 
     // Global fallback mail sender (last resort when no tenant config is found)
     private final ObjectProvider<JavaMailSender> emailClient;
@@ -194,12 +200,16 @@ public class EmailService {
             if (resolved.isPresent()) return resolved.get();
         }
 
-        TemplateLoader loader = templateLoader.getIfAvailable();
-        if (loader != null) {
-            return loader.loadTemplate(name);
-        }
+        return this.isFlatLayoutServed() ? flatLayoutLoader.loadTemplate(name) : null;
+    }
 
-        return null;
+    /**
+     * The flat 0.4.x layout has no tenant directories, so it is served only where a single tenant
+     * can exist: without the {@code database} profile and with at most one declared tenant.
+     */
+    private boolean isFlatLayoutServed() {
+        return !environment.matchesProfiles(DatabaseConfig.PROFILE)
+                && tenantProperties.getConfig().size() <= 1;
     }
 
     private String[] renderTemplates(String subjectTemplate, String bodyTemplate, String plainTextTemplate,

@@ -19,7 +19,8 @@ import java.util.stream.Stream;
  * <p>Reads from the classpath ({@code classpath:templates/}) or the filesystem
  * ({@code /resources/templates/}). Used by {@link com.encircle360.oss.straightmail.service.EmailService}
  * as a final fallback after {@link com.encircle360.oss.straightmail.service.template.provider.CompositeTemplateProvider}
- * returns no match. Logs all discovered filesystem template files at startup.
+ * returns no match, in single-tenant operation only (no {@code database} profile, at most one declared
+ * tenant). Logs all discovered filesystem template files at startup.
  */
 @Slf4j
 @Service

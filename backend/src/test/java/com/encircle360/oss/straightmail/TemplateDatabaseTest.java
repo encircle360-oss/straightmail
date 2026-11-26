@@ -1,6 +1,8 @@
 package com.encircle360.oss.straightmail;
 
 import com.encircle360.oss.straightmail.dto.PageContainer;
+import com.encircle360.oss.straightmail.dto.email.EmailResultDTO;
+import com.encircle360.oss.straightmail.dto.email.EmailTemplateFileRequestDTO;
 import com.encircle360.oss.straightmail.dto.template.CreateUpdateTemplateDTO;
 import com.encircle360.oss.straightmail.dto.template.TemplateDTO;
 import com.encircle360.oss.straightmail.repository.TemplateRepository;
@@ -17,6 +19,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -99,5 +102,20 @@ class TemplateDatabaseTest extends AbstractTest {
         MvcResult getResult = get("/v1/templates/" + templateDTO.getId(), status().isOk());
         TemplateDTO fetched = resultToObject(getResult, TemplateDTO.class);
         assertEquals(templateDTO.getId(), fetched.getId());
+    }
+
+    @Test
+    void test_send_with_unknown_template_is_not_found() throws Exception {
+        EmailTemplateFileRequestDTO request = EmailTemplateFileRequestDTO.builder()
+                .recipients(List.of("recipient@test.com"))
+                .sender("sender@test.com")
+                .emailTemplateId("no-such-template")
+                .build();
+
+        MvcResult result = post("/v1/email", request, status().isBadRequest());
+
+        EmailResultDTO body = resultToObject(result, EmailResultDTO.class);
+        assertFalse(body.isSuccess());
+        assertEquals("Template not found", body.getMessage());
     }
 }
