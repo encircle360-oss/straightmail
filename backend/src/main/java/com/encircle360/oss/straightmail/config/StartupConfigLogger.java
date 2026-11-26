@@ -11,7 +11,8 @@ import org.springframework.stereotype.Component;
 
 /**
  * Logs all resolved environment-configuration values once after application startup.
- * Secrets ({@code encryption.key}, {@code api.key}) are masked so they never appear in plain text.
+ * Secrets ({@code encryption.key}, {@code api.key}) are reported only as set or not set; no part of
+ * their value is logged.
  */
 @Slf4j
 @Component
@@ -113,9 +114,6 @@ public class StartupConfigLogger {
     }
 
     private String maskSecret(String value) {
-        if (value == null || value.isBlank()) {
-            return "(not set)";
-        }
-        return value.length() <= 4 ? "***" : value.substring(0, 4) + "***";
+        return value == null || value.isBlank() ? "(not set)" : "(set)";
     }
 }
