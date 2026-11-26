@@ -7,65 +7,124 @@ For component-specific changes see [`backend/CHANGELOG.md`](backend/CHANGELOG.md
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
-
-### Documentation
-
-- README: the template preview renders in an `<iframe srcdoc>` and therefore inherits the page's
-  Content-Security-Policy, so images on foreign hosts are blocked by the shipped default. The
-  security section now states this and carries a complete `SECURITY_CONTENT_SECURITY_POLICY`
-  example that widens `img-src` while keeping every other directive, identity provider origin
-  included. No behaviour change — the default policy is unchanged
-
-## [0.5.0] - 2026-09-17
+## [0.5.0] - 2026-11-26
 
 For component-specific changes see [`backend/CHANGELOG.md`](backend/CHANGELOG.md) and [`frontend/CHANGELOG.md`](frontend/CHANGELOG.md).
+The migration guide in the [README](README.md#migrating-from-04x) shows each step with examples.
+
+### Breaking changes — migrating from 0.4.x
+
+- The REST API moved under `/api/v1`: `POST /api/v1/email`, `/api/v1/email/inline`, `/api/v1/render`.
+  The prefix comes from `API_PREFIX` (default `/api`), `/v1` is fixed. `POST /email` and the other
+  0.4.x paths answer `403`
+- `AUTH_MODE` defaults to `oidc`: without `AUTH_MODE=none` and without a reachable OIDC issuer the
+  application does not start. `none` is the 0.4.x behaviour
+- `ENCRYPTION_KEY` is required and must be the Base64 encoding of exactly 32 bytes
+  (`openssl rand -base64 32`); otherwise the application does not start
+- The OpenAPI document moved to `/api/v3/api-docs`; `/v3/api-docs` answers `404`. Swagger UI stays
+  at `/swagger-ui/index.html`
+- The plain-text part derived from the HTML body (templates without `_plain.ftl`) renders links as
+  `text(url)` instead of `text ( url )`, and its whitespace can differ
+- `ghcr.io/encircle360-oss/straightmail` still contains the backend only. The Admin UI ships only
+  in `ghcr.io/encircle360-oss/straightmail/monorepo`, published as `latest` and by commit SHA, not
+  by version
+- The image is based on Temurin 25 (JRE) instead of `eclipse-temurin:21-jre`, runs as the non-root
+  user `straightmail` (UID 10001) and starts the application from `/app` instead of `/straightmail.jar`
+- FreeMarker renders sandboxed: `?new`, `?api` and the Spring form-binding macros fail (see Security)
+- `/api/v1/render` and the template listing only read the per-tenant layout
+  `TEMPLATE_FILE_PATH/<tenant>/<id>.ftl`; only `/api/v1/email` still falls back to the flat 0.4.x
+  layout under `/resources/templates`. `TEMPLATE_FILE_PATH` defaults to `/directory/files/templates`
+- Actuator exposes `health` only (`MANAGEMENT_ENDPOINTS` widens it again)
 
 ### Security
 
+- Base images pinned by digest to Temurin 25.0.5.1+2, which fixes CVE-2026-114938 and the other
+  November 2026 OpenJDK CVEs
+- Spring Boot 4.2.0, which manages Tomcat 11.0.27 (CVE-2026-65182, CVE-2026-65905, CVE-2026-68525)
+  and FreeMarker 2.3.35 (CVE-2026-84939)
+- Dependency updates: jsoup 1.24.1, springdoc-openapi 3.2.1, JGit 7.8.1, ShedLock 7.12.0, Lombok
+  1.18.48; `commons-lang3` on the Gradle build classpath constrained to 3.22.0 (CVE-2025-48924)
 - FreeMarker renders sandboxed: `?new` is rejected for every class and `?api` is disabled. Previously
   `?new` could instantiate `freemarker.template.utility.Execute` and run OS commands, reachable by any
   caller holding a per-tenant API key — **breaking for templates that use either built-in**
 - Template IDs are normalised and confined to their tenant directory; `../` escapes no longer read
-  another tenant's templates, over the URL or through the JSON body of `/v1/render` and `/v1/email`
-- `GET /v1/tenants` and `GET /v1/tenants/{slug}` require `ROLE_ADMIN` — they previously let any
-  authenticated caller enumerate every tenant's mail relay configuration. `/v1/tenants/me` is unchanged
+  another tenant's templates, over the URL or through the JSON body of `/api/v1/render` and `/api/v1/email`
+- `GET /api/v1/tenants` and `GET /api/v1/tenants/{slug}` require `ROLE_ADMIN` — they previously let any
+  authenticated caller enumerate every tenant's mail relay configuration. `/api/v1/tenants/me` is unchanged
 - Content-Security-Policy, `Referrer-Policy` and HSTS on all three filter chains, with
   `server.forward-headers-strategy=framework` so HSTS survives a TLS terminator
 - Actuator exposure set explicitly to `health` (`MANAGEMENT_ENDPOINTS` widens it again)
 - Production frontend bundles no longer ship the development environment; bearer tokens and API keys
   are scoped by origin as well as path
+- The startup configuration log reports `ENCRYPTION_KEY` and `API_KEY` only as set or not set,
+  never a part of their value
 - `mavenCentral` before `mavenLocal` so a stale local artifact cannot win a build
 
 ### Added
 
 - Multi-tenancy support: per-tenant SMTP, API keys, and JWT tenant resolution
 - No-authentication (`auth.mode=none`) and API-key (`auth.mode=api-key`) modes alongside OIDC
-- Modular Docker Compose stacks (`docker/oidc-sqlite.yml`, `api-key-sqlite.yml`, etc.)
-- Feature branch CI workflow (`feature.yml`) for `feature/**`, `fix/**`, `chore/**`
-- Monorepo full-build workflow (`monorepo.yml`) producing a combined backend+frontend JAR image
-- Frontend standalone build artifact (`frontend-dist`) uploaded by `frontend.yml` on every `main` push
+- Admin UI (Angular) embedded into the backend JAR by the full Gradle build
+- Message bundles are read from `I18N_PATH` (default `/resources/i18n`) before the built-in ones
+- Modular Docker Compose stacks (`docker/minimal.yml`, `apikey-sqlite.yml`, `oidc-sqlite.yml`,
+  `oidc-postgres.yml`)
+- Monorepo full-build workflow (`monorepo.yml`) publishing the combined backend+frontend image
+- Dependabot for Gradle, npm, Docker and GitHub Actions
 
 ### Changed
 
 - Replaced MailHog with Mailpit across all Docker Compose configs and integration tests
-- Fixed `frontend.yml` path filters (`../../frontend/**` → `frontend/**`) so the workflow now triggers correctly
-- Added `if: github.ref == 'refs/heads/main'` guard to `backend.yml` docker job (was pushing on PRs)
-- SQLite replaces PostgreSQL as default database backend (Liquibase migrations updated)
+- SQLite is the default database of the `database` profile (Liquibase migrations updated)
 - Keycloak hostname handling refactored; JWK/issuer URLs split for OIDC setups
-- Toolchain: Java 21 → 25, Spring Boot 4.1.1, Gradle 9.7.1, Angular 22.1.x, Node.js 22
+- Toolchain: Java 21 → 25, Spring Boot 4.2.0, Gradle 9.9.2, Angular 22.3, Node.js 26 in CI
 - Compose stacks bind their ports to `127.0.0.1` instead of `0.0.0.0`; `docker/README.md` states what
   a real deployment has to change
-- CI repaired and extended: dependency and container scanning, the image cleanup workflow moved
-  in-repo, and all seven workflows documented
+- The OpenAPI document reports the application version from the build instead of a fixed value
+- CI: pull requests run `ci.yml`, which ends in a single `CI gate` check; CodeQL, Gradle dependency
+  submission and the GHCR cleanup run in-repo. `.github/workflows/README.md` documents all nine
+  workflows
+- GHCR cleanup protects released tags (`x`, `x.y`, `x.y.z`, `latest`, `buildcache`) with an anchored
+  regular expression
 
 ### Fixed
 
+- `senderName` sets the display name of the `From` header, as in 0.4.x
+- An unset `SMTP_PORT` defaults to `587`, as in 0.4.x, instead of breaking startup
+- The OpenAPI document declares no fixed server, as in 0.4.x, so the documented host follows the
+  request (including forwarded headers)
 - The PostgreSQL stack could not start: `tenants.active`, `smtp_tls` and `smtp_ssl` were created as
   `integer`, which PostgreSQL rejects when Hibernate binds a boolean, so tenant reconciliation failed
   on the first insert. Changeset `0009` converts the three columns; SQLite installations are unaffected
 - Three Compose stacks shipped `ENCRYPTION_KEY: "CHANGE_ME_GENERATE_RANDOM_KEY"`, which is not valid
   Base64 and put the container in a crash loop on first start
+
+### Removed
+
+- `trivy.yml`; `release.yml` and `monorepo.yml` scan the image they push with Trivy
+- `frontend/.github/workflows/ci.yml`, which GitHub never ran
+
+### Documentation
+
+- README: the template preview renders in an `<iframe srcdoc>` and therefore inherits the page's
+  Content-Security-Policy, so images on foreign hosts are blocked by the shipped default. The
+  security section carries a complete `SECURITY_CONTENT_SECURITY_POLICY` example that widens
+  `img-src` while keeping every other directive, identity provider origin included
+- README, component READMEs and changelogs aligned with the 0.5.0 code: migration guide against
+  0.4.x, configuration defaults, image contents
+
+## [0.4.1] - 2026-06-03
+
+### Changed
+
+- A missing `_plain.ftl` is no longer an error: the HTML body and `_subject.ftl` are required, the
+  plain-text variant is optional and derived from the HTML when absent (#5)
+- Each send is logged at INFO on receipt and after the SMTP dispatch — template source and ID,
+  recipient counts, locale; no recipient addresses or rendered content (#5)
+
+### Deprecated
+
+- `AbstractTemplateLoader.getFileContent` (for removal) — subclasses use `getRequiredFileContent` or
+  `getOptionalFileContent` (#5)
 
 ## [0.4.0] - 2026-05-21
 

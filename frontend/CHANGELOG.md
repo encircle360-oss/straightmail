@@ -5,7 +5,13 @@ All notable changes to the straightmail client will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [0.5.0] - 2026-09-17
+## [0.5.0] - 2026-11-26
+
+### Breaking changes — migrating from 0.4.x
+
+- The Admin UI is served by the backend only when the JAR embeds it — the image
+  `ghcr.io/encircle360-oss/straightmail/monorepo` (`latest`, commit SHA). The versioned image
+  `ghcr.io/encircle360-oss/straightmail` contains no Admin UI
 
 ### Added
 
@@ -30,10 +36,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
-- Angular 22.2, Vitest 5, Playwright 1.64, npm 12 and all other dependencies on their latest
-  releases; TypeScript stays on 6.0 because Angular 22 requires `>=6.0 <6.1`
-- `vite` overridden to 8.3.5: `@angular/build` pins 8.3.0, which is affected by
-  GHSA-9jrq-w75r-8gcw, GHSA-rq7h-c2jc-7f22, GHSA-vfpm-58rq-9qcg and the `launch-editor` advisories
+- Angular 22.3, Vitest 5.1, Playwright 1.65, npm 12.2.3, jsdom 31 and all other dependencies on
+  their latest releases; TypeScript stays on 6.0 because Angular 22 requires `>=6.0 <6.1`
+- vite 8.3.8, pinned by `@angular/build` 22.3, which contains the fixes for GHSA-9jrq-w75r-8gcw,
+  GHSA-rq7h-c2jc-7f22, GHSA-vfpm-58rq-9qcg and the `launch-editor` advisories; the `vite` override is gone
 - `TranslateModule` imports replaced by standalone `TranslatePipe` across all components
 - MailHog references replaced with Mailpit in E2E test configurations
 - Toast auto-dismiss delay adjusted; locale handling simplified in template options
@@ -41,7 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Frontend serving and auth configuration consolidated in Docker Compose setups
 - Storage keys updated for NGXS persistence plugin compatibility
 - Font sizes standardized to `rem` units across all component stylesheets
-- Angular upgraded to 22.1.x, Node.js to 22
+- Node.js 22.22+, 24.15+ or 26 (`engines`); CI runs Node.js 26
 - NGXS runs with `compatibility.strictContentSecurityPolicy` so the app works under the backend's
   `script-src 'self'` policy without `unsafe-eval`
 - Shared form fields bound via `[formControl]` instead of `ngModel`
@@ -62,6 +68,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Removed
 
+- `frontend/.github/workflows/ci.yml`; GitHub only runs workflows from the repository root, where
+  `frontend.yml` covers the frontend
 - `public/env.js` runtime-injection shim, left over from the standalone frontend image; the Admin UI is
   served by the backend and reads its configuration from `/api/v1/info`
 

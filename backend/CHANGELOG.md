@@ -5,15 +5,41 @@ All notable changes to the straightmail backend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [0.5.0] - 2026-09-17
+## [0.5.0] - 2026-11-26
+
+### Breaking changes — migrating from 0.4.x
+
+- All `@RestController` endpoints are prefixed with `api.prefix` (`API_PREFIX`, default `/api`) and
+  live under `/v1`: `POST /api/v1/email`, `/api/v1/email/inline`, `/api/v1/render`. Requests to the
+  0.4.x paths are not API requests and fail CSRF protection with `403`
+- `auth.mode` (`AUTH_MODE`) defaults to `oidc`, which needs a reachable issuer (or `OIDC_JWK_URI`) at
+  startup; `none` is the 0.4.x behaviour
+- `EncryptionService` is always created and aborts startup unless `ENCRYPTION_KEY` is the Base64
+  encoding of exactly 32 bytes
+- The OpenAPI document is served under the prefix (`/api/v3/api-docs`); `/v3/api-docs` answers `404`
+- `HtmlUtil` renders links in the derived plain-text part as `text(url)` instead of `text ( url )`,
+  and the whitespace of that part can differ
+- `RenderController` and `TemplateReadController` resolve templates only through
+  `CompositeTemplateProvider` (per-tenant layout under `templates.file.base-path`); only
+  `EmailService` falls back to `FileTemplateLoader` and the flat `/resources/templates` layout.
+  `templates.file.base-path` defaults to `/directory/files/templates`
+- Runtime image: Temurin 25 JRE, non-root user `straightmail` (UID 10001), layered application in `/app`
+- FreeMarker sandbox and narrowed `springMacroRequestContext` (see Security)
 
 ### Security
 
 - FreeMarker locked down in `FreemarkerSecurityConfig`: `TemplateClassResolver.ALLOWS_NOTHING_RESOLVER`
   plus the `?api` built-in disabled, both set once on the shared `Configuration` singleton. `?new` could
   previously instantiate `freemarker.template.utility.Execute` and run OS commands, reachable by any
-  caller holding a per-tenant API key via `/v1/email/inline` or a stored template — **breaking for
+  caller holding a per-tenant API key via `/api/v1/email/inline` or a stored template — **breaking for
   templates using `?new` or `?api`**
+- Base images pinned by digest to Temurin 25.0.5.1+2 (fix for CVE-2026-114938 and the other
+  November 2026 OpenJDK CVEs); Dependabot updates the digests
+- Spring Boot 4.2.0, which manages Tomcat 11.0.27 (CVE-2026-65182, CVE-2026-65905, CVE-2026-68525)
+  and FreeMarker 2.3.35 (CVE-2026-84939)
+- jsoup 1.24.1, springdoc-openapi 3.2.1, JGit 7.8.1.202611041320-r, ShedLock 7.12.0, Lombok 1.18.48;
+  `commons-lang3` on the buildscript classpath constrained to 3.22.0 (CVE-2025-48924)
+- `StartupConfigLogger` reports `encryption.key` and `api.key` only as `(set)` / `(not set)`
 - Templates no longer see Spring's `RequestContext`: `springMacroRequestContext` is now the narrow
   `TemplateRequestContext` facade (message and URL methods only). Through
   `springMacroRequestContext.webApplicationContext` any template could read every configuration
@@ -28,11 +54,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Runtime image applies pending Ubuntu security updates and drops the unused `/usr/bin/pebble` Go
   binary, which carried critical Go stdlib CVEs
 - `FileTemplateSourceProvider` and `AbstractTemplateLoader` normalise template names and confine them
-  to the tenant directory; `../other-tenant/welcome` no longer resolves, over the URL or through the
-  `templateId` in the JSON body of `/v1/render` and `/v1/email`
+  to the tenant directory and to the templates root respectively; `../other-tenant/welcome` no longer resolves, over the URL or through the
+  `templateId` in the JSON body of `/api/v1/render` and `/api/v1/email`
 - `TenantReadController.list()` and `get(slug)` require `ROLE_ADMIN`; both had no authorization at all
   and exposed every tenant's `smtpHost`, `smtpPort`, `smtpUser`, `smtpSender`, `gitRepoUrl` and
-  `hasApiKey`. `/v1/tenants/me` stays open to any authenticated caller
+  `hasApiKey`. `/api/v1/tenants/me` stays open to any authenticated caller
 - `SecurityConfig` sends a Content-Security-Policy, `Referrer-Policy: same-origin` and HSTS on all
   three filter chains; the policy is derived from `auth.issuer-uri` and replaceable via
   `security.content-security-policy`
@@ -43,10 +69,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Added
 
 - Multi-tenancy: `TenantService`, `TenantRepository`, `/v1/tenants` CRUD admin API
-- Per-tenant API key authentication (`ApiKeyTenantResolutionFilter`) with SHA-256 hashing via `EncryptionService`
+- Per-tenant API key authentication (`ApiKeyTenantResolutionFilter`) with SHA-256 hashing via `TenantService.hashApiKey`
 - `AbstractTenantResolutionFilter` base class; JWT and API-key resolution now share common logic
-- Config-based tenant provisioning via `TenantProperties` + `TenantReconciliationService` (YAML-declared tenants reconciled at startup)
-- `StartupConfigLogger`: logs all resolved configuration at startup with masked secrets (`encryption.key`, `api.key`)
+- Config-based tenant provisioning via `TenantProperties` + `TenantReconciliationService` (YAML-declared tenants created at startup when they do not exist; existing tenants are not updated)
+- `StartupConfigLogger`: logs the resolved configuration at startup; secrets are reported only as set or not set
 - `auth.mode` property (`oidc` | `api-key` | `none`) replacing the boolean `auth.enabled` flag
 - No-authentication mode: `NoAuthTenantResolutionFilter` resolves tenant from `X-Tenant-ID` header or falls back to default
 - Database-backed Git sync status (`GitSyncStatusRepository`) and template caching
@@ -58,25 +84,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - UUID-based template lookup fallback in `TemplateService`
 - Tenant branding fields in `TenantDTO`
 - Comprehensive Javadoc on all public REST controller methods and non-obvious service methods
+- `MessageSourceConfig`: bundles in `i18n.base-path` (`I18N_PATH`, default `/resources/i18n`) are read
+  before the built-in `classpath:i18n/messages`; the image creates `/resources/i18n`
+- OpenAPI info version taken from the build info (`springBoot.buildInfo`)
 
 ### Changed
 
-- Spring Boot 4.1.2, Gradle 9.8.2; `hibernate-community-dialects`, `sqlite-jdbc` and Testcontainers
+- Spring Boot 4.2.0, Gradle 9.9.2; `hibernate-community-dialects`, `sqlite-jdbc` and Testcontainers
   versions now come from the Boot BOM, so the dialect stays aligned with Hibernate core
 - Keycloak 26.8.1 in the OIDC Compose stacks
 - Switched default database from PostgreSQL to SQLite (`jdbc:sqlite:`); Liquibase changesets updated
 - MailHog replaced by Mailpit in Testcontainers (`AbstractTest`) and all Docker Compose stacks
 - Keycloak hostname handling updated; JWK endpoint URL and issuer URL split into separate config properties
 - `ObjectProvider<T>` used for all beans conditional on the `database` profile (`TenantService`, `TenantMailSenderFactory`)
-- Package structure reorganized: `template/`, `tenant/`, `mail/`, `security/` sub-packages
+- Package structure reorganized: `controller/{mail,template,tenant}`, `service/template/{loader,provider}`
+  and `tenant/{filter,mail}` sub-packages
 - `@Autowired` field injection replaced by constructor injection throughout
 - `this.` prefix applied consistently to all same-class method calls
-- Toolchain: Java 21 → 25, Spring Boot 4.1.1, Gradle wrapper 9.7.1
-- A missing `_plain.ftl` is no longer an error; the template renders and sends as HTML only
-- Send lifecycle logged at INFO
+- Toolchain: Java 21 → 25
 
 ### Fixed
 
+- `EmailRequestDTO.senderName` sets the display name of the `From` header, as in 0.4.x
+- `spring.mail.port` defaults to `SMTP_PORT:587`, as in 0.4.x; an empty default broke the startup of
+  `ConfigBasedMailSenderFactory`
+- `ApiConfig` declares no fixed OpenAPI server (`http://localhost:50003` is gone), as in 0.4.x
 - PostgreSQL could not start: `tenants.active`, `smtp_tls` and `smtp_ssl` were created as `integer` in
   changeset `0002`, which PostgreSQL rejects when Hibernate binds a boolean, so the first insert from
   `TenantReconciliationService` failed at startup. Changeset `0009` converts the three columns to
@@ -85,7 +117,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Removed
 
 - `auth.enabled` boolean property (superseded by `auth.mode`)
+- `AbstractTemplateLoader.getFileContent`, deprecated in 0.4.1
 - Helm chart templates and related CI workflows
+
+## [0.4.1] - 2026-06-03
+
+### Changed
+
+- `AbstractTemplateLoader` distinguishes required template files (HTML, `_subject.ftl`) from the
+  optional `_plain.ftl`; a missing plain-text variant is no longer logged as an error, and
+  `EmailService` derives the plain text from the HTML (#5)
+- `EmailService.sendMail` logs at INFO on request entry and after the SMTP dispatch (template source
+  and ID, recipient counts, locale — no recipient addresses) (#5)
+
+### Deprecated
+
+- `AbstractTemplateLoader.getFileContent` (`forRemoval = true`); use `getRequiredFileContent` or
+  `getOptionalFileContent` (#5)
 
 ## [0.4.0] - 2026-05-21
 
