@@ -1,6 +1,7 @@
 # Base images are pinned by digest so a build is reproducible and a vulnerable JDK cannot slip in
 # through a stale tag cache. Both digests are Temurin 25.0.5.1+2 (fix for CVE-2026-114938 and the
-# other November 2026 OpenJDK CVEs). Renovate bumps the digest whenever the 25 tags are rebuilt.
+# other November 2026 OpenJDK CVEs). Dependabot (docker ecosystem) bumps the digests whenever the 25
+# tags are rebuilt.
 FROM eclipse-temurin:25-jdk@sha256:ce2ef9d2d67a68de5e196d4de9d743327c44a10b57fe02ec39f572c652cacfd3 AS builder
 WORKDIR /build
 COPY build/libs/straightmail-*.jar application.jar
