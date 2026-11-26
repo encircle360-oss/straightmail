@@ -2,9 +2,9 @@
 
 [![Frontend Build](../../../actions/workflows/frontend.yml/badge.svg)](../../../actions/workflows/frontend.yml)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](../LICENSE)
-[![Angular](https://img.shields.io/badge/Angular-22.1-DD0031?logo=angular&logoColor=white)](https://angular.io/)
+[![Angular](https://img.shields.io/badge/Angular-22.3-DD0031?logo=angular&logoColor=white)](https://angular.io/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-6.0-blue.svg)](https://www.typescriptlang.org/)
-[![npm](https://img.shields.io/badge/npm-11.8.0-brightgreen.svg)](https://www.npmjs.com/)
+[![npm](https://img.shields.io/badge/npm-12.2.3-brightgreen.svg)](https://www.npmjs.com/)
 
 A modern, open-source Angular administration console for managing email templates, rendering, and sending operations with the StraightMail email service.
 
@@ -52,7 +52,8 @@ A modern, open-source Angular administration console for managing email template
 - 📧 **Email Template Management** - Create, edit, and delete email templates with HTML and plain text support, tag filtering, and pagination
 - 🎨 **Template Rendering** - Preview rendered email templates with dynamic FreeMarker variable substitution (HTML + plain text)
 - 📤 **Email Sending** - Send emails by template ID or inline template with dynamic recipients, CC/BCC, locale, and JSON model
-- 🔐 **OIDC Authentication** - Configurable OpenID Connect authentication (e.g. Keycloak) with silent token renewal and Bearer token injection
+- 🔐 **Authentication** - Follows the backend's `AUTH_MODE`: OpenID Connect (e.g. Keycloak) with silent token renewal and Bearer token injection, API key, or none
+- 🏢 **Multi-Tenancy** - Tenant selector, tenant management and template CRUD when the backend runs with the `database` profile
 - 📊 **API Health Dashboard** - Real-time API status monitoring with quick-action shortcuts
 - 🌐 **Internationalization** - Full i18n support for English and German via ngx-translate
 - 💾 **Persistent State** - Form inputs and application state persisted to localStorage via NGXS storage plugin
@@ -63,10 +64,9 @@ A modern, open-source Angular administration console for managing email template
 
 ### Prerequisites
 
-- Node.js (v18 or higher recommended)
-- npm 11.8.0 or higher
-- Angular CLI 21.2 or higher
-- A running [StraightMail](../README.md) backend (default: `http://localhost:50003`)
+- Node.js 22.22+, 24.15+ or 26 (`engines` in `package.json`)
+- npm 12 (`packageManager: npm@12.2.3`)
+- A running [StraightMail](../README.md) backend on `http://localhost:50003`; the dev server proxies `/api` to it
 
 ### Installation
 
@@ -84,7 +84,9 @@ npm start
 
 The application will be available at `http://localhost:4200/`.
 
-By default, authentication is **disabled** in development mode so you can start immediately without configuring an OIDC provider.
+Before bootstrapping, the app reads its runtime configuration (`authMode`, `apiUrl`, `oidcAuthority`) from
+`GET /api/v1/info`, so it uses whatever authentication mode the backend runs with. Start the backend with
+`AUTH_MODE=none` to work without an identity provider.
 
 ## 📦 Available Scripts
 
@@ -99,50 +101,35 @@ By default, authentication is **disabled** in development mode so you can start 
 ## 🏗️ Project Structure
 
 ```
-straightmail-frontend/
+frontend/
 ├── src/
 │   ├── app/
-│   │   ├── core/
-│   │   │   ├── guards/        # Auth route guard
-│   │   │   ├── interceptors/  # Bearer token HTTP interceptor
-│   │   │   └── services/      # Auth service, API service
-│   │   ├── layout/            # Main shell (sidebar + topbar)
-│   │   ├── pages/
-│   │   │   ├── dashboard/     # API health check & quick actions
-│   │   │   ├── send/          # Email sending (by ID or inline)
-│   │   │   ├── render/        # Template rendering preview
-│   │   │   └── templates/     # Template CRUD management
-│   │   ├── shared/            # Toast notification component
-│   │   └── store/
-│   │       ├── auth/          # Auth NGXS state
-│   │       ├── send/          # Send form NGXS state
-│   │       ├── render/        # Render form NGXS state
-│   │       ├── templates/     # Templates NGXS state
-│   │       └── toast/         # Toast NGXS state
-│   ├── environments/
-│   │   ├── environment.ts     # Development configuration
-│   │   └── environment.prod.ts # Production configuration
-│   ├── index.html
-│   ├── main.ts
-│   └── styles.scss
-└── public/
-    ├── assets/i18n/           # Translation files (en.json, de.json)
-    └── logos/                 # Brand assets
+│   │   ├── core/          # Guards, interceptors (bearer token, API key), API and auth services
+│   │   ├── layout/        # Main shell (sidebar, topbar, footer)
+│   │   ├── pages/         # dashboard, send, render, templates, tenants, api-key-login, unauthorized, not-found
+│   │   ├── shared/        # Reusable components
+│   │   └── store/         # Global NGXS states: auth, api-key, tenant, toast, ui
+│   ├── environments/      # environment.ts (dev), environment.prod.ts, environment.e2e.ts
+│   └── main.ts            # Loads /api/v1/info, then bootstraps the app
+├── public/
+│   ├── assets/i18n/       # Translation files (en.json, de.json)
+│   └── logos/             # Brand assets
+└── tests/                 # Playwright E2E tests
 ```
 
 ## 🛠️ Tech Stack
 
 | Category                 | Technology                                         |
 |--------------------------|----------------------------------------------------|
-| **Framework**            | Angular 21.2                                       |
-| **State Management**     | NGXS 21.0 (with devtools, logger, storage plugins) |
-| **UI Library**           | Bootstrap 5.3 with ng-bootstrap                    |
+| **Framework**            | Angular 22.3                                       |
+| **State Management**     | NGXS 22.0 (with devtools, logger, storage plugins) |
+| **UI Library**           | Bootstrap 5.3 with ng-bootstrap 21                 |
 | **Icons**                | Bootstrap Icons 1.13                               |
-| **Internationalization** | ngx-translate 17.0                                 |
-| **Authentication**       | angular-auth-oidc-client 21.0                      |
-| **Language**             | TypeScript 5.9 (strict mode)                       |
+| **Internationalization** | ngx-translate 18.1                                 |
+| **Authentication**       | angular-auth-oidc-client 22.0                      |
+| **Language**             | TypeScript 6.0 (strict mode)                       |
 | **Build Tool**           | Angular CLI with esbuild                           |
-| **Testing**              | Vitest 4.0 with jsdom                              |
+| **Testing**              | Vitest 5.1 with jsdom, Playwright 1.65 for E2E     |
 
 ## 🗄️ State Management
 
@@ -184,79 +171,50 @@ ofActionSuccessful(TemplatesActions.CreateTemplate)
 
 All events are defined alongside their commands in the respective `*.actions.ts` file under `src/app/pages/*/store/`.
 
-## 🔐 Authentication (OIDC)
+## 🔐 Authentication
 
-The admin console supports OpenID Connect (OIDC) authentication, tested with **Keycloak**. Authentication is **optional** and can be toggled per environment.
+The admin console uses the authentication mode the backend reports in `GET /api/v1/info`
+(`AUTH_MODE` on the backend):
 
-### How it works
+- **`oidc`** — `angular-auth-oidc-client` against the `oidcAuthority` from `/api/v1/info`, client ID
+  `straightmail`, authorization code flow with silent renewal via refresh tokens. A guard redirects
+  unauthenticated users to the provider, an interceptor attaches `Authorization: Bearer <token>`.
+  Tested with **Keycloak**.
+- **`api-key`** — the `/api-key-login` page asks for the key, an interceptor sends it as `X-API-KEY`.
+- **`none`** — no login.
 
-- On startup, `checkAuth()` is called via `APP_INITIALIZER` to restore an existing session
-- An **auth guard** protects all routes and redirects unauthenticated users to the OIDC provider
-- An **HTTP interceptor** automatically attaches `Authorization: Bearer <token>` to all API requests
-- **Silent token renewal** is enabled using refresh tokens
-- Auth state (user info, token) is persisted to `localStorage` via the NGXS storage plugin
-
-### Configuration
-
-Authentication is configured in the environment files:
-
-**`src/environments/environment.ts`** (development — auth disabled by default):
-
-```typescript
-export const environment = {
-  production: false,
-  authEnabled: false,          // Set to true to enable OIDC in dev
-  API: 'http://localhost:50003',
-  oidc: {
-    authority: 'https://your-keycloak-host/realms/your-realm',
-    clientId: 'straightmail',
-    scope: 'openid profile email',
-    responseType: 'code',
-    silentRenew: true,
-    useRefreshToken: true,
-    renewTimeBeforeTokenExpiresInSeconds: 30,
-  }
-};
-```
-
-**`src/environments/environment.prod.ts`** (production — auth enabled):
-
-```typescript
-export const environment = {
-  production: true,
-  authEnabled: true,           // Auth enforced in production
-  API: 'http://localhost:50003',
-  oidc: { /* same as above */}
-};
-```
+Bearer token and API key are only attached to requests for the API base on the console's own origin.
+When `/api/v1/info` cannot be read, the defaults in `src/environments/` apply (`authMode: 'oidc'`,
+`apiUrl: '/api'`).
 
 ### Keycloak Setup
 
 1. Create a realm and a client with ID `straightmail`
-2. Set **Valid redirect URIs** to your app's origin (e.g. `http://localhost:4200/*`)
+2. Set **Valid redirect URIs** to your app's origin (e.g. `http://localhost:50003/*`, or `http://localhost:4200/*` for the dev server)
 3. Enable **Standard flow** and **Refresh token** support
-4. Set `authority` in `environment.ts` to your realm URL
+4. Set `OIDC_ISSUER_URI` on the backend to your realm URL; the console takes the authority from there
 
-When `authEnabled: false`, no OIDC providers or interceptors are registered, allowing the app to run without any authentication backend.
+[`docker/keycloak/realm-export.json`](../docker/keycloak/realm-export.json) is a working example.
 
 ## 🔌 API Integration
 
-The admin console integrates with the StraightMail backend API.
+The admin console calls the backend under `/api` (`apiUrl` from `/api/v1/info`):
 
-**Default base URL**: `http://localhost:50003`
-
-| Method   | Endpoint          | Description                                     |
-|----------|-------------------|-------------------------------------------------|
-| `GET`    | `/info`           | API health check                                |
-| `GET`    | `/templates`      | List templates (paginated, optional tag filter) |
-| `POST`   | `/templates`      | Create a new template                           |
-| `PUT`    | `/templates/{id}` | Update an existing template                     |
-| `DELETE` | `/templates/{id}` | Delete a template                               |
-| `POST`   | `/email`          | Send email by template ID                       |
-| `POST`   | `/email/inline`   | Send email with inline template                 |
-| `POST`   | `/render`         | Render a template and return HTML/plain text    |
-
-Configure the API base URL in `src/environments/environment.ts`.
+| Method   | Endpoint                     | Description                                     |
+|----------|------------------------------|-------------------------------------------------|
+| `GET`    | `/v1/info`                   | Runtime configuration, API health check         |
+| `GET`    | `/v1/status`                 | Template source and Git sync status             |
+| `POST`   | `/v1/sync/git/{tenantSlug}`  | Trigger a Git sync for a tenant                 |
+| `GET`    | `/v1/templates`              | List templates (paginated, optional tag filter) |
+| `GET`    | `/v1/templates/{id}`         | Get a template                                  |
+| `POST`   | `/v1/templates`              | Create a new template (`database` profile)      |
+| `PUT`    | `/v1/templates/{id}`         | Update an existing template (`database` profile)|
+| `DELETE` | `/v1/templates/{id}`         | Delete a template (`database` profile)          |
+| `GET`    | `/v1/tenants/me`             | The caller's tenants                            |
+| various  | `/v1/tenants[/{slug}]`       | Tenant management (admin, `database` profile for writes) |
+| `POST`   | `/v1/email`                  | Send email by template ID                       |
+| `POST`   | `/v1/email/inline`           | Send email with inline template                 |
+| `POST`   | `/v1/render`                 | Render a template and return HTML/plain text    |
 
 ## 📄 Pages
 
@@ -279,7 +237,8 @@ Render a template by ID with a JSON model and preview the output in a modal with
 
 ### Template Management (`/templates`)
 
-Full CRUD interface for email templates with:
+Lists the templates of all sources; templates from the database (`database` profile) can be created,
+edited and deleted, file and Git templates are read-only. Features:
 
 - Paginated list (20 per page)
 - Filter by tag
@@ -306,7 +265,6 @@ The production build will be output to the `dist/` directory with:
 - Output hashing for cache busting
 - Bundle size budgets (max 1MB initial, 8kB component styles)
 - License extraction
-- OIDC authentication enabled
 
 ## 🤝 Contributing
 
@@ -320,7 +278,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the Apache License 2.0 - see the [LICENSE](../LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 

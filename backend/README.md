@@ -4,62 +4,69 @@
 
 ### Getting started
 
-To run an instance with default templates and language just run:
+To run an instance with the built-in default template and messages, without authentication and
+without a database:
 
 ```
 docker run -p 50003:50003 -p 50004:50004 \
-    --env SMTP_PASSWORD=bar \
+    --env AUTH_MODE=none \
+    --env ENCRYPTION_KEY="$(openssl rand -base64 32)" \
     --env SMTP_HOST=host.docker.internal \
-    --env SMTP_USER=foo \
     --env SMTP_PORT=1025 \
+    --env SMTP_USER=foo \
+    --env SMTP_PASSWORD=bar \
     --env DEFAULT_SENDER=test@encircle360.com \
     --env SMTP_ENABLE_TLS=true \
     --env SMTP_ENABLE_SSL=false \
-    --env SPRING_PROFILES_ACTIVE=development \
-    ghcr.io/encircle360-oss/straightmail:latest
+    ghcr.io/encircle360-oss/straightmail:0.5.0
 ```
 
-Variables should be set to your correct SMTP credentals and host. `DEFAULT_SENDER` should be set to your default email
-address, if no email is set in payload this one will be used.
+Variables should be set to your correct SMTP credentials and host. `DEFAULT_SENDER` is used when a
+request carries no `sender`. `SMTP_PORT` defaults to `587`.
 
-If you want to use SSL set `SMTP_ENABLE_SSL` to `true` an `SMTP_ENABLE_TLS` to `false`. Same for TLS but in other
-direction
+If you want to use SSL set `SMTP_ENABLE_SSL` to `true` and `SMTP_ENABLE_TLS` to `false`. Same for TLS
+but in the other direction.
 
-Now you can start using straightmail for sending your email via simple rest calls.
+`AUTH_MODE` defaults to `oidc`, which needs a reachable OIDC issuer at startup; `ENCRYPTION_KEY` must
+be the Base64 encoding of exactly 32 bytes, otherwise the application does not start. See the
+[root README](../README.md#authentication) for the authentication modes.
 
-Open `http://localhost:50003/swagger-ui/index.html?url=/v3/api-docs#/` in your browser to visit the swagger and openAPI
-documentation which shows the available REST endpoints you can use to send emails.
+All REST endpoints live under `API_PREFIX` (default `/api`). The Swagger UI is served at
+`http://localhost:50003/swagger-ui/index.html`, the OpenAPI document at
+`http://localhost:50003/api/v3/api-docs`.
 
-Note that you should start straightmail in `production` profile if you're in a production environment otherwise the
-swagger-ui will be be available and open to the world.
-To do this just switch the docker env variable to `--env SPRING_PROFILES_ACTIVE=production`.
-
-You should also note that this service is ment to be an internal service and shouldn't be exposed to the outside world
-since it has no security in it's APIs.
+Start straightmail with the `production` profile in a production environment
+(`--env SPRING_PROFILES_ACTIVE=production`); it disables Swagger UI and the API docs. With
+`AUTH_MODE=none` the API has no protection of its own, so keep such an instance on an internal
+network.
 
 ### Example REST call to send an email
 
-Let's send an email using our straightmail instance with template as files in our templates file directory.
-Your template should be saved in two files, one for the subject and one for
-the body of an email. Template id is the name of the template file without ending, the subject template always
-called templateId_subject.ftl (**important:** all HTML tags will be removed from subject while parsing).
-
-You can also add templateId_plain.ftl for plaintext usage of the template, please avoid to use HTML in this template.
+Let's send an email using a template from the templates directory. A template consists of the body
+`<templateId>.ftl` and the subject `<templateId>_subject.ftl` (**important:** all HTML tags are
+removed from the subject). `<templateId>_plain.ftl` is optional and holds a plain-text body; without
+it the plain text is derived from the HTML body. The template ID is the file name without ending.
 
 ```
-curl -d '{   "recipients": ["test@encircle360.com"],   "cc": null,   "bcc": null,   "attachments": null,   "sender": "test@encircle360.com",   "model": {     "test": 200.8,     "text": "test text"   },   "locale": "de",   "subject": "test mail: ${text}",   "emailTemplateId": "default" }'  -H "Content-Type: application/json" -X POST http://localhost:50003/
+curl -d '{ "recipients": ["test@encircle360.com"], "sender": "test@encircle360.com", "senderName": "straightmail", "model": { "test": 200.8, "text": "test text" }, "locale": "de", "emailTemplateId": "default" }' \
+    -H "Content-Type: application/json" -X POST http://localhost:50003/api/v1/email
 ```
 
-Let's send an email using our straightmail instance with a template submitted inline.
+The optional `senderName` renders the `From` header as `Display Name <address>`.
+
+Let's send an email with a template submitted inline.
 
 ```
-curl -d '{   "recipients": ["test@localhost"],   "cc": null,   "bcc": null,   "attachments": null,   "sender": "test@localhost",   "model": {     "test": 200.8,     "text": "test text"   },   "locale": "de",   "subject": "test mail: ${text}",   "emailTemplate": "${test!\"\"}" }' -H "Content-Type: application/json" -X POST http://localhost:50003/inline
+curl -d '{ "recipients": ["test@localhost"], "sender": "test@localhost", "model": { "test": 200.8, "text": "test text" }, "locale": "de", "subject": "test mail: ${text}", "emailTemplate": "${test!\"\"}" }' \
+    -H "Content-Type: application/json" -X POST http://localhost:50003/api/v1/email/inline
 ```
+
+`POST /api/v1/render` renders a template without sending it.
 
 ### Attachments
 
-Attachments can be provided as array of attachment objects. The content of the files should be a base64 encoded utf 8
-string. for example:
+Attachments can be provided as an array of attachment objects. The content of the files should be a
+base64 encoded string. For example:
 
 ```
 {..., "attachments": [{"filename":"picture.jpg", "mimeType": "image/jpg", "content":"IG51bGw="}]}
@@ -67,88 +74,76 @@ string. for example:
 
 ### Customization
 
-If you want to bring your own templates and language files just use the straightmail base image and create your own
-straightmail image on top of that.
-We suggest to use your own Dockerfile for that. You could for example put this one with your templates and language
-files into a git repository to have everything versioned.
+Bring your own templates and message bundles by mounting them into the container or by building
+your own image on top of the straightmail image:
+
+```
+FROM ghcr.io/encircle360-oss/straightmail:0.5.0
+ADD templates /resources/templates
+ADD i18n /resources/i18n
+```
+
+Templates under `/resources/templates/<templateId>.ftl` are found by `POST /api/v1/email`. Render and
+template listing read the per-tenant layout `TEMPLATE_FILE_PATH/<tenant>/<templateId>.ftl` instead —
+the [root README](../README.md#templates-and-translations) describes both layouts. You can find
+examples how [templates](src/main/resources/templates) and [i18n files](src/main/resources/i18n) look
+like in [src/main/resources](src/main/resources).
 
 #### Models in your template
 
-You can use objects, lists and primitive types in your template (provided in model field). Numbers (doubles, integers
-and co.) will be mapped correctly into the template.
+You can use objects, lists and primitive types in your template (provided in the `model` field).
+Numbers (doubles, integers and co.) will be mapped correctly into the template.
+
+FreeMarker runs sandboxed: `?new` and `?api` are rejected, and the Spring form-binding macros are not
+available.
 
 ### i18n
 
-As you can see in Dockerfile we provide i18n functionality. You can also provide customized subject, just use freemarker
-template language in template_subject.ftl files
-
-In template files you can use:
-```<@spring.message "message.key"/>``` to load messages from properties files. In the next section example Dockerfile,
-more information about templates and messages will be provided.
+In template files you can use `<@spring.message "message.key"/>` to load messages from
+`messages*.properties` bundles; the `locale` of the request selects the bundle. Bundles in
+`I18N_PATH` (default `/resources/i18n`) are read first, the built-in bundles answer every other key.
+Subjects are templates too, so you can use messages there as well.
 
 ### Database Support (optional)
 
-PostgreSQL support can be enabled by spring profile and gives the ability to save templates to database with a simple
-RESTful controller. If you want to enable database support use the `database` profile. Requires PostgreSQL 13+.
+The `database` profile stores templates and tenants in a database and enables template CRUD and
+tenant management. SQLite is the default; the schema is managed by Liquibase on startup.
 
 Example docker run command:
 
 ```
 docker run -p 50003:50003 -p 50004:50004 \
-    --env SMTP_PASSWORD=bar \
+    --env SPRING_PROFILES_ACTIVE=database \
+    --env AUTH_MODE=none \
+    --env ENCRYPTION_KEY="<openssl rand -base64 32>" \
+    --env DB_URL="jdbc:sqlite:/data/straightmail.db?journal_mode=WAL" \
     --env SMTP_HOST=host.docker.internal \
-    --env SMTP_USER=foo \
     --env SMTP_PORT=1025 \
     --env DEFAULT_SENDER=test@encircle360.com \
-    --env SMTP_ENABLE_TLS=true \
-    --env SMTP_ENABLE_SSL=false \
-    --env SPRING_PROFILES_ACTIVE=database \
-    --env DB_URL=jdbc:postgresql://your-postgres-host:5432/straightmail \
-    --env DB_USERNAME=straightmail \
-    --env DB_PASSWORD=yourpassword \
-    ghcr.io/encircle360-oss/straightmail:latest
+    --volume straightmail-data:/data \
+    ghcr.io/encircle360-oss/straightmail:0.5.0
 ```
 
 Environment variables for database configuration:
 
-| Variable      | Description                          | Default                                         |
-|---------------|--------------------------------------|-------------------------------------------------|
-| `DB_URL`      | JDBC URL of your PostgreSQL instance | `jdbc:postgresql://localhost:5432/straightmail` |
-| `DB_USERNAME` | Database username                    | `straightmail`                                  |
-| `DB_PASSWORD` | Database password                    | `straightmail`                                  |
+| Variable       | Description              | Default                                                    |
+|----------------|--------------------------|------------------------------------------------------------|
+| `DB_URL`       | JDBC URL                 | `jdbc:sqlite:docker/data/sqlite/straightmail.db?journal_mode=WAL` |
+| `DB_DRIVER`    | JDBC driver class        | `org.sqlite.JDBC`                                          |
+| `DB_DIALECT`   | Hibernate dialect        | `org.hibernate.community.dialect.SQLiteDialect`            |
+| `DB_USERNAME`  | Database username        | —                                                          |
+| `DB_PASSWORD`  | Database password        | —                                                          |
+| `DB_POOL_SIZE` | Maximum connection pool  | `1`                                                        |
 
-The database schema is managed automatically by Liquibase on startup.
-
-You will see all template operations in swagger ui:
-`http://localhost:50003/swagger-ui/index.html?url=/v3/api-docs#/`
-
-### Example Dockerfile
-
-Since straightmail will lookup for templates in `/resources/templates/` and i18n files in `/resources/i18n/` you can use
-the following Dockerfile as example to create your own docker image with your own templates and i18n.
-You can find examples how [templates](src/main/resources/templates) or [i18n files](src/main/resources/i18n) look
-like [here](src/main/resources).
-
-```
-FROM ghcr.io/encircle360-oss/straightmail:latest
-ADD templates /resources/templates # add your template directory containing *.ftl templates here
-ADD i18n /resources/i18n # add your i18n directory containing messages.properties files here
-```
-
-If you're done with this you can build your own image using docker-cli `docker build .` or let your build pipeline do
-that.
-E.g. we suggest to use GitHub Actions to always have your own customized straightmail docker image.
-
-After you've build your own docker image with your own templates you can use the REST api to send emails.
-The `emailTemplateId` field corresponds to the template filename. If you've added a template called
-`emailConfirmation.ftl` you have to use
-`"emailConfirmation"`
-within your API request payload.
+The default `DB_URL` is relative to the working directory, which in the image is `/app`; set it to a
+path on a volume such as `/data`. For PostgreSQL set `DB_URL=jdbc:postgresql://<host>:5432/<db>`,
+`DB_DRIVER=org.postgresql.Driver` and `DB_DIALECT=org.hibernate.dialect.PostgreSQLDialect` — see
+[`docker/oidc-postgres.yml`](../docker/oidc-postgres.yml).
 
 ### Service Health
 
-If you started with port exposing to localhost you can fetch `http://localhost:50004/actuator/health` to get health
-status of the service itself
+If the management port is mapped, `http://localhost:50004/actuator/health` returns the health status
+of the service, `/actuator/health/liveness` and `/actuator/health/readiness` the probe groups.
 
 ### Good to know
 
@@ -157,12 +152,6 @@ that it's easy to copy and paste email html templates.
 This is really useful if you for example use email templates bought on themeforest. Since these templates can get
 updates you don't have to check each html dom element while importing a template update.
 Mostly you only have to focus on your content model variables and you're able to just copy the html from the update.
-
-Templates will be used for body and subject, too. So you can use i18n features also in your subject.
-
-So you have the [full feature support](https://freemarker.apache.org/docs/ref.html) of freemarker in your templates and
-also activated i18n support so that you can also put your resource bundles with messages.properties into your image and
-switch the locale for each email you're sending.
 
 This is open source software by [encircle360](https://encircle360.com).
 Use on your own risk and for personal use. If you need support or consultancy just contact us.

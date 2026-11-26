@@ -1,7 +1,11 @@
 # HTTP Requests for straightmail API
 
-These files contain HTTP requests for all API endpoints of the straightmail application. They can be used directly in
+These files contain example HTTP requests for the straightmail API. They can be used directly in
 IntelliJ IDEA.
+
+> **Note:** the request files still address the 0.4.x paths (`/email`, `/render`, `/templates`).
+> Since 0.5.0 every endpoint lives under `/api/v1` — e.g. `http://localhost:50003/api/v1/email` —
+> and the old paths answer `403`. Adjust the URLs before running a request.
 
 ## Usage in IntelliJ IDEA
 
@@ -15,8 +19,8 @@ IntelliJ IDEA.
 
 **Email Sending Endpoints**
 
-- `POST /email` - Send email with template ID (template from filesystem or MongoDB)
-- `POST /email/inline` - Send email with inline template
+- `POST /api/v1/email` - Send email with template ID
+- `POST /api/v1/email/inline` - Send email with inline template
 
 **Examples:**
 
@@ -29,7 +33,7 @@ IntelliJ IDEA.
 
 **Template Rendering Endpoints**
 
-- `POST /render` - Render template to HTML and plain text (without sending email)
+- `POST /api/v1/render` - Render template to HTML and plain text (without sending email)
 
 **Examples:**
 
@@ -39,13 +43,13 @@ IntelliJ IDEA.
 
 ### 3. templates-controller.http
 
-**Template Management Endpoints** (only active with MongoDB profile)
+**Template Endpoints**
 
-- `GET /templates` - List all templates (paginated)
-- `GET /templates/{id}` - Get template by ID
-- `POST /templates` - Create new template
-- `PUT /templates/{id}` - Update existing template
-- `DELETE /templates/{id}` - Delete template
+- `GET /api/v1/templates` - List templates of all sources (paginated)
+- `GET /api/v1/templates/{id}` - Get template by ID
+- `POST /api/v1/templates` - Create new template (`database` profile)
+- `PUT /api/v1/templates/{id}` - Update existing template (`database` profile)
+- `DELETE /api/v1/templates/{id}` - Delete template (`database` profile)
 
 **Examples:**
 
@@ -62,7 +66,9 @@ The requests use the following defaults:
 - **Base URL:** `http://localhost:50003`
 - **Content-Type:** `application/json`
 
-If your application runs on a different port, adjust the URLs accordingly.
+If your application runs on a different port, adjust the URLs accordingly. Unless the backend runs
+with `AUTH_MODE=none`, add the credentials of your auth mode (`Authorization: Bearer …` or
+`X-API-KEY`, plus `X-Tenant-ID` where needed).
 
 ## Template Variables
 
@@ -72,41 +78,35 @@ The requests use Freemarker template syntax:
 - `${object.property}` - Nested properties
 - Complex objects and arrays are supported
 
-## MongoDB Profile
+## Database Profile
 
-**Important:** The `TemplatesController` is only available when the MongoDB profile is active:
-
-```yaml
-spring:
-  profiles:
-    active: mongodb
-```
-
-Without the MongoDB profile, templates are only loaded from the filesystem (`resources/templates`).
+Creating, updating and deleting templates is only available when the `database` profile is active
+(`SPRING_PROFILES_ACTIVE=database`). Without it, templates are read from files — see
+[Templates and translations](../../README.md#templates-and-translations).
 
 ## Example Workflow
 
-1. **Create template** (with MongoDB):
+1. **Create template** (with the `database` profile):
    ```
-   POST /templates (from templates-controller.http)
+   POST /api/v1/templates (from templates-controller.http)
    ```
 
 2. **Render template** (preview):
    ```
-   POST /render (from render-controller.http)
+   POST /api/v1/render (from render-controller.http)
    ```
 
 3. **Send email**:
    ```
-   POST /email (from mail-controller.http)
+   POST /api/v1/email (from mail-controller.http)
    ```
 
 4. **Update template**:
    ```
-   PUT /templates/{id} (from templates-controller.http)
+   PUT /api/v1/templates/{id} (from templates-controller.http)
    ```
 
 ## Test Environment
 
-In the test environment, a MailHog container runs automatically on dynamic ports.
-Emails can be viewed through the MailHog Web UI (typically on port 8025).
+The backend tests start a Mailpit container through Testcontainers on dynamic ports. The Docker
+Compose stacks run Mailpit with its web UI on `http://localhost:8025`.
