@@ -128,8 +128,10 @@ has to be declared in this mode — see [Tenants and SMTP](#tenants-and-smtp).
 
 ### With Admin UI
 
-The Admin UI is only contained in `ghcr.io/encircle360-oss/straightmail/monorepo`, which is
-published as `latest` and by commit SHA, not by version. It is served at `http://localhost:50003`.
+The Admin UI is only contained in `ghcr.io/encircle360-oss/straightmail/monorepo`. That image
+carries version tags from the release after 0.5.0 on; 0.5.0 is published there only as the commit
+tag `0397766` and, until the next release, as `latest` — see [Images](#images). It is served at
+`http://localhost:50003`.
 Activate the `database` Spring profile to enable template CRUD and tenant management. The SQLite
 file lives on a named volume so the non-root process can write to it.
 
@@ -505,19 +507,30 @@ SKIP_FRONTEND_BUILD=true ./gradlew build
 
 ### Images
 
-| Image                                           | Contents                    | Tags                                                                    |
-|-------------------------------------------------|-----------------------------|-------------------------------------------------------------------------|
-| `ghcr.io/encircle360-oss/straightmail`          | backend only, no Admin UI   | `0.5.0`, `0.5`, `0` from the tag `v0.5.0`; `latest` from the default branch |
-| `ghcr.io/encircle360-oss/straightmail/monorepo` | backend with the Admin UI   | `latest` and the 7-character commit SHA — no version tags               |
+| Image                                           | Contents                    | Commit tag from the default branch |
+|-------------------------------------------------|-----------------------------|------------------------------------|
+| `ghcr.io/encircle360-oss/straightmail`          | backend only, no Admin UI   | `master-<sha>`                     |
+| `ghcr.io/encircle360-oss/straightmail/monorepo` | backend with the Admin UI   | `<sha>` (7 characters)             |
+
+Both images are tagged by the same rules:
+
+- A release tag `vX.Y.Z` publishes `X.Y.Z`, `X.Y`, `X` and `latest`, so `latest` is the most
+  recently tagged release.
+- A pre-release tag such as `v1.0.0-rc.1` publishes only `1.0.0-rc.1`.
+- Every push to the default branch publishes `edge` and the commit tag above; these builds are
+  unreleased and never become `latest`.
+
+The Admin UI image gets version tags starting with the release after 0.5.0. 0.5.0 is published
+there only as the commit tag `0397766` and, until the next release, as `latest`.
 
 Both are multi-arch (`linux/amd64`, `linux/arm64`) and carry an SBOM and build provenance.
 
 ## CI / CD
 
-GitHub Actions build and test every pull request, publish the monorepo image on every push to
-`master` / `main`, and publish the release image on every `v*.*.*` tag. Dependency updates come from
-Dependabot. See [`.github/workflows/README.md`](.github/workflows/README.md) for each workflow, its
-triggers and its required permissions.
+GitHub Actions build and test every pull request, publish both images as `edge` on every push to
+the default branch, and publish both under their version and `latest` on every `v*.*.*` tag.
+Dependency updates come from Dependabot. See [`.github/workflows/README.md`](.github/workflows/README.md)
+for each workflow, its triggers and its required permissions.
 
 ## Template Sources
 

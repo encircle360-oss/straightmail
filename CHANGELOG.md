@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- Image tags: a release tag `vX.Y.Z` publishes `X.Y.Z`, `X.Y`, `X` and `latest` for both images; a
+  pre-release such as `v1.0.0-rc.1` publishes only its own version. Pushes to the default branch
+  publish `edge` and the commit tag (`master-<sha>`, or the 7-character SHA for the monorepo image)
+  and no longer move `latest`, so `latest` is always the most recently tagged release. The GHCR
+  cleanup never deletes `edge`
+- `ghcr.io/encircle360-oss/straightmail/monorepo`, the image with the Admin UI, is also built for
+  release tags and gets version tags starting with the next release. 0.5.0 exists there only as the
+  commit tag `0397766` and, until the next release, as `latest`
+
 ### Fixed
 
 - Build provenance attestations of both images also create the artifact storage record, which lists

@@ -42,9 +42,9 @@ env:
   # Number of newest tagged images to keep. Never set this to 0 — the action reads 0 as
   # "delete every tagged image", which would empty the package.
   KEEP_TAGGED: '15'
-  # Release tags, which retention never deletes. `latest` and `buildcache` are protected
-  # unconditionally below. This is a regular expression (the action runs with use-regex):
-  # the wildcard syntax has no character classes, so `[0-9]` would only match itself.
+  # Release tags, which retention never deletes. `latest`, `edge` and `buildcache` are
+  # protected unconditionally below. This is a regular expression (the action runs with
+  # use-regex): the wildcard syntax has no character classes, so `[0-9]` would only match itself.
   # Alternatives: the released tags by name, then any x, x.y and x.y.z (optionally with a
   # `v` prefix). A bare major is limited to three digits so that a 7-character commit SHA
   # tag made of digits only stays under retention.
@@ -69,12 +69,13 @@ jobs:
           if [ "$KEEP" -lt 1 ]; then KEEP=1; fi
           echo "keep=$KEEP" >> "$GITHUB_OUTPUT"
 
-          # Invariant 2 — latest and buildcache are always protected.
-          # latest: what a deployment resolves to a digest.
+          # Invariant 2 — latest, edge and buildcache are always protected.
+          # latest: the newest release, what a deployment resolves to a digest.
+          # edge: the newest default-branch build.
           # buildcache: the registry cache that monorepo.yml writes to.
           # The action matches a regular expression anywhere in a tag or digest, so the
           # alternatives are anchored to the whole tag.
-          EXCLUDE="latest|buildcache"
+          EXCLUDE="latest|edge|buildcache"
           if [ -n "${IN_RELEASE_TAGS}" ]; then
             EXCLUDE="${EXCLUDE}|${IN_RELEASE_TAGS}"
           fi

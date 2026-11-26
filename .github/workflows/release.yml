@@ -79,12 +79,13 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            # `latest` on the default branch only
-            type=raw,value=latest,enable={{is_default_branch}}
-            # Semantic-version tags `v1.2.3` produce: 1.2.3, 1.2, 1
+            # Release tags `v1.2.3` produce 1.2.3, 1.2, 1 and, through the default flavor
+            # latest=auto, `latest`. A pre-release such as `v1.0.0-rc.1` produces only 1.0.0-rc.1.
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
+            # The default branch publishes `edge`, never `latest`
+            type=edge
             # Branch builds get `master-<sha>` for traceability
             type=sha,prefix={{branch}}-,enable=${{ github.ref_type == 'branch' }}
 

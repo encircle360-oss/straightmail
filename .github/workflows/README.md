@@ -16,7 +16,7 @@ and `main`, so a rename does not silently disable CI.
 | Backend CI | [`backend.yml`](backend.yml) | push / PR to `master` or `main` (`backend/**`), called by `ci.yml` | Build + test the backend | — |
 | Frontend CI | [`frontend.yml`](frontend.yml) | push / PR to `master` or `main` (`frontend/**`), called by `ci.yml` | Unit tests + Playwright E2E | — |
 | Feature Branch CI | [`feature.yml`](feature.yml) | push to `feature/**`, `fix/**`, `chore/**` | Validate before a PR is opened | — |
-| Monorepo Full Build | [`monorepo.yml`](monorepo.yml) | push to `master` or `main` (not docs-only) | Full build + combined image | `ghcr.io/encircle360-oss/straightmail/monorepo` |
+| Monorepo Full Build | [`monorepo.yml`](monorepo.yml) | push to `master` / `main` (not docs-only), tag `v*.*.*` | Full build + combined image | `ghcr.io/encircle360-oss/straightmail/monorepo` |
 | Release | [`release.yml`](release.yml) | push to `master` / `main` (not docs-only), tag `v*.*.*` | Backend image with SBOM & provenance | `ghcr.io/encircle360-oss/straightmail` |
 | CodeQL | [`codeql.yml`](codeql.yml) | push / PR to `master` or `main`, weekly cron | Static analysis (Java + TypeScript) | — |
 | Dependency submission | [`dependency-submission.yml`](dependency-submission.yml) | push to `master`, `workflow_dispatch` | Gradle dependency graph for Dependabot alerts | — |
@@ -79,15 +79,18 @@ echo …`), so a missing lint script never fails the branch.
 ### `monorepo.yml` — Monorepo Full Build
 
 Runs on every push to `master` or `main`, except pushes that only change Markdown, `docs/**`,
-`LICENSE` or issue templates. Builds the full monorepo — Angular console embedded into the Spring
-Boot JAR via `./gradlew build` — runs backend and frontend unit tests, then publishes the combined
-image. Only one publish runs per ref at a time, so a fast follow-up push cannot leave an older
-image behind `latest`.
+`LICENSE` or issue templates, and on semantic version tags (`v*.*.*`); GitHub does not evaluate
+path filters for tag pushes, so every version tag publishes. Builds the full monorepo — Angular
+console embedded into the Spring Boot JAR via `./gradlew build` — runs backend and frontend unit
+tests, then publishes the combined image. Only one publish runs per ref at a time, so a fast
+follow-up push cannot leave an older image behind `edge`. A tag is a ref of its own, so its build
+runs alongside the branch build of the same commit instead of waiting for it.
 
 **Jobs:** `backend` (full build + tests, `combined-jar` artifact, 7 days) · `frontend` (Vitest) ·
 `docker-combined` (`needs: [backend, frontend]`)  
 **Image:** `ghcr.io/encircle360-oss/straightmail/monorepo` — `linux/amd64`, `linux/arm64`  
-**Tags:** `latest` · short commit SHA (7 hex)  
+**Tags:** from a `v*.*.*` tag `{{version}}` · `{{major}}.{{minor}}` · `{{major}}` · `latest`; from
+the default branch `edge` · short commit SHA (7 hex) — see [Image tags](#image-tags)  
 **Build cache:** registry cache at `…/straightmail/monorepo:buildcache`  
 **Security:** SBOM + provenance in the build, Trivy scan of the pushed digest (CRITICAL/HIGH,
 `ignore-unfixed`) uploaded as SARIF to code scanning (category `container-image-monorepo`),
@@ -105,8 +108,8 @@ release flow runs per ref at a time, and a tagged release is never cancelled mid
 
 **Job:** `build-and-push`  
 **Image:** `ghcr.io/encircle360-oss/straightmail` — `linux/amd64`, `linux/arm64`  
-**Tags:** `latest` (default branch only) · `{{version}}` · `{{major}}.{{minor}}` · `{{major}}` from a
-`v*.*.*` tag · `<branch>-<sha>` for branch builds — e.g. tag `v0.5.0` yields `0.5.0`, `0.5`, `0`  
+**Tags:** from a `v*.*.*` tag `{{version}}` · `{{major}}.{{minor}}` · `{{major}}` · `latest`; from
+the default branch `edge` · `<branch>-<sha>` — see [Image tags](#image-tags)  
 **Build cache:** GitHub Actions cache (`type=gha`)  
 **Security:** SBOM + provenance in the build, Trivy scan of the pushed digest → SARIF (category
 `container-image-straightmail`), `actions/attest-build-provenance` pushed to the registry with an
@@ -146,7 +149,7 @@ OCI index plus untagged child manifests, and deleting all untagged versions woul
 on a tag that still resolves.
 
 A shell guard step composes the action inputs and enforces two invariants: `keep-n-tagged` is never
-`0` or non-numeric (the action reads `0` as "delete every tagged image"), and `latest` plus
+`0` or non-numeric (the action reads `0` as "delete every tagged image"), and `latest`, `edge` and
 `buildcache` are always excluded — `buildcache` is the registry cache `monorepo.yml` writes to, so
 dropping it turns every subsequent build cold.
 
@@ -157,7 +160,7 @@ wildcard syntax knows only `?`, `*` and `**` and has no character classes, so a 
 **Job:** `images`  
 **Packages:** `straightmail`, `straightmail/monorepo`  
 **Keeps:** 15 newest tagged images per package  
-**Never deletes:** `latest`, `buildcache`, the released tags `0.4.0`, `0.4.1`, `0.4`, `0`, and any
+**Never deletes:** `latest`, `edge`, `buildcache`, the released tags `0.4.0`, `0.4.1`, `0.4`, `0`, and any
 `x`, `x.y`, `x.y.z` tag (optionally `v`-prefixed; a bare major has at most three digits, so a
 digits-only 7-character commit SHA tag is not exempt)  
 **Deletes:** untagged, ghost, partial and orphaned images (orphaned covers the `sha256-<digest>`
@@ -168,6 +171,22 @@ attestation referrer tags once their parent is gone)
 > `inputs.dry-run || false` — only after a manual dry-run has been reviewed for this repository.
 
 ---
+
+## Image tags
+
+`release.yml` and `monorepo.yml` tag their images by the same rules (`docker/metadata-action`):
+
+| Event | `ghcr.io/encircle360-oss/straightmail` | `ghcr.io/encircle360-oss/straightmail/monorepo` |
+|---|---|---|
+| push to `master` | `edge`, `master-<sha>` | `edge`, `<sha>` (7 hex) |
+| tag `v0.6.0` | `0.6.0`, `0.6`, `0`, `latest` | `0.6.0`, `0.6`, `0`, `latest` |
+| tag `v1.0.0-rc.1` | `1.0.0-rc.1` | `1.0.0-rc.1` |
+
+`latest` therefore always points at the most recently tagged release and never at an unreleased
+build; `edge` follows the default branch. A pre-release publishes only its own version: the action reduces the
+`{{major}}.{{minor}}` and `{{major}}` patterns of a pre-release to `{{version}}`, and its default
+flavor `latest=auto` adds `latest` only for a release. A push to `main` while `master` is the
+default branch publishes `main-<sha>` or `<sha>` only.
 
 ## Required Permissions & Secrets
 
@@ -197,9 +216,9 @@ For `cleanup.yml`, each package must also grant this repository the **Admin** ro
 - **Local Compose stacks do not pull these images.** The four stacks under `docker/` build from
   `../backend` with `build.context`, so a published image is never required for local development.
 - **Image repositories differ by content.** `release.yml` publishes the backend-only image to
-  `ghcr.io/encircle360-oss/straightmail` (version tags on release); `monorepo.yml` publishes the
-  image with the embedded admin console to `ghcr.io/encircle360-oss/straightmail/monorepo`
-  (7-hex commit tags). Nothing publishes `…/straightmail/backend`.
+  `ghcr.io/encircle360-oss/straightmail`; `monorepo.yml` publishes the image with the embedded
+  admin console to `ghcr.io/encircle360-oss/straightmail/monorepo`. Both carry the version tags of a
+  release and `edge` for the default branch. Nothing publishes `…/straightmail/backend`.
 - **Each image has its own code scanning category** (`container-image-straightmail`,
   `container-image-monorepo`). Code scanning replaces earlier results of the same tool and category
   for a commit, so a shared category would keep only the image whose scan uploads last.

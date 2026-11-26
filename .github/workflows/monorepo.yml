@@ -3,15 +3,18 @@ name: Monorepo Full Build
 on:
   push:
     branches: [ "master", "main" ]
-    # Documentation-only changes do not build or publish an image.
+    tags: [ "v*.*.*" ]
+    # Documentation-only changes do not build or publish an image. GitHub ignores path
+    # filters for tag pushes, so a v*.*.* tag always publishes a release image.
     paths-ignore:
       - '**/*.md'
       - 'docs/**'
       - 'LICENSE'
       - '.github/ISSUE_TEMPLATE/**'
 
-# One publish at a time for ghcr.io/<repo>/monorepo, so a fast follow-up push cannot overtake
-# the run before it and leave an older image behind :latest.
+# One publish at a time per ref for ghcr.io/<repo>/monorepo, so a fast follow-up push cannot
+# overtake the run before it and leave an older image behind :edge. Each tag is a ref of its own,
+# so a release build does not wait for the branch build of the same commit.
 concurrency:
   group: monorepo-image-${{ github.ref }}
   cancel-in-progress: false
@@ -140,8 +143,15 @@ jobs:
           # backend-only image is published by release.yml under ghcr.io/<repo>.
           images: ghcr.io/${{ steps.repo.outputs.repo_lowercase }}/monorepo
           tags: |
-            type=raw,value=latest
-            type=sha,prefix=,format=short
+            # Release tags `v1.2.3` produce 1.2.3, 1.2, 1 and, through the default flavor
+            # latest=auto, `latest`. A pre-release such as `v1.0.0-rc.1` produces only 1.0.0-rc.1.
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            # The default branch publishes `edge`, never `latest`
+            type=edge
+            # Branch builds get the 7-character commit SHA
+            type=sha,prefix=,format=short,enable=${{ github.ref_type == 'branch' }}
 
       - name: Build and push
         id: build
