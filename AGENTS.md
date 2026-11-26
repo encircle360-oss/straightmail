@@ -9,11 +9,11 @@ This file provides guidance to coding agents working with code in this repositor
 ```bash
 cd backend
 
-# Run dev server (API at http://localhost:50003/api/)
-./gradlew bootRun
+# Run dev server (API at http://localhost:50003/api/; needs application-local.yml, see below)
+SPRING_PROFILES_ACTIVE=local ./gradlew bootRun
 
 # Run with database profile
-SPRING_PROFILES_ACTIVE=dev,database ./gradlew bootRun
+SPRING_PROFILES_ACTIVE=local,database ./gradlew bootRun
 
 # Run all tests
 ./gradlew test
@@ -39,7 +39,7 @@ cd frontend
 npm install
 npm start              # Dev server at http://localhost:4200 (proxies /api → :50003)
 npm test               # Unit tests via Vitest (Angular builder)
-npm run test:e2e       # Playwright e2e tests (requires app at :4299)
+npm run test:e2e       # Playwright e2e tests (starts the :4299 server, or reuses it outside CI)
 npm run start:e2e      # Serve on :4299 for Playwright
 npm run test:e2e:ui    # Playwright interactive UI
 ```
@@ -77,31 +77,32 @@ docker/     Four Compose stacks (minimal, apikey-sqlite, oidc-sqlite, oidc-postg
 
 The backend is a standard Spring Boot layered app (`controller → service → repository`). Key design points:
 
-**Template provider chain** — `CompositeTemplateProvider` aggregates three `TemplateSourceProvider` beans in injection order: `DatabaseTemplateSourceProvider`, `FileTemplateSourceProvider`, and `GitTemplateSourceProvider`. First-match wins on resolve; listing merges all and slices in-memory. New template sources implement `TemplateSourceProvider` and are automatically picked up.
+**Template provider chain** — `CompositeTemplateProvider` aggregates the active `TemplateSourceProvider` beans in injection order: `DatabaseTemplateSourceProvider` (`database` profile), `FileTemplateSourceProvider` (`templates.file.enabled`), and `GitTemplateSourceProvider` (`templates.git-sync.enabled`). First-match wins on resolve; listing merges all and slices in-memory. New template sources implement `TemplateSourceProvider` and are automatically picked up.
 
-**Template loaders** — `FreemarkerService` drives rendering. Each source has its own `TemplateLoader` subclass (`DatabaseTemplateLoader`, `FileTemplateLoader`) that adapts to FreeMarker's `TemplateLoader` interface. Git templates are cached in `GitTemplateCache` (JPA entity) by the `GitSyncService` and served through `DatabaseGitTemplateRegistry`.
+**Template loaders** — `FreemarkerService` drives rendering. `EmailService` resolves templates through `CompositeTemplateProvider`; only in single-tenant operation (no `database` profile, at most one tenant in `tenants.config`) does a miss fall back to the flat 0.4.x layout through `FileTemplateLoader`, an implementation of the project's own `TemplateLoader` interface. `GitSyncService` stores synced Git templates in a `GitTemplateRegistry`: `DatabaseGitTemplateRegistry` (JPA entity `GitTemplateCache`, `database` profile) or `InMemoryGitTemplateRegistry` otherwise.
 
-**Multi-tenancy** — `TenantContext` (thread-local) carries the current tenant ID. `JwtTenantClaimsExtractor` resolves tenants from JWT claims. `TenantReconciliationService` auto-provisions tenants declared in `tenants.config.*` at startup. SMTP config, Git repo URL, and access token are stored per tenant, encrypted with AES-256-GCM via `EncryptionService`.
+**Multi-tenancy** — `TenantContext` (request-scoped bean) carries the current tenant ID. `JwtTenantClaimsExtractor` reads the tenant claims from the JWT for `JwtTenantResolutionFilter`. With the `database` profile, `TenantReconciliationService` creates tenants declared in `tenants.config` that are missing from the database at startup. SMTP config and Git repository are stored per tenant; the SMTP password and Git token are encrypted with AES-256-GCM via `EncryptionService`, per-tenant API keys are stored as a SHA-256 hash.
 
 **Spring profiles**:
-- `database` — activates JPA, Liquibase, Tenant CRUD, and Git-sync DB storage. Without it the app runs file-only with global SMTP env vars.
-- `production` — disables Swagger UI, tunes Tomcat thread pool.
-- `dev` — localhost SMTP relay defaults.
+- `database` — activates JPA, Liquibase, template and tenant CRUD, per-tenant API keys, and Git-sync DB storage. Without it tenants come from `tenants.config` and Git-synced templates are kept in memory.
+- `production` — disables the OpenAPI document (`/api/v3/api-docs`) and with it Swagger UI, tunes Tomcat thread pool.
+- `local` — reads `application-local.yml` (gitignored) for local development.
 
-**Auth modes** (env `AUTH_MODE`): `oidc` (default, JWT), `api-key` (`X-API-KEY` header, SHA-256 hash), `none` (open).
+**Auth modes** (env `AUTH_MODE`): `oidc` (default, JWT), `api-key` (`X-API-KEY` header: the global `API_KEY`, compared as given, or a per-tenant key matched by its SHA-256 hash with the `database` profile), `none` (open).
 
 **Ports**: API `:50003`, management/actuator `:50004`.
 
 **Database migrations** — Liquibase changesets live in `backend/src/main/resources/db/changelog/`. Schema is applied on startup when `database` profile is active.
 
 **Controllers**:
-- `MailController` — `/api/v1/mail/send` (template by ID) and `/inline` (inline FreeMarker)
-- `RenderController` — preview rendering without sending
-- `TemplatesController` — full CRUD for DB-stored templates (requires `database` profile)
+- `MailController` — `/api/v1/email` (template by ID) and `/api/v1/email/inline` (inline FreeMarker)
+- `RenderController` — `/api/v1/render`, preview rendering without sending
+- `TemplatesController` — create, update and delete for DB-stored templates (requires `database` profile)
 - `TemplateReadController` — read-only template listing across all sources
-- `TenantAdminController` — tenant CRUD (requires `database` profile + admin role)
-- `TenantReadController` — current tenant info
-- `StatusController` / `InfoController` — health and version endpoints
+- `TenantAdminController` — tenant create, update and delete (requires `database` profile + admin role)
+- `TenantReadController` — tenant listing and lookup (admin role) and `/api/v1/tenants/me` for the caller's tenants
+- `StatusController` — `/api/v1/status` (Git-sync status per tenant, file-template directory accessibility) and `POST /api/v1/sync/git/{tenantSlug}`
+- `InfoController` — `/api/v1/info` (application name, status, auth mode, API URL and OIDC issuer for the frontend)
 
 **Tests** use `AbstractTest` which spins up a Mailpit Testcontainer and in-memory SQLite. Tests that send real mail inherit from `AbstractTest`; unit tests stand alone.
 
@@ -111,7 +112,7 @@ Angular 22 with standalone components and NGXS state management.
 
 **State slices** (`src/app/store/`): `auth`, `api-key`, `tenant`, `toast`, `ui`. State is persisted via `@ngxs/storage-plugin`.
 
-**Auth** — `angular-auth-oidc-client` handles OIDC silent renewal and token injection via `AuthInterceptor`. `ApiKeyInterceptor` handles `X-API-KEY` mode. The active mode is detected from the backend's `/api/v1/info` endpoint.
+**Auth** — `angular-auth-oidc-client` handles OIDC silent renewal and token injection via `authInterceptor`. `apiKeyInterceptor` handles `X-API-KEY` mode. The active mode is detected from the backend's `/api/v1/info` endpoint.
 
 **API layer** — `ApiService` (`core/services/api.service.ts`) is the single HTTP abstraction, typed against the backend DTOs.
 
@@ -121,12 +122,12 @@ Angular 22 with standalone components and NGXS state management.
 
 **i18n** — `@ngx-translate` with English (`en`) and German (`de`) JSON bundles under `frontend/public/assets/i18n/`.
 
-**E2E tests** — Playwright in `frontend/tests/`, run against the `:4299` e2e-specific serve target (auth-mode: `none`).
+**E2E tests** — Playwright in `frontend/tests/`, run against the `:4299` e2e-specific serve target (auth-mode: `api-key`).
 
 ### Template file naming convention
 
 ```
-templates/{tenant-id}/
+{TEMPLATE_FILE_PATH}/{tenant-id}/
   {templateId}.ftl          # HTML body
   {templateId}_subject.ftl  # Subject (HTML stripped)
   {templateId}_plain.ftl    # Plain-text body (optional)
@@ -134,24 +135,24 @@ templates/{tenant-id}/
 
 ### Encryption
 
-All persisted secrets (SMTP password, Git token, API key) are encrypted at rest. The key comes from `ENCRYPTION_KEY` env var (AES-256-GCM). Never return plain-text secrets from the API — `EncryptionService` is the only place that decrypts.
+The persisted SMTP password and Git token are encrypted at rest; per-tenant API keys are stored only as a SHA-256 hash. The key comes from `ENCRYPTION_KEY` env var (AES-256-GCM). Never return plain-text secrets from the API — `EncryptionService` is the only place that decrypts.
 
 ## Code Conventions — Backend
 
 ### DTOs
 
-Mutable request/response DTOs always use this Lombok combination:
+Mutable request/response DTOs use this Lombok combination:
 
 ```java
 @Data
-@SuperBuilder
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(name = "CreateUpdateTenantDTO", description = "...")
+@Schema(name = "CreateUpdateTenant")
 public class CreateUpdateTenantDTO { ... }
 ```
 
-- Use `@SuperBuilder` instead of `@Builder` when inheritance is involved (`CreateUpdateTemplateDTO extends EmailRequestDTO`)
+- Use `@SuperBuilder` instead of `@Builder` when inheritance is involved (`EmailTemplateFileRequestDTO extends EmailRequestDTO`)
 - Use `@Builder.Default` for fields with default values
 - Java Records **only** for truly immutable value objects (e.g. `GitSyncStatusDTO`, `FileStatusDTO`)
 - No `I`-prefix on interfaces
@@ -180,7 +181,7 @@ public class Tenant { ... }
 - Inline error handling: `orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "..."))`
 - No global `@RestControllerAdvice`
 - Pagination via `PageContainer<T>`, not Spring's `Page<T>` directly
-- Every endpoint gets `@Operation(summary = "...")` + `@Tag`
+- Every endpoint gets `@Operation(operationId = "...", description = "...")` + `@Tag`
 - `@Valid` on every `@RequestBody` parameter
 
 ### Lombok Quick Reference
@@ -188,7 +189,7 @@ public class Tenant { ... }
 | Context | Annotations |
 |---------|-------------|
 | Service / Controller | `@RequiredArgsConstructor` (all fields `final`) |
-| DTO (mutable) | `@Data + @SuperBuilder + @NoArgsConstructor + @AllArgsConstructor` |
+| DTO (mutable) | `@Data + @Builder (or @SuperBuilder) + @NoArgsConstructor + @AllArgsConstructor` |
 | Entity | `@Getter + @Setter` (no `@Data`) |
 | Logging | `@Slf4j` |
 
@@ -215,7 +216,7 @@ Prettier (`.prettierrc`): 100-char width, single quotes, Angular HTML parser. Ru
 
 ### Components
 
-- Always `standalone: true` — no NgModules
+- Always standalone (the Angular default; some components still set `standalone: true`) — no NgModules
 - Reactivity via Signals: `signal()`, `computed()`, `toSignal()` for RxJS interop
 - `ChangeDetectionStrategy.OnPush` on presentational/dumb components
 - `input()` and `output()` instead of `@Input`/`@Output` decorators
@@ -274,22 +275,26 @@ and it is picked up automatically — no changes needed in `CompositeTemplatePro
 Listing aggregates all sources in-memory first, then slices — heterogeneous sources cannot be
 jointly paginated at the query level. This is an intentional design decision, not a bug.
 
-### Thread-Local Tenant Context
+### Request-Scoped Tenant Context
 
-`TenantContext` holds the current tenant ID in a ThreadLocal. Never pass the tenant ID as a
-method parameter through service layers — always call `TenantContext.get()`.
-Resolution happens in `JwtTenantClaimsExtractor` (OIDC) or via API-key lookup.
+`TenantContext` is a request-scoped bean that holds the current tenant ID. Never pass the tenant ID as a
+method parameter through service layers — inject `TenantContext` (or `ObjectProvider<TenantContext>`
+where code may run outside a request) and call `getTenantId()`.
+Resolution happens in the tenant resolution filters: `JwtTenantResolutionFilter` (OIDC, via
+`JwtTenantClaimsExtractor`), `ApiKeyAuthenticationFilter` / `ApiKeyTenantResolutionFilter` (API key),
+`NoAuthTenantResolutionFilter` (none).
 
 ### Spring Profile Feature Gating
 
-Features are activated via Spring profiles, not in-code feature flags.
-`@Profile("database")` and `@ConditionalOnMissingBean` are the standard patterns.
+Features are activated via Spring profiles and configuration properties, not in-code feature flags.
+`@Profile(DatabaseConfig.PROFILE)` and `@ConditionalOnProperty` (e.g. `auth.mode`,
+`templates.git-sync.enabled`) are the standard patterns.
 Any feature that only works with the `database` profile must be explicitly annotated.
 
 ### Tenant Reconciliation at Startup
 
-`TenantReconciliationService` reads `tenants.config.*` from `application.yml` and provisions
-missing tenants on startup. The `default` tenant is never deleted.
+With the `database` profile, `TenantReconciliationService` reads `tenants.config.*` from `application.yml`
+and creates missing tenants on startup. Existing tenants are never modified or deleted.
 Declare new tenants in config — no manual API calls required.
 
 ---
@@ -298,8 +303,9 @@ Declare new tenants in config — no manual API calls required.
 
 ### Encryption at Rest
 
-All persisted secrets (SMTP password, Git token, API key hash) pass through `EncryptionService` (AES-256-GCM).
-Decryption happens exclusively there — never in controllers or DTOs.
+The persisted SMTP password and Git token pass through `EncryptionService` (AES-256-GCM); per-tenant
+API keys are not encrypted but stored as a SHA-256 hash (`TenantService.hashApiKey`).
+Decryption happens exclusively through `EncryptionService` — never in controllers or DTOs.
 The API **never** returns plain-text secrets.
 
 ### MapStruct: Always Ignore Sensitive Fields
@@ -310,11 +316,12 @@ with `@Mapping(target = "...", ignore = true)`. When a new secret field is added
 
 ### Frontend: Auth-Mode Gating
 
-Check `environment.authMode` before any auth logic (follow the `authGuard` pattern).
+Check `environment.authMode` before any auth logic (follow the `authGuard` pattern); it returns the
+auth mode the backend reports through `/api/v1/info`, fetched in `main.ts` before bootstrap.
 No hard-coded auth bypass in code. `AUTH_MODE=none` is the only legitimate config for open
 endpoints — exclusively for internal services protected at the network level.
 
 ### Production Profile
 
-The `production` profile disables Swagger UI and `/v3/api-docs`.
-Never use `production` in local dev; never use `dev` or no profile in production.
+The `production` profile disables the OpenAPI document (`/api/v3/api-docs`) and with it Swagger UI.
+Never use `production` in local dev; never run production without it.
