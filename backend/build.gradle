@@ -28,6 +28,14 @@ java {
     }
 }
 
+springBoot {
+    // Supplies the project version to the running application (BuildProperties); the build time
+    // stays out so the output is reproducible.
+    buildInfo {
+        excludes = ['time']
+    }
+}
+
 repositories {
     // mavenCentral first: a stale or poisoned artifact in the local ~/.m2 must not win
     // over the published one on a developer machine or a self-hosted runner.

@@ -2,8 +2,10 @@ package com.encircle360.oss.straightmail.config;
 
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.info.Info;
-import io.swagger.v3.oas.annotations.servers.Server;
+import org.springdoc.core.customizers.OpenApiCustomizer;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.info.BuildProperties;
 import org.springframework.boot.webmvc.autoconfigure.WebMvcRegistrations;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,19 +27,15 @@ import java.util.Map;
  *   <li><b>API prefix</b>: all {@link RestController} endpoints are automatically prefixed with
  *       the value of {@code api.prefix} (default: {@code /api}), separating them from static
  *       SPA assets served at the root.</li>
- *   <li><b>OpenAPI definition</b>: Swagger UI metadata for the SpringDoc integration.</li>
+ *   <li><b>OpenAPI definition</b>: Swagger UI metadata for the SpringDoc integration. The documented
+ *       version is the application version from the build info; no server is declared, so the
+ *       documented host follows the request (including forwarded headers).</li>
  * </ul>
  */
 @OpenAPIDefinition(
         info = @Info(
-                title = "Straightmail",
-                version = "0.2.0"
-        ),
-        servers = {
-                @Server(
-                        url = "http://localhost:50003"
-                )
-        }
+                title = "Straightmail"
+        )
 )
 @Configuration
 public class ApiConfig implements WebMvcConfigurer {
@@ -60,6 +58,18 @@ public class ApiConfig implements WebMvcConfigurer {
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
                 .allowedHeaders("Authorization", "Content-Type", "X-API-KEY", "X-Tenant-ID", "*")
                 .allowCredentials(true);
+    }
+
+    /**
+     * Sets the OpenAPI info version to the application version from the build info.
+     *
+     * @param buildProperties the build info, absent when the application runs without
+     *                        {@code META-INF/build-info.properties}
+     * @return the customizer applied to the generated OpenAPI document
+     */
+    @Bean
+    public OpenApiCustomizer applicationVersionOpenApiCustomizer(ObjectProvider<BuildProperties> buildProperties) {
+        return openApi -> buildProperties.ifAvailable(build -> openApi.getInfo().setVersion(build.getVersion()));
     }
 
     /**
