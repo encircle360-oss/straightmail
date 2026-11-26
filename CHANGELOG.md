@@ -7,6 +7,59 @@ For component-specific changes see [`backend/CHANGELOG.md`](backend/CHANGELOG.md
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.5.1] - 2026-11-26
+
+No application code changes; this release changes how the container images are named, tagged and
+published. For component-specific changes see [`backend/CHANGELOG.md`](backend/CHANGELOG.md) and
+[`frontend/CHANGELOG.md`](frontend/CHANGELOG.md).
+
+### Added
+
+- `ghcr.io/encircle360-oss/straightmail/backend`, the image with the API only, under a name of its
+  own. Every build is also pushed with the identical digest as `ghcr.io/encircle360-oss/straightmail`,
+  the name used up to 0.5.0, which stays published so existing deployments and `FROM` lines keep
+  working
+- `ghcr.io/encircle360-oss/straightmail/aio`, the all-in-one image: the API with the Admin UI
+  embedded. It replaces `ghcr.io/encircle360-oss/straightmail/monorepo` and, unlike it, gets version
+  tags and a `latest` that follows releases
+- A smoke test for the images, `.github/scripts/smoke-test-image.sh <image> <backend|aio>`, also
+  runnable locally: it starts the image without external services, checks `/actuator/health` and
+  `/api/v1/info`, and checks that `aio` serves the Admin UI and `backend` does not. Pull requests
+  that touch the backend, the frontend or the image build build both images for `linux/amd64` and
+  run it; nothing is pushed for a pull request
+
+### Changed
+
+- Image tags, the same for every image: a release tag `vX.Y.Z` publishes `X.Y.Z`, `X.Y`, `X` and
+  `latest`; a pre-release such as `v1.0.0-rc.1` publishes only its own version. Pushes to the
+  default branch publish `edge` and the 7-character commit SHA and no longer move `latest`, so
+  `latest` is always the most recently tagged release. The commit tag of
+  `ghcr.io/encircle360-oss/straightmail` changes from `master-<sha>` to the bare SHA (for example
+  `abc1234`). The GHCR cleanup never deletes `edge`
+- One workflow, `images.yml`, builds and publishes all images and replaces `release.yml` and
+  `monorepo.yml`. It publishes only after the backend and frontend test suites and the smoke test
+  passed. Each image has its own GitHub Actions build cache; the registry cache tag
+  `…/straightmail/monorepo:buildcache` is no longer written
+- The GHCR cleanup covers `straightmail`, `straightmail/backend` and `straightmail/aio`, no longer
+  protects a `buildcache` tag, and skips a package that does not exist instead of failing the run
+- Dependabot offers TypeScript only patch updates, since Angular 22.3 accepts `>=6.0 <6.1`, and
+  updates the Angular packages (`@angular/*`, `@angular-devkit/*`, `@schematics/angular`) in one
+  pull request of their own, apart from the other npm minor and patch updates
+
+### Removed
+
+- `ghcr.io/encircle360-oss/straightmail/monorepo`, the name under which 0.5.0 published the image
+  with the Admin UI, is no longer updated; use `ghcr.io/encircle360-oss/straightmail/aio`. The
+  package stays at its last build, the 0.5.0 commit `0397766` (also its `latest`)
+
+### Fixed
+
+- Build provenance attestations of the images also create the artifact storage record, which lists
+  the image on the organization's Linked Artifacts page; the workflow grants `artifact-metadata: write`
+- The Trivy scans of the images upload to separate code scanning categories,
+  `container-image-backend` and `container-image-aio`; with a shared category, the second upload for
+  a commit replaced the results of the first image
+
 ## [0.5.0] - 2026-11-26
 
 For component-specific changes see [`backend/CHANGELOG.md`](backend/CHANGELOG.md) and [`frontend/CHANGELOG.md`](frontend/CHANGELOG.md).

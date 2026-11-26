@@ -1,0 +1,218 @@
+name: Images
+
+# Builds, smoke-tests and publishes the container images:
+#   backend  ghcr.io/<repo>/backend, also pushed as ghcr.io/<repo> (same digest): the API only
+#   aio      ghcr.io/<repo>/aio: the API with the admin UI embedded
+# Pull requests build linux/amd64 only, run the smoke test and publish nothing.
+
+on:
+  push:
+    branches: [master, main]
+    tags: ['v*.*.*']
+    # Documentation-only changes do not build or publish an image. GitHub ignores path
+    # filters for tag pushes, so a v*.*.* tag always publishes.
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - 'LICENSE'
+      - '.github/ISSUE_TEMPLATE/**'
+  pull_request:
+    branches: [master, main]
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - '.github/workflows/images.yml'
+      - '.github/scripts/smoke-test-image.sh'
+
+# One run per ref at a time, so a fast follow-up push cannot overtake the run before it and
+# leave an older image behind `edge`. A publishing run is never cancelled; a pull request run
+# gives way to the next push to the same pull request.
+concurrency:
+  group: images-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  # The test gate for publishing. Pull requests get the same suites from ci.yml.
+  backend:
+    name: Backend
+    if: github.event_name != 'pull_request'
+    permissions:
+      contents: read
+    uses: ./.github/workflows/backend.yml
+
+  frontend:
+    name: Frontend
+    if: github.event_name != 'pull_request'
+    permissions:
+      contents: read
+    uses: ./.github/workflows/frontend.yml
+
+  image:
+    name: Image (${{ matrix.variant }})
+    needs: [backend, frontend]
+    # The gate jobs are skipped on pull requests; everywhere else both have to succeed.
+    if: >-
+      !cancelled() && (github.event_name == 'pull_request' ||
+      (needs.backend.result == 'success' && needs.frontend.result == 'success'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: write
+      # Upload of the Trivy results to code scanning
+      security-events: write
+      # OIDC token and attestation API for actions/attest-build-provenance
+      id-token: write
+      attestations: write
+      # Lets the attestation step create the artifact storage record for the image
+      artifact-metadata: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - variant: backend
+            image: ghcr.io/${{ github.repository }}/backend
+            # The name used up to 0.5.0, kept so existing deployments and FROM lines keep working
+            alias: ghcr.io/${{ github.repository }}
+            embed-ui: false
+          - variant: aio
+            image: ghcr.io/${{ github.repository }}/aio
+            embed-ui: true
+    env:
+      PUBLISH: ${{ github.event_name != 'pull_request' }}
+      SMOKE_IMAGE: straightmail-${{ matrix.variant }}:smoke
+      CACHE_SCOPE: image-${{ matrix.variant }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Set up Node.js
+        if: matrix.embed-ui
+        uses: actions/setup-node@v7
+        with:
+          node-version: '26'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build the JAR
+        # gradlew, settings.gradle and the Dockerfile live under backend/; with the admin UI
+        # embedded, Gradle runs npm ci and the Angular build in frontend/ first.
+        working-directory: backend
+        env:
+          SKIP_FRONTEND_BUILD: ${{ !matrix.embed-ui }}
+        run: ./gradlew --no-daemon bootJar -x test
+
+      - name: Set up QEMU
+        if: env.PUBLISH == 'true'
+        uses: docker/setup-qemu-action@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build the linux/amd64 image for the smoke test
+        uses: docker/build-push-action@v7
+        with:
+          # The context is backend/ so the docker/ dev stacks and their placeholder credentials
+          # never enter the image build context.
+          context: ./backend
+          file: ./backend/Dockerfile
+          platforms: linux/amd64
+          load: true
+          push: false
+          tags: ${{ env.SMOKE_IMAGE }}
+          # The docker image store cannot hold attestations; the published build carries them.
+          provenance: false
+          sbom: false
+          cache-from: type=gha,scope=${{ env.CACHE_SCOPE }}
+
+      - name: Smoke test
+        run: .github/scripts/smoke-test-image.sh "$SMOKE_IMAGE" "${{ matrix.variant }}"
+
+      - name: Log in to GitHub Container Registry
+        if: env.PUBLISH == 'true'
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate image metadata
+        if: env.PUBLISH == 'true'
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          # An empty line (no alias) is skipped.
+          images: |
+            ${{ matrix.image }}
+            ${{ matrix.alias }}
+          tags: |
+            # Release tags `v1.2.3` produce 1.2.3, 1.2, 1 and, through the default flavor
+            # latest=auto, `latest`. A pre-release such as `v1.0.0-rc.1` produces only 1.0.0-rc.1.
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            # The default branch publishes `edge`, never `latest`
+            type=edge
+            # Branch builds get the 7-character commit SHA
+            type=sha,prefix=,format=short,enable=${{ github.ref_type == 'branch' }}
+
+      - name: Build and push the multi-arch image
+        if: env.PUBLISH == 'true'
+        id: push
+        uses: docker/build-push-action@v7
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          provenance: true
+          sbom: true
+          cache-from: type=gha,scope=${{ env.CACHE_SCOPE }}
+          cache-to: type=gha,mode=max,scope=${{ env.CACHE_SCOPE }}
+
+      - name: Scan the image for known vulnerabilities
+        if: env.PUBLISH == 'true'
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ matrix.image }}@${{ steps.push.outputs.digest }}
+          format: sarif
+          output: trivy-results.sarif
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+
+      - name: Upload scan results
+        if: env.PUBLISH == 'true'
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: trivy-results.sarif
+          category: container-image-${{ matrix.variant }}
+
+      - name: Attest build provenance
+        if: env.PUBLISH == 'true'
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-name: ${{ matrix.image }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
+
+      - name: Attest build provenance for the alias
+        if: env.PUBLISH == 'true' && matrix.alias != ''
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-name: ${{ matrix.alias }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true

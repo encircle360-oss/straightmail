@@ -6,7 +6,8 @@ on:
     paths:
       - "backend/**"
       - ".github/workflows/backend.yml"
-  # Called by ci.yml, whose `CI gate` job reports the combined result.
+  # Called by ci.yml, whose `CI gate` job reports the combined result, and by images.yml as
+  # the test gate before an image is published.
   workflow_call:
   pull_request:
     branches: [ "master", "main" ]
@@ -17,8 +18,7 @@ on:
 permissions:
   contents: read
 
-# Build and test only; this workflow publishes nothing. Images come from release.yml and
-# monorepo.yml.
+# Build and test only; this workflow publishes nothing. Images come from images.yml.
 
 jobs:
   build:

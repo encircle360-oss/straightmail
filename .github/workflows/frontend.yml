@@ -6,7 +6,8 @@ on:
     paths:
       - "frontend/**"
       - ".github/workflows/frontend.yml"
-  # Called by ci.yml, whose `CI gate` job reports the combined result.
+  # Called by ci.yml, whose `CI gate` job reports the combined result, and by images.yml as
+  # the test gate before an image is published.
   workflow_call:
   pull_request:
     branches: [ "master", "main" ]

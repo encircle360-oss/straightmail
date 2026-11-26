@@ -1,6 +1,6 @@
 # CI / CD Workflows
 
-straightmail uses nine GitHub Actions workflows to cover the development, security and release
+straightmail uses eight GitHub Actions workflows to cover the development, security and release
 lifecycle — from feature branch validation through to image publishing with supply-chain
 attestations and registry retention. Dependency updates come from Dependabot
 ([`../dependabot.yml`](../dependabot.yml)).
@@ -16,8 +16,7 @@ and `main`, so a rename does not silently disable CI.
 | Backend CI | [`backend.yml`](backend.yml) | push / PR to `master` or `main` (`backend/**`), called by `ci.yml` | Build + test the backend | — |
 | Frontend CI | [`frontend.yml`](frontend.yml) | push / PR to `master` or `main` (`frontend/**`), called by `ci.yml` | Unit tests + Playwright E2E | — |
 | Feature Branch CI | [`feature.yml`](feature.yml) | push to `feature/**`, `fix/**`, `chore/**` | Validate before a PR is opened | — |
-| Monorepo Full Build | [`monorepo.yml`](monorepo.yml) | push to `master` or `main` (not docs-only) | Full build + combined image | `ghcr.io/encircle360-oss/straightmail/monorepo` |
-| Release | [`release.yml`](release.yml) | push to `master` / `main` (not docs-only), tag `v*.*.*` | Backend image with SBOM & provenance | `ghcr.io/encircle360-oss/straightmail` |
+| Images | [`images.yml`](images.yml) | push to `master` / `main` (not docs-only), tag `v*.*.*`, PR touching the images | Test gate, smoke test, multi-arch images with SBOM & provenance | `ghcr.io/encircle360-oss/straightmail/backend` (also as `ghcr.io/encircle360-oss/straightmail`), `ghcr.io/encircle360-oss/straightmail/aio` |
 | CodeQL | [`codeql.yml`](codeql.yml) | push / PR to `master` or `main`, weekly cron | Static analysis (Java + TypeScript) | — |
 | Dependency submission | [`dependency-submission.yml`](dependency-submission.yml) | push to `master`, `workflow_dispatch` | Gradle dependency graph for Dependabot alerts | — |
 | Cleanup Old Packages | [`cleanup.yml`](cleanup.yml) | weekly cron, `workflow_dispatch` | GHCR retention for the published images | — |
@@ -45,7 +44,7 @@ outside their paths and block it. A change to `ci.yml` itself runs both suites.
 ### `backend.yml` — Backend CI
 
 Runs on push and pull requests to `master` or `main` that touch `backend/**` or the workflow file,
-and as a reusable workflow from `ci.yml`. Builds the JAR with Gradle (`SKIP_FRONTEND_BUILD=true`)
+and as a reusable workflow from `ci.yml` and from `images.yml` (the test gate before publishing). Builds the JAR with Gradle (`SKIP_FRONTEND_BUILD=true`)
 and runs the test suite in a separate job. It publishes nothing.
 
 **Jobs:** `build` · `test`  
@@ -56,7 +55,7 @@ and runs the test suite in a separate job. It publishes nothing.
 ### `frontend.yml` — Frontend CI
 
 Runs on push and pull requests to `master` or `main` that touch `frontend/**` (push additionally
-watches the workflow file), and as a reusable workflow from `ci.yml`. Executes Vitest unit tests
+watches the workflow file), and as a reusable workflow from `ci.yml` and from `images.yml`. Executes Vitest unit tests
 and Playwright E2E tests (chromium) against the `:4299` e2e serve target. The Playwright report is
 uploaded with `if: always()`, so it exists for green runs too.
 
@@ -76,40 +75,52 @@ echo …`), so a missing lint script never fails the branch.
 
 ---
 
-### `monorepo.yml` — Monorepo Full Build
+### `images.yml` — Images
 
-Runs on every push to `master` or `main`, except pushes that only change Markdown, `docs/**`,
-`LICENSE` or issue templates. Builds the full monorepo — Angular console embedded into the Spring
-Boot JAR via `./gradlew build` — runs backend and frontend unit tests, then publishes the combined
-image. Only one publish runs per ref at a time, so a fast follow-up push cannot leave an older
-image behind `latest`.
+Builds, smoke-tests and publishes the container images. Runs on every push to `master` or `main`,
+except pushes that only change Markdown, `docs/**`, `LICENSE` or issue templates, on semantic
+version tags (`v*.*.*`; GitHub does not evaluate path filters for tag pushes, so every version tag
+publishes), and on pull requests to `master` / `main` that touch `backend/**`, `frontend/**`, the
+workflow or the smoke-test script.
 
-**Jobs:** `backend` (full build + tests, `combined-jar` artifact, 7 days) · `frontend` (Vitest) ·
-`docker-combined` (`needs: [backend, frontend]`)  
-**Image:** `ghcr.io/encircle360-oss/straightmail/monorepo` — `linux/amd64`, `linux/arm64`  
-**Tags:** `latest` · short commit SHA (7 hex)  
-**Build cache:** registry cache at `…/straightmail/monorepo:buildcache`  
+On branch and tag pushes, `backend.yml` and `frontend.yml` run first as reusable workflows; the
+images are built only when both succeed. Pull requests skip that gate (`ci.yml` runs the same
+suites) and build `linux/amd64` only: they run the smoke test and push nothing — no registry login,
+no scan upload, no attestation — so pull requests from forks, whose token is read-only, work the
+same way.
+
+The `image` job is a matrix over the two variants (`fail-fast: false`), each in its own runner:
+
+| Variant | Image | Also pushed as | JAR |
+|---|---|---|---|
+| `backend` | `ghcr.io/encircle360-oss/straightmail/backend` | `ghcr.io/encircle360-oss/straightmail` (same digest) | `bootJar` with `SKIP_FRONTEND_BUILD=true` — the API only |
+| `aio` | `ghcr.io/encircle360-oss/straightmail/aio` | — | `bootJar` with the Angular admin UI embedded (Node 26) |
+
+Per variant: build the JAR, build the `linux/amd64` image and load it into the runner's Docker,
+run [`../scripts/smoke-test-image.sh`](../scripts/smoke-test-image.sh) against it, then — on pushes
+only — build and push the `linux/amd64` + `linux/arm64` image from the same cache, scan the pushed
+digest with Trivy and attest it under every name it was pushed as. Both variants use
+`backend/Dockerfile` with `backend/` as the build context.
+
+**Concurrency:** one run per ref. A publishing run is never cancelled, so a fast follow-up push
+cannot leave an older image behind `edge`; a pull request run is cancelled by the next push to the
+same pull request. A tag is a ref of its own, so its build runs alongside the branch build of the
+same commit.  
+**Jobs:** `backend` · `frontend` (the test gate, reusable workflows) · `image` (matrix `backend`,
+`aio`)  
+**Tags:** from a `v*.*.*` tag `{{version}}` · `{{major}}.{{minor}}` · `{{major}}` · `latest`; from
+the default branch `edge` · short commit SHA (7 hex) — the same for every image, see
+[Image tags](#image-tags)  
+**Build cache:** GitHub Actions cache (`type=gha`), one scope per variant (`image-backend`,
+`image-aio`); pull requests read it but do not write it  
+**Smoke test:** starts the image with `AUTH_MODE=none`, a generated `ENCRYPTION_KEY` and the mail
+health indicator disabled, waits for `/actuator/health` on `:50004`, checks `/api/v1/info`, then
+requires the admin UI app shell at `/` and `/templates` for `aio` and its absence for `backend`.
+Run it locally with `.github/scripts/smoke-test-image.sh <image> <backend|aio>`  
 **Security:** SBOM + provenance in the build, Trivy scan of the pushed digest (CRITICAL/HIGH,
-`ignore-unfixed`) uploaded as SARIF to code scanning (category `container-image`), plus
-`actions/attest-build-provenance` pushed to the registry
-
----
-
-### `release.yml` — Release
-
-Runs on push to `master` / `main` (with the same docs-only exclusion as `monorepo.yml`) and on
-semantic version tags (`v*.*.*`); GitHub does not evaluate path filters for tag pushes, so every
-version tag releases. Builds the `bootJar` with `SKIP_FRONTEND_BUILD=true` — the release image
-carries the backend only — and publishes a multi-arch image with supply-chain metadata. Only one
-release flow runs per ref at a time, and a tagged release is never cancelled mid-flight.
-
-**Job:** `build-and-push`  
-**Image:** `ghcr.io/encircle360-oss/straightmail` — `linux/amd64`, `linux/arm64`  
-**Tags:** `latest` (default branch only) · `{{version}}` · `{{major}}.{{minor}}` · `{{major}}` from a
-`v*.*.*` tag · `<branch>-<sha>` for branch builds — e.g. tag `v0.5.0` yields `0.5.0`, `0.5`, `0`  
-**Build cache:** GitHub Actions cache (`type=gha`)  
-**Security:** SBOM + provenance in the build, Trivy scan of the pushed digest → SARIF (category
-`container-image`), `actions/attest-build-provenance` pushed to the registry
+`ignore-unfixed`) uploaded as SARIF to code scanning (category `container-image-<variant>`), plus
+`actions/attest-build-provenance` pushed to the registry with an artifact storage record — for the
+`backend` variant once per name
 
 ---
 
@@ -145,18 +156,22 @@ OCI index plus untagged child manifests, and deleting all untagged versions woul
 on a tag that still resolves.
 
 A shell guard step composes the action inputs and enforces two invariants: `keep-n-tagged` is never
-`0` or non-numeric (the action reads `0` as "delete every tagged image"), and `latest` plus
-`buildcache` are always excluded — `buildcache` is the registry cache `monorepo.yml` writes to, so
-dropping it turns every subsequent build cold.
+`0` or non-numeric (the action reads `0` as "delete every tagged image"), and `latest` and `edge`
+are always excluded.
+
+The action aborts on the first package it cannot find, so a second step looks each package up first
+and passes on only those that exist; a package that is not published yet, or was deleted, is skipped
+with a warning (a lookup that fails for any other reason fails the run).
 
 Tag exclusion runs with `use-regex: true`, as one anchored expression. The action's default
 wildcard syntax knows only `?`, `*` and `**` and has no character classes, so a pattern like
 `[0-9]*.[0-9]*` would match no version tag.
 
 **Job:** `images`  
-**Packages:** `straightmail`, `straightmail/monorepo`  
+**Packages:** `straightmail`, `straightmail/backend`, `straightmail/aio` (`straightmail/monorepo` is
+no longer published and is left alone)  
 **Keeps:** 15 newest tagged images per package  
-**Never deletes:** `latest`, `buildcache`, the released tags `0.4.0`, `0.4.1`, `0.4`, `0`, and any
+**Never deletes:** `latest`, `edge`, the released tags `0.4.0`, `0.4.1`, `0.4`, `0`, and any
 `x`, `x.y`, `x.y.z` tag (optionally `v`-prefixed; a bare major has at most three digits, so a
 digits-only 7-character commit SHA tag is not exempt)  
 **Deletes:** untagged, ghost, partial and orphaned images (orphaned covers the `sha256-<digest>`
@@ -168,24 +183,43 @@ attestation referrer tags once their parent is gone)
 
 ---
 
+## Image tags
+
+`images.yml` tags every image by the same rules (`docker/metadata-action`):
+
+| Event | Tags of `…/straightmail/backend`, `…/straightmail` and `…/straightmail/aio` |
+|---|---|
+| pull request | nothing is pushed |
+| push to `master` (commit `abc1234…`) | `edge`, `abc1234` |
+| tag `v0.5.1` | `0.5.1`, `0.5`, `0`, `latest` |
+| tag `v1.0.0-rc.1` | `1.0.0-rc.1` |
+
+`latest` therefore always points at the most recently tagged release and never at an unreleased
+build; `edge` follows the default branch. A pre-release publishes only its own version: the action reduces the
+`{{major}}.{{minor}}` and `{{major}}` patterns of a pre-release to `{{version}}`, and its default
+flavor `latest=auto` adds `latest` only for a release. A push to `main` while `master` is the
+default branch publishes the commit tag only.
+
 ## Required Permissions & Secrets
 
 No repository secrets need to be configured manually.
 
 | Requirement | Used by | Details |
 |---|---|---|
-| `GITHUB_TOKEN` | `monorepo.yml`, `release.yml`, `cleanup.yml` | Auto-provided by GitHub — pushes images to `ghcr.io` and deletes package versions |
-| `packages: write` | `monorepo.yml`, `release.yml`, `cleanup.yml` | Declared in each workflow's `permissions:` block |
-| `security-events: write` | `monorepo.yml`, `release.yml`, `codeql.yml` | Uploading Trivy and CodeQL SARIF to code scanning |
-| `id-token: write` | `monorepo.yml`, `release.yml` | OIDC tokens for SBOM and provenance attestations |
-| `attestations: write` | `monorepo.yml`, `release.yml` | Required for `actions/attest-build-provenance` |
+| `GITHUB_TOKEN` | `images.yml`, `cleanup.yml` | Auto-provided by GitHub — pushes images to `ghcr.io` and deletes package versions |
+| `packages: write` | `images.yml` (`image` job), `cleanup.yml` | Declared in the job's or workflow's `permissions:` block |
+| `security-events: write` | `images.yml` (`image` job), `codeql.yml` | Uploading Trivy and CodeQL SARIF to code scanning |
+| `id-token: write` | `images.yml` (`image` job) | OIDC tokens for SBOM and provenance attestations |
+| `attestations: write` | `images.yml` (`image` job) | Required for `actions/attest-build-provenance` |
+| `artifact-metadata: write` | `images.yml` (`image` job) | Lets `actions/attest-build-provenance` create the artifact storage record for the pushed image |
 | `contents: write` | `dependency-submission.yml` | Submitting the dependency graph |
 | `pull-requests: read` | `ci.yml` | `changes` job reads the pull request's changed files |
 
-`ci.yml`, `feature.yml`, `backend.yml`, `frontend.yml`, `monorepo.yml` and `codeql.yml` set a
+`ci.yml`, `feature.yml`, `backend.yml`, `frontend.yml`, `images.yml` and `codeql.yml` set a
 read-only `contents: read` default at the top level and widen permissions only on the jobs that need
-it. `release.yml`, `cleanup.yml` and `dependency-submission.yml` declare their wider scopes at the
-top level because they each have a single job.
+it. `cleanup.yml` and `dependency-submission.yml` declare their wider scopes at the top level because
+they each have a single job. On pull requests from forks GitHub issues a read-only token whatever a
+workflow requests; `images.yml` pushes nothing on pull requests, so it needs no more there.
 
 For `cleanup.yml`, each package must also grant this repository the **Admin** role under
 **Package Settings → Manage Actions access**.
@@ -194,9 +228,15 @@ For `cleanup.yml`, each package must also grant this repository the **Admin** ro
 
 - **Local Compose stacks do not pull these images.** The four stacks under `docker/` build from
   `../backend` with `build.context`, so a published image is never required for local development.
-- **Image repositories differ by content.** `release.yml` publishes the backend-only image to
-  `ghcr.io/encircle360-oss/straightmail` (version tags on release); `monorepo.yml` publishes the
-  image with the embedded admin console to `ghcr.io/encircle360-oss/straightmail/monorepo`
-  (7-hex commit tags). Nothing publishes `…/straightmail/backend`.
+- **Image repositories differ by content.** `…/straightmail/backend` carries the API only and is
+  pushed with the identical digest as `ghcr.io/encircle360-oss/straightmail`, the name used up to
+  0.5.0, so existing deployments and `FROM` lines keep working. `…/straightmail/aio` carries the API
+  with the admin UI embedded. `…/straightmail/monorepo` is no longer published and stays at its
+  last build, the 0.5.0 commit `0397766`.
+- **Each variant has its own code scanning category** (`container-image-backend`,
+  `container-image-aio`). Code scanning replaces earlier results of the same tool and category
+  for a commit, so a shared category would keep only the image whose scan uploads last.
 - **Several workflows can run for the same push or pull request** (for example `ci.yml` together
-  with `backend.yml`/`frontend.yml`, or `monorepo.yml` together with `release.yml`).
+  with `backend.yml`/`frontend.yml` and `images.yml`). On a push to `master`, `backend.yml` and
+  `frontend.yml` run once on their own (when their paths changed) and once more inside
+  `images.yml` as its test gate.
