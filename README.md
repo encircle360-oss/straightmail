@@ -1,9 +1,10 @@
 # <img src="frontend/public/logos/logo.svg" alt="straightmail" width="34"> straightmail
 
-[![Monorepo Full Build](../../actions/workflows/monorepo.yml/badge.svg)](../../actions/workflows/monorepo.yml)
+[![Images](../../actions/workflows/images.yml/badge.svg)](../../actions/workflows/images.yml)
 [![Backend Build](../../actions/workflows/backend.yml/badge.svg)](../../actions/workflows/backend.yml)
 [![Frontend Build](../../actions/workflows/frontend.yml/badge.svg)](../../actions/workflows/frontend.yml)
-[![Container](https://img.shields.io/badge/ghcr.io-encircle360--oss%2Fstraightmail-blue?logo=docker)](../../pkgs/container/straightmail)
+[![Backend image](https://img.shields.io/badge/ghcr.io-straightmail%2Fbackend-blue?logo=docker)](../../pkgs/container/straightmail%2Fbackend)
+[![All-in-one image](https://img.shields.io/badge/ghcr.io-straightmail%2Faio-blue?logo=docker)](../../pkgs/container/straightmail%2Faio)
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Java 25](https://img.shields.io/badge/Java-25-orange?logo=openjdk&logoColor=white)](https://www.oracle.com/java/)
@@ -82,7 +83,7 @@ If you're upgrading straightmail from 0.4.0 or 0.4.1, check this migration guide
 | `ENCRYPTION_KEY`    | not used                                          | **required** — Base64 of exactly 32 bytes (`openssl rand -base64 32`), otherwise the app does not start                |
 | API docs            | `/v3/api-docs`                                    | `/api/v3/api-docs` (`/v3/api-docs` answers `404`); Swagger UI stays at `/swagger-ui/index.html`                        |
 | Derived plain text  | links rendered as `text ( url )`                  | links rendered as `text(url)`; whitespace can differ — affects mails without `_plain.ftl`                              |
-| Container image     | `ghcr.io/encircle360-oss/straightmail`            | same image, still backend only; the Admin UI ships only in `…/straightmail/monorepo` — see [Images](#images)           |
+| Container image     | `ghcr.io/encircle360-oss/straightmail`            | same image, still backend only (later releases also as `…/straightmail/backend`); the Admin UI ships in `…/straightmail/aio` — see [Images](#images) |
 | Base image          | `eclipse-temurin:21-jre`, runs as root            | Temurin 25 JRE, runs as user `straightmail` (UID 10001), application in `/app` instead of `/straightmail.jar`          |
 | FreeMarker          | unrestricted                                      | **sandboxed** — `?new`, `?api` and the Spring form-binding macros fail                                                 |
 | Template paths      | resolved as given                                 | confined to the template root — a `templateId` that escapes it is not found                                            |
@@ -128,10 +129,11 @@ has to be declared in this mode — see [Tenants and SMTP](#tenants-and-smtp).
 
 ### With Admin UI
 
-The Admin UI is only contained in `ghcr.io/encircle360-oss/straightmail/monorepo`. That image
-carries version tags from the release after 0.5.0 on; 0.5.0 is published there only as the commit
-tag `0397766` and, until the next release, as `latest` — see [Images](#images). It is served at
-`http://localhost:50003`.
+The Admin UI is only contained in the all-in-one image `ghcr.io/encircle360-oss/straightmail/aio`.
+It carries version tags and `latest` from the release after 0.5.0 on; until then it has only `edge`
+and commit tags. 0.5.0 itself with the Admin UI exists only as
+`ghcr.io/encircle360-oss/straightmail/monorepo:0397766`, an image that is no longer published —
+see [Images](#images). The Admin UI is served at `http://localhost:50003`.
 Activate the `database` Spring profile to enable template CRUD and tenant management. The SQLite
 file lives on a named volume so the non-root process can write to it.
 
@@ -140,7 +142,7 @@ file lives on a named volume so the non-root process can write to it.
 ```yaml
 services:
   straightmail:
-    image: ghcr.io/encircle360-oss/straightmail/monorepo:latest
+    image: ghcr.io/encircle360-oss/straightmail/aio:latest
     ports:
       - "50003:50003"
     volumes:
@@ -172,7 +174,7 @@ answers `400`.
 ```yaml
 services:
   straightmail:
-    image: ghcr.io/encircle360-oss/straightmail/monorepo:latest
+    image: ghcr.io/encircle360-oss/straightmail/aio:latest
     ports:
       - "50003:50003"
     volumes:
@@ -507,28 +509,38 @@ SKIP_FRONTEND_BUILD=true ./gradlew build
 
 ### Images
 
-| Image                                           | Contents                    | Commit tag from the default branch |
-|-------------------------------------------------|-----------------------------|------------------------------------|
-| `ghcr.io/encircle360-oss/straightmail`          | backend only, no Admin UI   | `master-<sha>`                     |
-| `ghcr.io/encircle360-oss/straightmail/monorepo` | backend with the Admin UI   | `<sha>` (7 characters)             |
+| Image                                          | Contents                                  |
+|------------------------------------------------|-------------------------------------------|
+| `ghcr.io/encircle360-oss/straightmail/backend` | the API only, no Admin UI                 |
+| `ghcr.io/encircle360-oss/straightmail`         | the same image as `…/straightmail/backend` |
+| `ghcr.io/encircle360-oss/straightmail/aio`     | all in one: the API with the Admin UI     |
 
-Both images are tagged by the same rules:
+`ghcr.io/encircle360-oss/straightmail` is the name the API image was published under up to 0.5.0.
+It stays published, with the identical digest as `…/straightmail/backend`, so existing deployments
+and images built `FROM` it keep working; new setups should use `…/straightmail/backend`.
+
+All images are tagged by the same rules:
 
 - A release tag `vX.Y.Z` publishes `X.Y.Z`, `X.Y`, `X` and `latest`, so `latest` is the most
   recently tagged release.
 - A pre-release tag such as `v1.0.0-rc.1` publishes only `1.0.0-rc.1`.
-- Every push to the default branch publishes `edge` and the commit tag above; these builds are
-  unreleased and never become `latest`.
+- Every push to the default branch publishes `edge` and the 7-character commit SHA (for example
+  `abc1234`); these builds are unreleased and never become `latest`.
 
-The Admin UI image gets version tags starting with the release after 0.5.0. 0.5.0 is published
-there only as the commit tag `0397766` and, until the next release, as `latest`.
+`…/straightmail/backend` and `…/straightmail/aio` carry version tags from the release after 0.5.0
+on and only `edge` and commit tags before it; releases up to 0.5.0 are available only as
+`ghcr.io/encircle360-oss/straightmail`. Up to 0.5.0, the image with the Admin UI was
+`ghcr.io/encircle360-oss/straightmail/monorepo`, without version tags; it is no longer published
+and stays at the 0.5.0 build (`0397766`). Up to 0.5.0, default-branch builds of
+`ghcr.io/encircle360-oss/straightmail` were tagged `master-<sha>`.
 
-Both are multi-arch (`linux/amd64`, `linux/arm64`) and carry an SBOM and build provenance.
+All images are multi-arch (`linux/amd64`, `linux/arm64`) and carry an SBOM and build provenance.
 
 ## CI / CD
 
-GitHub Actions build and test every pull request, publish both images as `edge` on every push to
-the default branch, and publish both under their version and `latest` on every `v*.*.*` tag.
+GitHub Actions build and test every pull request and smoke-test the images it affects, publish
+all images as `edge` on every push to the default branch, and publish them under their version and
+`latest` on every `v*.*.*` tag.
 Dependency updates come from Dependabot. See [`.github/workflows/README.md`](.github/workflows/README.md)
 for each workflow, its triggers and its required permissions.
 

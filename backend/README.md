@@ -21,6 +21,12 @@ docker run -p 50003:50003 -p 50004:50004 \
     ghcr.io/encircle360-oss/straightmail:0.5.0
 ```
 
+The image carries the API only. From the release after 0.5.0 on it is published as
+`ghcr.io/encircle360-oss/straightmail/backend` and, with the identical digest, as
+`ghcr.io/encircle360-oss/straightmail`; releases up to 0.5.0 exist only under the second name. The
+image with the admin UI embedded is `ghcr.io/encircle360-oss/straightmail/aio` — see
+[Images](../README.md#images) in the root README.
+
 Variables should be set to your correct SMTP credentials and host. `DEFAULT_SENDER` is used when a
 request carries no `sender`. `SMTP_PORT` defaults to `587`.
 
