@@ -88,3 +88,6 @@ templates:
   file:
     enabled: ${TEMPLATE_FILE_ENABLED:true}
     base-path: ${TEMPLATE_FILE_PATH:/directory/files/templates}
+
+i18n:
+  base-path: ${I18N_PATH:/resources/i18n}

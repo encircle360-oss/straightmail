@@ -5,14 +5,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration;
 import org.springframework.boot.liquibase.autoconfigure.LiquibaseAutoConfiguration;
 import org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration;
-import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Profile;
-import org.springframework.context.support.ResourceBundleMessageSource;
-
-import java.nio.charset.StandardCharsets;
 
 import static freemarker.template.Configuration.VERSION_2_3_28;
 
@@ -29,15 +25,6 @@ import static freemarker.template.Configuration.VERSION_2_3_28;
         )
 )
 public class TestApplication {
-
-    @Bean
-    public MessageSource messageSource() {
-        ResourceBundleMessageSource messageSource = new ResourceBundleMessageSource();
-        messageSource.setBasenames("i18n/messages");
-        messageSource.setDefaultEncoding(StandardCharsets.UTF_8.name());
-
-        return messageSource;
-    }
 
     @Bean
     JsonNodeObjectWrapper jsonNodeObjectWrapper() {

@@ -27,11 +27,12 @@ COPY --from=builder /build/extracted/snapshot-dependencies/ ./
 COPY --from=builder /build/extracted/application/ ./
 
 # The app writes the SQLite database to /data and the git-sync working copies to /git, and reads
-# file templates from /resources/templates. They have to exist in the image and belong to the
-# runtime user: a named volume inherits this ownership on first use, while a bind mount of a
-# host directory would otherwise arrive root-owned and leave the non-root process unable to write.
-RUN mkdir -p /data /git /resources/templates \
-    && chown -R straightmail:straightmail /app /data /git /resources/templates
+# file templates from /resources/templates and message bundles from /resources/i18n. They have to
+# exist in the image and belong to the runtime user: a named volume inherits this ownership on
+# first use, while a bind mount of a host directory would otherwise arrive root-owned and leave the
+# non-root process unable to write.
+RUN mkdir -p /data /git /resources/templates /resources/i18n \
+    && chown -R straightmail:straightmail /app /data /git /resources/templates /resources/i18n
 
 USER straightmail
 
