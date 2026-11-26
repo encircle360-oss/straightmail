@@ -1,0 +1,9 @@
+springdoc:
+  api-docs:
+    enabled: false
+
+server:
+  tomcat:
+    threads:
+      max: 50
+      min-spare: 10

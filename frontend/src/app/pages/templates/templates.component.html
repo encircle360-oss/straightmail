@@ -1,0 +1,138 @@
+<app-page-header icon="templates" title="templates.title">
+  <div class="d-flex align-items-center gap-2">
+    <div class="btn-group d-none d-md-flex" role="group" [attr.aria-label]="'templates.view_toggle' | translate">
+      <button
+        class="btn btn-md"
+        [class.btn-secondary]="viewMode() === 'grid'"
+        [class.btn-outline-secondary]="viewMode() !== 'grid'"
+        (click)="setViewMode('grid')"
+        [title]="'templates.view_grid' | translate"
+      >
+        <i class="bi bi-grid-3x3-gap"></i>
+      </button>
+      <button
+        class="btn btn-md"
+        [class.btn-secondary]="viewMode() === 'list'"
+        [class.btn-outline-secondary]="viewMode() !== 'list'"
+        (click)="setViewMode('list')"
+        [title]="'templates.view_list' | translate"
+      >
+        <i class="bi bi-list-ul"></i>
+      </button>
+    </div>
+    @if (isDbMode()) {
+      <button (click)="openCreate()" class="btn btn-primary btn-md">
+        <i class="bi bi-plus-lg me-2"></i>{{ 'templates.new' | translate }}
+      </button>
+    }
+  </div>
+</app-page-header>
+
+<div class="filter-bar mb-3">
+  <!-- Source filter -->
+  <div class="filter-group">
+    <button
+      (click)="onSourceChange('ALL')"
+      [class.btn-primary]="activeSourceTab() === 'ALL'"
+      [class.btn-outline-secondary]="activeSourceTab() !== 'ALL'"
+      class="btn btn-sm"
+    ><i class="bi bi-database-fill-check me-1"></i>{{ 'templates.all_tags' | translate }}
+    </button>
+    @if (isDbMode()) {
+      <button
+        (click)="onSourceChange('DATABASE')"
+        [class.btn-primary]="activeSourceTab() === 'DATABASE'"
+        [class.btn-outline-secondary]="activeSourceTab() !== 'DATABASE'"
+        class="btn btn-sm"
+      ><i class="bi bi-database-fill me-1"></i>{{ 'templates.source_database' | translate }}
+      </button>
+    }
+    <button
+      (click)="onSourceChange('FILE')"
+      [class.btn-primary]="activeSourceTab() === 'FILE'"
+      [class.btn-outline-secondary]="activeSourceTab() !== 'FILE'"
+      class="btn btn-sm"
+    ><i class="bi bi-file-earmark-text me-1"></i>{{ 'templates.source_file' | translate }}
+    </button>
+    <button
+      (click)="onSourceChange('GIT')"
+      [class.btn-primary]="activeSourceTab() === 'GIT'"
+      [class.btn-outline-secondary]="activeSourceTab() !== 'GIT'"
+      class="btn btn-sm"
+    ><i class="bi bi-git me-1"></i>{{ 'templates.source_git' | translate }}
+    </button>
+  </div>
+
+  @if ((activeSourceTab() === 'ALL' || activeSourceTab() === 'DATABASE') && allTags().length > 0) {
+    <div class="filter-divider"></div>
+    <!-- Tag filter -->
+    <div class="filter-group">
+      <button
+        (click)="filterByTag(undefined)"
+        [class.btn-primary]="!activeTag()"
+        [class.btn-outline-secondary]="activeTag()"
+        class="btn btn-sm"
+      >
+        <i class="bi bi-grid-3x3 me-1"></i>{{ 'templates.all_tags' | translate }}
+      </button>
+      @for (tag of allTags(); track tag) {
+        <button
+          (click)="filterByTag(tag)"
+          [class.btn-primary]="activeTag() === tag"
+          [class.btn-outline-secondary]="activeTag() !== tag"
+          [class.tag-filter--dimmed]="activeTag() && !tagsInCurrentPage().has(tag)"
+          class="btn btn-sm"
+        >
+          <i class="bi bi-tag me-1"></i>{{ tag }}
+        </button>
+      }
+    </div>
+  }
+</div>
+
+<!-- Grid: always on mobile, on md+ only when viewMode is 'grid' -->
+<app-template-grid
+  class="d-block"
+  [class.d-md-none]="viewMode() === 'list'"
+  (delete)="confirmDelete($event)"
+  (edit)="openEdit($event)"
+  (view)="openView($event)"
+  [loading]="loading"
+  [templates]="templates"
+/>
+
+<!-- Table: only on md+ when viewMode is 'list' -->
+@if (viewMode() === 'list') {
+  <app-template-table
+    class="d-none d-md-block"
+    (delete)="confirmDelete($event)"
+    (edit)="openEdit($event)"
+    (view)="openView($event)"
+    [loading]="loading"
+    [templates]="templates"
+  />
+}
+
+@if (tenantSyncStatus()) {
+  <app-git-sync-card
+    class="d-block my-3"
+    [syncStatus]="tenantSyncStatus()!"
+    [syncing]="syncingCurrentTenant()"
+    (sync)="onGitSync($event)"
+  />
+}
+
+<!-- Pagination -->
+@if (totalElements() > pageSize()) {
+  <div class="d-flex justify-content-center mt-3">
+    <ngb-pagination
+      (pageChange)="onPageChange($event)"
+      [boundaryLinks]="true"
+      [collectionSize]="totalElements()"
+      [maxSize]="7"
+      [pageSize]="pageSize()"
+      [page]="currentPage() + 1"
+      [rotate]="true"
+    />
+  </div>
+}

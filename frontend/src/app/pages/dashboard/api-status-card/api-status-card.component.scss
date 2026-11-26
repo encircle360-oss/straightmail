@@ -1,0 +1,153 @@
+// ─── Status card ──────────────────────────────────────────────────────────────
+.status-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-left: 3px solid var(--border);
+  border-radius: var(--radius-md);
+  transition: border-left-color var(--transition);
+
+  &:hover {
+    border-left-color: var(--accent-border);
+  }
+
+  &__pip {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: var(--text-muted);
+    transition: background var(--transition);
+  }
+
+  &__body {
+    flex: 1;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+
+  &__name {
+    font-family: var(--font-sans), sans-serif;
+    font-size: 0.94rem;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+
+  &__host {
+    font-family: var(--font-mono), monospace;
+    font-size: 0.83rem;
+    color: var(--text-muted);
+
+    @media (max-width: 639px) {
+      display: none;
+    }
+  }
+
+  &__right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+}
+
+.pip--up {
+  background: var(--success);
+  box-shadow: 0 0 5px var(--success);
+}
+
+.pip--down {
+  background: var(--error);
+}
+
+.pip--checking {
+  background: var(--warning);
+  animation: blink 1s ease-in-out infinite;
+}
+
+// ─── Status badge ─────────────────────────────────────────────────────────────
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 2px;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+
+  &__dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+
+    &--pulse {
+      animation: blink 1s ease-in-out infinite;
+    }
+  }
+
+  &--up {
+    background: rgba(22, 163, 74, 0.08);
+    color: var(--success);
+    border: 1px solid rgba(22, 163, 74, 0.2);
+
+    .status-badge__dot {
+      background: var(--success);
+    }
+  }
+
+  &--down {
+    background: rgba(220, 38, 38, 0.08);
+    color: var(--error);
+    border: 1px solid rgba(220, 38, 38, 0.2);
+
+    .status-badge__dot {
+      background: var(--error);
+    }
+  }
+
+  &--checking {
+    background: rgba(217, 119, 6, 0.08);
+    color: var(--warning);
+    border: 1px solid rgba(217, 119, 6, 0.2);
+
+    .status-badge__dot {
+      background: var(--warning);
+    }
+  }
+}
+
+// ─── Refresh button ───────────────────────────────────────────────────────────
+.btn-refresh {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color var(--transition), border-color var(--transition), background var(--transition);
+
+  &:hover {
+    color: var(--text-accent);
+    border-color: var(--accent-border);
+    background: var(--accent-dim);
+  }
+}
+
+// ─── Animations ───────────────────────────────────────────────────────────────
+@keyframes blink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}

@@ -1,0 +1,57 @@
+spring:
+  profiles:
+    active: test
+  main:
+    allow-bean-definition-overriding: true
+  mail:
+    default-encoding: UTF-8
+    host: ${SMTP_HOST:localhost}
+    username: ${SMTP_USER:""}
+    password: ${SMTP_PASSWORD:""}
+    port: ${SMTP_PORT:1025}
+    default-sender: ${DEFAULT_SENDER:test@encircle360.com}
+    default-template: ${DEFAULT_TEMPLATE:default}
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+          ssl:
+            enable: false
+    protocol: smtp
+    test-connection: false
+server:
+  port: 50003
+
+cors:
+  allowed-origins: ""
+
+auth:
+  mode: api-key
+
+api:
+  prefix: ""
+  key: "test-api-key"
+
+encryption:
+  key: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+
+jwt:
+  tenant-claim: tenant_id
+  tenant-ids-claim: tenant_ids
+
+templates:
+  git-sync:
+    enabled: false
+    cron: "0 0 * * * *"
+    lock-at-least: PT1M
+    lock-at-most: PT2M
+  file:
+    enabled: true
+    base-path: /resources/templates
+
+tenants:
+  config:
+    - id: default
+      displayName: Default

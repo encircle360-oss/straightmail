@@ -1,0 +1,55 @@
+@if (loading()) {
+  <div class="grid-loading">
+    {{ 'common.loading' | translate }}
+  </div>
+} @else if (tenants().length === 0) {
+  <div class="grid-empty">
+    <i class="bi bi-building grid-empty__icon"></i>
+    <p>{{ 'tenants.no_tenants' | translate }}</p>
+  </div>
+} @else {
+  <div class="tenant-grid">
+    @for (tenant of tenants(); track tenant.slug) {
+      <div
+        class="tenant-card"
+        (click)="navigate(tenant)"
+        [class.tenant-card--readonly]="tenant.editable === false"
+        [attr.aria-label]="tenant.displayName"
+      >
+        @if (tenant.editable !== false && tenant.slug !== 'default') {
+          <button
+            class="tenant-card__delete btn btn-sm btn-outline-danger"
+            (click)="$event.stopPropagation(); delete.emit(tenant)"
+            [title]="'common.delete' | translate"
+          >
+            <i class="bi bi-trash"></i>
+          </button>
+        }
+
+        <app-tenant-avatar [tenant]="tenant" size="lg"/>
+
+        <div class="tenant-card__body">
+          <div class="tenant-card__name">{{ tenant.displayName }}</div>
+
+          <div class="tenant-card__indicators">
+            @if (tenant.active) {
+              <i class="bi bi-check-circle-fill text-success" [title]="'tenants.active' | translate"></i>
+            } @else {
+              <i class="bi bi-dash-circle text-secondary" [title]="'tenants.inactive' | translate"></i>
+            }
+            @if (tenant.smtpHost) {
+              <i class="bi bi-envelope-fill" [title]="'tenants.smtp_host' | translate"></i>
+            }
+            @if (tenant.gitRepoUrl) {
+              <i class="bi bi-git" [title]="'tenants.git_repo' | translate"></i>
+            }
+            @if (tenant.hasApiKey) {
+              <i class="bi bi-key-fill" [title]="'tenants.has_api_key' | translate"></i>
+            }
+            <code class="tenant-card__slug">{{ tenant.slug }}</code>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+}

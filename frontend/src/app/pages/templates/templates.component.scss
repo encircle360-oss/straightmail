@@ -1,0 +1,25 @@
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.filter-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag-filter--dimmed {
+  opacity: 0.4;
+}
+
+.filter-divider {
+  width: 1px;
+  height: 28px;
+  background-color: var(--bs-border-color);
+  align-self: center;
+  flex-shrink: 0;
+  margin: 0 2px;
+}

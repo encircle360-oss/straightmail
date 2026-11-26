@@ -1,0 +1,26 @@
+<header class="topbar">
+  <div class="topbar__breadcrumb">
+    <button (click)="menuToggle.emit()" aria-label="Menu" class="topbar__menu-btn" type="button">
+      <i class="bi bi-list"></i>
+    </button>
+    <span class="topbar__label">Admin Console</span>
+  </div>
+  <div class="topbar__actions">
+    @if (authMode === 'oidc') {
+      @if (userData$ | async; as userData) {
+        <span class="topbar__user">
+          <app-user-avatar [email]="userData.email" [name]="userData.name || userData.email || ''"/>
+          {{ userData.name || userData.email || 'User' }}
+        </span>
+      }
+    }
+    @if (authMode !== 'none') {
+      <button (click)="logout()" aria-label="Logout" class="topbar__logout-btn" type="button">
+        <i class="bi bi-box-arrow-right"></i>
+      </button>
+    }
+    <button (click)="openHelp()" [title]="'help.title' | translate" class="topbar__help-btn" type="button">
+      <i class="bi bi-question-circle"></i>
+    </button>
+  </div>
+</header>

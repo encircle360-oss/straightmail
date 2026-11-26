@@ -1,0 +1,61 @@
+### Render template to HTML and plain text
+POST http://localhost:50003/render
+Content-Type: application/json
+
+{
+  "templateId": "test",
+  "model": {
+    "subject": "Test Subject",
+    "text": "This is a test message",
+    "test": 200.8
+  }
+}
+
+### Render template with complex model
+POST http://localhost:50003/render
+Content-Type: application/json
+
+{
+  "templateId": "test_json_node",
+  "model": {
+    "number": 200.8,
+    "string": "Sample text",
+    "bool": true,
+    "object": {
+      "singleString": "Nested string",
+      "singleBoolean": false,
+      "singleDouble": 99.99,
+      "singleInteger": 42,
+      "strings": [
+        "First",
+        "Second",
+        "Third"
+      ],
+      "booleans": [
+        true,
+        false
+      ],
+      "doubles": [
+        1.5,
+        2.5,
+        3.5
+      ],
+      "integers": [
+        10,
+        20,
+        30
+      ]
+    }
+  }
+}
+
+### Render template - should return 404 if template not found
+POST http://localhost:50003/render
+Content-Type: application/json
+
+{
+  "templateId": "non-existent-template",
+  "model": {
+    "test": "value"
+  }
+}

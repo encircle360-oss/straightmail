@@ -1,0 +1,76 @@
+# =============================================================================
+# Mode: Minimal — No auth, no database, file templates
+# =============================================================================
+# Auth:      none (all API endpoints are open — AUTH_MODE=none)
+# Templates: file-based (./data/files mounted read-only at /resources/templates; templates must be in
+#            a {tenantId}/ subdir, e.g. data/files/default/welcome.ftl); git-sync enabled (no-op without DB)
+# Database:  none (no JPA, no tenant filters)
+# Services:  backend + mailpit
+#
+# Start:  docker compose -f compose/minimal.yml up
+# API:    http://localhost:50003/api
+# Mails:  http://localhost:8025 (Mailpit web UI)
+# =============================================================================
+
+services:
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: straightmail-minimal-mailpit
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:1025:1025"
+      - "127.0.0.1:8025:8025"
+    healthcheck:
+      # The mailpit image ships no curl; readyz is its own built-in health command.
+      test: [ "CMD", "/mailpit", "readyz" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - straightmail
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: straightmail-minimal-backend
+    restart: unless-stopped
+    # Without this the first "docker compose up" races its dependencies and crash-loops.
+    depends_on:
+      mailpit:
+        condition: service_healthy
+    environment:
+      # No 'database' profile → no JPA, no tenant context, no auth filters
+      AUTH_MODE: none
+      SMTP_HOST: mailpit
+      SMTP_PORT: 1025
+      ENCRYPTION_KEY: "Km7nst8YEA/oFsM6fWlJt1s20rF+BTZV1Z/kugo0LGk="   # local development only — generate your own with: openssl rand -base64 32
+      DEFAULT_SENDER: "test@straightmail.local"
+      CORS_ALLOWED_ORIGINS: "http://localhost:50003,http://localhost:4200"
+      # -----------------------------------------------------------------------
+      # Template sources
+      # -----------------------------------------------------------------------
+      TEMPLATE_FILE_ENABLED: "true"
+      TEMPLATE_GIT_SYNC_ENABLED: "true"
+      TEMPLATES_FILE_BASE_PATH: /resources/templates
+      TEMPLATES_GIT_SYNC_BASE_PATH: /git
+      TENANTS_CONFIG_0_ID: "default"
+      TENANTS_CONFIG_0_DISPLAY_NAME: "ACME"
+    volumes:
+      # Writable paths are named volumes: they inherit the image's ownership, so the non-root
+      # container can write to them. A host bind mount would arrive root-owned on Linux.
+      - straightmail-minimal-git:/git
+      - ./data/files:/resources/templates:ro
+    ports:
+      - "127.0.0.1:50003:50003"
+      - "127.0.0.1:50004:50004"
+    networks:
+      - straightmail
+
+networks:
+  straightmail:
+    driver: bridge
+
+volumes:
+  straightmail-minimal-git:

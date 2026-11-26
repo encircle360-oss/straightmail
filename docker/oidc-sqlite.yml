@@ -1,0 +1,155 @@
+# =============================================================================
+# Mode: OIDC Auth + SQLite + Database Templates + Keycloak
+# =============================================================================
+# Auth:      OIDC/JWT (Bearer token — Keycloak)
+# Tenant:    resolved from JWT array-claim 'tenant_ids'
+#            Keycloak user must have a multi-value attribute 'tenant_ids' (e.g. acme-1, acme-2)
+# Templates: stored in SQLite DB (full CRUD via UI/API)
+# Database:  SQLite (WAL mode, persisted in named volume)
+# Services:  backend + mailpit + keycloak (frontend served by backend on :50003)
+#
+# Start:  docker compose -f compose/oidc-sqlite.yml up
+# UI:     http://localhost:50003  →  login: admin / admin
+# API:    http://localhost:50003/api  (Bearer token required)
+# Keycloak admin: http://localhost:8090  →  admin / admin
+# Mails:  http://localhost:8025 (Mailpit web UI)
+#
+# OIDC hostname strategy:
+#   Keycloak advertises 'localhost:8090' as its public hostname, so the issuer URI
+#   in JWT tokens is 'http://localhost:8090/realms/straightmail' — reachable from any browser.
+#   The backend fetches JWK keys via the Docker-internal service name 'keycloak:8080'
+#   (OIDC_JWK_URI) to avoid a dependency on host networking at container startup.
+#   Issuer claim validation still uses the public OIDC_ISSUER_URI (localhost:8090).
+# =============================================================================
+
+services:
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: straightmail-oidc-mailpit
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:1025:1025"
+      - "127.0.0.1:8025:8025"
+    healthcheck:
+      # The mailpit image ships no curl; readyz is its own built-in health command.
+      test: [ "CMD", "/mailpit", "readyz" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - straightmail
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.8.1
+    container_name: straightmail-oidc-keycloak
+    # Custom entrypoint: starts Keycloak in the background, then uses kcadm to set
+    # sslRequired=none on the master realm. In Docker bridge networking the browser's
+    # localhost:8090 request arrives inside the container from the bridge gateway IP
+    # (e.g. 172.17.0.1), which Keycloak treats as external — triggering the master
+    # realm's default "sslRequired: external" check. Setting it to none at startup
+    # is the reliable fix; KC_HOSTNAME_STRICT_HTTPS does not affect this realm-level check.
+    entrypoint: [ "/bin/bash", "-c" ]
+    command:
+      - |
+        /opt/keycloak/bin/kc.sh start-dev --import-realm &
+        KC_PID=$$!
+        trap "kill $$KC_PID" SIGTERM SIGINT
+        until /opt/keycloak/bin/kcadm.sh config credentials \
+          --server http://localhost:8080 --realm master \
+          --user "$$KC_BOOTSTRAP_ADMIN_USERNAME" --password "$$KC_BOOTSTRAP_ADMIN_PASSWORD" \
+          > /dev/null 2>&1; do sleep 5; done
+        /opt/keycloak/bin/kcadm.sh update realms/master -s sslRequired=none
+        wait $$KC_PID
+    restart: unless-stopped
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      # Hostname v2 (default since KC 25): full URL form sets the scheme to HTTP explicitly.
+      # All tokens will carry iss = http://localhost:8090/realms/straightmail.
+      KC_HOSTNAME: "http://localhost:8090"
+      KC_HOSTNAME_STRICT: "false"
+      KC_HTTP_ENABLED: "true"
+      # Opens the management port 9000, where /health/ready is served.
+      KC_HEALTH_ENABLED: "true"
+    volumes:
+      - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+    ports:
+      - "127.0.0.1:8090:8080"
+    healthcheck:
+      # The Keycloak image ships no curl, and since Keycloak 25 the health endpoints live on the
+      # management port 9000 rather than on 8080. bash's /dev/tcp is what is left.
+      test: [ "CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000 && echo -e 'GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 && grep -q UP <&3" ]
+      interval: 15s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    networks:
+      - straightmail
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: straightmail-oidc-backend
+    restart: unless-stopped
+    # Without this the first "docker compose up" races its dependencies and crash-loops.
+    depends_on:
+      mailpit:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    environment:
+      # No 'local' profile here: it would pull in a developer's application-local.yml, which
+      # bootJar packages into the image and whose tenants.config overrides the values below.
+      SPRING_PROFILES_ACTIVE: database
+      AUTH_MODE: oidc
+      OIDC_ISSUER_URI: "http://localhost:8090/realms/straightmail"
+      OIDC_JWK_URI: "http://keycloak:8080/realms/straightmail/protocol/openid-connect/certs"
+      JWT_TENANT_IDS_CLAIM: "tenant_ids"
+      # Stable dev encryption key — change for any non-local environment
+      ENCRYPTION_KEY: "wE+DkEnrOHduqYmJc4Pt/rPefrH2BznkwL6mfxOArCk="
+      DB_URL: "jdbc:sqlite:/data/straightmail.db?journal_mode=WAL"
+      SMTP_HOST: straightmail-oidc-mailpit
+      SMTP_PORT: 1025
+      DEFAULT_SENDER: "test@straightmail.local"
+      CORS_ALLOWED_ORIGINS: "http://localhost:4200"
+      # -----------------------------------------------------------------------
+      # Tenant configuration (TenantReconciliationService — runs at startup)
+      # -----------------------------------------------------------------------
+      TENANTS_CONFIG_0_ID: "acme-1"
+      TENANTS_CONFIG_0_DISPLAY_NAME: "ACME-1"
+      TENANTS_CONFIG_0_SMTP_HOST: "straightmail-oidc-mailpit"
+      TENANTS_CONFIG_0_SMTP_PORT: "1025"
+      TENANTS_CONFIG_0_SMTP_SENDER: "acme-1@straightmail.local"
+      TENANTS_CONFIG_1_ID: "acme-2"
+      TENANTS_CONFIG_1_DISPLAY_NAME: "ACME-2"
+      TENANTS_CONFIG_1_SMTP_HOST: "straightmail-oidc-mailpit"
+      TENANTS_CONFIG_1_SMTP_PORT: "1025"
+      TENANTS_CONFIG_1_SMTP_SENDER: "acme-2@straightmail.local"
+      # -----------------------------------------------------------------------
+      # Template sources
+      # -----------------------------------------------------------------------
+      TEMPLATE_FILE_ENABLED: "true"
+      TEMPLATE_GIT_SYNC_ENABLED: "true"
+      TEMPLATES_FILE_BASE_PATH: /templates
+      TEMPLATES_GIT_SYNC_BASE_PATH: /git
+    volumes:
+      # Writable paths are named volumes: they inherit the image's ownership, so the non-root
+      # container can write to them. A host bind mount would arrive root-owned on Linux.
+      - straightmail-oidc-sqlite:/data
+      - straightmail-oidc-git:/git
+      - ./data/files:/templates:ro
+    ports:
+      - "127.0.0.1:50003:50003"
+      - "127.0.0.1:50004:50004"
+    networks:
+      - straightmail
+
+networks:
+  straightmail:
+    driver: bridge
+
+volumes:
+  straightmail-oidc-sqlite:
+  straightmail-oidc-git:

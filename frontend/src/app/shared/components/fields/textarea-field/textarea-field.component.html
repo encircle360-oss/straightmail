@@ -1,0 +1,22 @@
+<div class="d-flex justify-content-between align-items-center mb-1">
+  <label class="form-label mb-0">
+    @if (icon()) {
+      <i [class]="icon()" style="margin-right: 6px"></i>
+    }
+    {{ label() | translate }}
+  </label>
+  @if (!disabled()) {
+    <button (click)="loadSample()" class="btn btn-link btn-md p-0 text-muted" type="button">
+      <i class="bi bi-file-earmark-code me-1"></i>{{ 'common.sample' | translate }}
+    </button>
+  }
+</div>
+<textarea
+  [formControl]="control()"
+  [class.font-mono]="mono()"
+  [class.is-invalid]="control().invalid && control().touched"
+  [placeholder]="placeholder() | translate"
+  [rows]="rows()"
+  class="form-control"
+></textarea>
+<app-form-error [control]="control()" />

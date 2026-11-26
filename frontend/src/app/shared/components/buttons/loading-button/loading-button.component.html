@@ -1,0 +1,11 @@
+<button [disabled]="loading()" [type]="type()" class="btn {{ variant() }}">
+  @if (loading()) {
+    <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+    {{ loadingLabel() | translate }}
+  } @else {
+    @if (icon()) {
+      <i class="bi {{ icon() }} me-2"></i>
+    }
+    {{ label() | translate }}
+  }
+</button>

@@ -1,0 +1,38 @@
+// Sidebar palette — independent dark world (copied from sidebar to maintain consistency)
+$sb-bg: #1c1917;
+$sb-text: #a8a29e;
+
+.lang-selector {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #57534e;
+
+  &__icon {
+    font-size: 0.78rem;
+    margin-top: 1px;
+  }
+
+  &__select {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    color: #57534e;
+    font-family: var(--font-mono), monospace;
+    font-size: 0.72rem;
+    padding: 1px 4px;
+    cursor: pointer;
+    outline: none;
+    transition: all 0.2s ease;
+
+    &:hover {
+      border-color: rgba(255, 255, 255, 0.2);
+      color: $sb-text;
+    }
+
+    option {
+      background: $sb-bg;
+      color: $sb-text;
+    }
+  }
+}

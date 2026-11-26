@@ -1,0 +1,25 @@
+<div class="accordion" ngbAccordion>
+  <div
+    (hidden)="onHidden()"
+    (shown)="onShown()"
+    [collapsed]="collapsed()"
+    class="accordion-item"
+    ngbAccordionItem
+  >
+    <span class="accordion-header" ngbAccordionHeader>
+      <button class="accordion-button" ngbAccordionButton>
+        @if (icon()) {
+          <i [class]="icon() + ' me-2'"></i>
+        }
+        {{ label() | translate }}
+      </button>
+    </span>
+    <div class="accordion-collapse" ngbAccordionCollapse>
+      <div class="accordion-body" ngbAccordionBody>
+        <ng-template>
+          <ng-content/>
+        </ng-template>
+      </div>
+    </div>
+  </div>
+</div>

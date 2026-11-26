@@ -1,0 +1,43 @@
+<div class="render-preview-panel">
+  @if (error()) {
+    <div class="render-error">
+      <i class="bi bi-exclamation-triangle-fill render-error__icon"></i>
+      <p class="render-error__label">{{ 'render.template_error' | translate }}</p>
+      <pre class="render-error__detail">{{ error() }}</pre>
+    </div>
+  } @else if (!html() && !plain()) {
+    <div class="render-empty">
+      <i class="bi bi-eye render-empty__icon"></i>
+      <p>{{ 'render.no_result' | translate }}</p>
+    </div>
+  } @else {
+    <ul #previewNav="ngbNav" [(activeId)]="activeTab" class="nav-tabs mb-3" ngbNav>
+      <li [destroyOnHide]="false" [ngbNavItem]="1" (shown)="adjustIframeHeight()">
+        <button ngbNavLink>
+          <i class="bi bi-code-slash me-1"></i>
+          {{ 'render.tab_html' | translate }}
+        </button>
+        <ng-template ngbNavContent>
+          <iframe
+            #previewIframe
+            (load)="onIframeLoad($event)"
+            [srcdoc]="html()"
+            class="render-iframe"
+            sandbox="allow-same-origin"
+            title="HTML Preview"
+          ></iframe>
+        </ng-template>
+      </li>
+      <li [ngbNavItem]="2">
+        <button ngbNavLink>
+          <i class="bi bi-file-text me-1"></i>
+          {{ 'render.tab_text' | translate }}
+        </button>
+        <ng-template ngbNavContent>
+          <pre class="render-plain">{{ plain() }}</pre>
+        </ng-template>
+      </li>
+    </ul>
+    <div [ngbNavOutlet]="previewNav"></div>
+  }
+</div>

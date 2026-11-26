@@ -1,0 +1,15 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.offcanvas-body {
+  overflow-y: auto;
+}
+
+.help-section--active {
+  border-left: 3px solid var(--accent);
+  padding-left: 12px;
+}

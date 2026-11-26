@@ -1,0 +1,22 @@
+spring:
+  main:
+    allow-bean-definition-overriding: true
+  autoconfigure:
+    exclude: [ ]
+  datasource:
+    url: ${DB_URL:jdbc:sqlite:docker/data/sqlite/straightmail.db?journal_mode=WAL}
+    driver-class-name: ${DB_DRIVER:org.sqlite.JDBC}
+    username: ${DB_USERNAME:}
+    password: ${DB_PASSWORD:}
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:1}
+  jpa:
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        dialect: ${DB_DIALECT:org.hibernate.community.dialect.SQLiteDialect}
+    open-in-view: false
+  liquibase:
+    enabled: true
+    change-log: classpath:db/changelog/db.changelog-master.yaml

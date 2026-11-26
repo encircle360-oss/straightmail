@@ -1,0 +1,17 @@
+<div class="modal-header">
+  <h5 class="modal-title">{{ 'common.confirm' | translate }}</h5>
+  <button (click)="modal.dismiss()" class="btn-close" type="button"></button>
+</div>
+<div class="modal-body">
+  <p>{{ message() | translate: (messageParams() ?? {}) }}</p>
+</div>
+<div class="modal-footer">
+  <button (click)="modal.dismiss()" class="btn btn-outline-secondary" type="button">
+    <i class="bi bi-x-lg me-2"></i>
+    {{ 'common.cancel' | translate }}
+  </button>
+  <button (click)="modal.close(true)" [class]="'btn btn-' + variant()" type="button">
+    <i class="bi bi-check-lg me-2"></i>
+    {{ confirmLabel() | translate }}
+  </button>
+</div>

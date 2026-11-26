@@ -1,0 +1,60 @@
+// ─── Shell ────────────────────────────────────────────────────────────────────
+.shell {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+// ─── Main ─────────────────────────────────────────────────────────────────────
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+  background: var(--bg-base);
+}
+
+// ─── Mobile ───────────────────────────────────────────────────────────────────
+@media (max-width: 767px) {
+  .content {
+    padding: 16px;
+  }
+}
+
+.sidebar-backdrop {
+  display: none;
+
+  @media (max-width: 767px) {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 1039;
+  }
+}
+
+// ngx-progressbar — brand color matching the dot-grid (rgb 194 65 12)
+// [relative]="true" makes the bar position:relative so it sits between topbar and content
+// --ng-progress-thickness is a unitless number (multiplied to px internally)
+ng-progress {
+  display: block;
+  --ng-progress-color: rgb(194 65 12);
+  --ng-progress-thickness: 3;
+  --ng-progress-ease: linear;
+}
+
+// Content — dot-grid paper background
+.content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 32px 32px;
+  background-color: var(--bg-base);
+  background-image: radial-gradient(
+      circle,
+      rgba(194, 65, 12, 0.1) 1px,
+      transparent 1px
+  );
+  background-size: 22px 22px;
+}

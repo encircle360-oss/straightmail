@@ -1,0 +1,231 @@
+<app-page-header icon="send" title="send.title">
+  <app-loading-button
+    (click)="submit()"
+    [loading]="loading()"
+    icon="bi-send"
+    label="send.submit"
+    loadingLabel="send.sending"
+    type="button"
+    variant="btn-primary btn-md"
+  />
+</app-page-header>
+
+<ul #nav="ngbNav" (activeIdChange)="onTabChange($event)" [(activeId)]="activeTab" class="nav-tabs mb-4" ngbNav>
+
+  <!-- ── Tab 1: By Template ID ──────────────────────────────────────────────── -->
+  <li [ngbNavItem]="1">
+    <button ngbNavLink>{{ 'send.tab_by_id' | translate }}</button>
+  </li>
+
+  <!-- ── Tab 2: Inline Template ──────────────────────────────────────────────── -->
+  <li [ngbNavItem]="2">
+    <button ngbNavLink>{{ 'send.tab_inline' | translate }}</button>
+  </li>
+
+</ul>
+
+@if (activeTab === 1) {
+  <form [formGroup]="byIdForm" novalidate>
+
+    <!-- Recipients -->
+    <div class="mb-3">
+      <app-chip-field
+        [form]="byIdForm"
+        [required]="true"
+        [showRequiredError]="$any(byIdForm.get('recipients'))?.length === 0 && byIdForm.touched"
+        arrayName="recipients"
+        icon="bi bi-people"
+        inputName="recipientInput"
+        inputType="email"
+        label="send.recipients"
+        placeholder="send.recipients_placeholder"
+      />
+    </div>
+
+    <!-- Sender + Template ID -->
+    <div class="row g-3 mb-3">
+      <div class="col-md-6">
+        <app-text-field
+          [control]="byIdForm.controls.sender"
+          [required]="true"
+          icon="bi bi-envelope"
+          label="send.sender"
+          placeholder="send.sender_placeholder"
+          type="email"
+        />
+      </div>
+      <div class="col-md-6">
+        <app-select-field
+          [control]="byIdForm.controls.emailTemplateId"
+          [required]="true"
+          icon="bi bi-file-earmark-text"
+          label="send.template_id"
+        >
+          <option value="">— Select template —</option>
+          @for (t of groupedTemplates().nonGit; track t.id) {
+            <option [value]="t.id">{{ t.name }}@if (t.locale) {
+              ({{ t.locale }})
+            }</option>
+          }
+          @for (group of groupedTemplates().gitGroups; track group.branch) {
+            <optgroup [label]="'⎇ ' + group.branch">
+              @for (t of group.templates; track t.id + '|' + t.gitBranch) {
+                <option [value]="t.id">{{ t.name }}@if (t.locale) {
+                  ({{ t.locale }})
+                }</option>
+              }
+            </optgroup>
+          }
+        </app-select-field>
+      </div>
+    </div>
+
+    <!-- Subject + Locale -->
+    <div class="row g-3 mb-3">
+      <div class="col-md-8">
+        <app-text-field
+          [control]="byIdForm.controls.subject"
+          icon="bi bi-text-left"
+          label="send.subject"
+          placeholder="send.subject_placeholder"
+        />
+      </div>
+      <div class="col-md-4">
+        <app-select-field [control]="byIdForm.controls.locale" icon="bi bi-globe2" label="send.locale">
+          @for (loc of localeOptions; track loc) {
+            <option [value]="loc">{{ loc }}</option>
+          }
+        </app-select-field>
+      </div>
+    </div>
+
+    <!-- Model JSON Accordion -->
+    <div class="mb-3">
+      <app-accordion-item [defaultCollapsed]="true" icon="bi bi-braces" label="send.model" stateKey="byIdModel">
+        <app-json-model-field [control]="byIdForm.controls.model" [label]="''" [rows]="8"
+                              placeholder="send.model_placeholder"/>
+      </app-accordion-item>
+    </div>
+
+    <!-- Advanced: CC / BCC -->
+    <details class="mb-4">
+      <summary class="details-summary">{{ 'send.advanced' | translate }}</summary>
+      <div class="details-body">
+        <div class="mb-3">
+          <app-chip-field
+            [form]="byIdForm"
+            arrayName="cc"
+            icon="bi bi-envelope-plus"
+            inputName="ccInput"
+            inputType="email"
+            label="send.cc"
+          />
+        </div>
+        <div class="mb-3">
+          <app-chip-field
+            [form]="byIdForm"
+            arrayName="bcc"
+            icon="bi bi-envelope-check"
+            inputName="bccInput"
+            inputType="email"
+            label="send.bcc"
+          />
+        </div>
+      </div>
+    </details>
+
+  </form>
+}
+
+@if (activeTab === 2) {
+  <form [formGroup]="inlineForm" novalidate>
+
+    <!-- Recipients -->
+    <div class="mb-3">
+      <app-chip-field
+        [form]="inlineForm"
+        [required]="true"
+        [showRequiredError]="$any(inlineForm.get('recipients'))?.length === 0 && inlineForm.touched"
+        arrayName="recipients"
+        icon="bi bi-people"
+        inputName="recipientInput"
+        inputType="email"
+        label="send.recipients"
+        placeholder="send.recipients_placeholder"
+      />
+    </div>
+
+    <!-- Sender + Subject -->
+    <div class="row g-3 mb-3">
+      <div class="col-md-6">
+        <app-text-field
+          [control]="inlineForm.controls.sender"
+          [required]="true"
+          icon="bi bi-envelope"
+          label="send.sender"
+          placeholder="send.sender_placeholder"
+          type="email"
+        />
+      </div>
+      <div class="col-md-6">
+        <app-text-field
+          [control]="inlineForm.controls.subject"
+          [required]="true"
+          icon="bi bi-text-left"
+          label="send.subject_required"
+          placeholder="send.subject_placeholder"
+          type="text"
+        />
+      </div>
+    </div>
+
+    <!-- Locale -->
+    <div class="mb-3" style="max-width: 180px;">
+      <app-select-field [control]="inlineForm.controls.locale" icon="bi bi-globe2" label="send.locale">
+        @for (loc of localeOptions; track loc) {
+          <option [value]="loc">{{ loc }}</option>
+        }
+      </app-select-field>
+    </div>
+
+    <!-- Email Template & Model JSON Accordions -->
+    <div class="d-flex flex-column mb-3 gap-3">
+      <app-accordion-item [defaultCollapsed]="false" icon="bi bi-code-slash" label="send.email_template"
+                          stateKey="inlineTemplate">
+        <app-html-body-field [control]="inlineForm.controls.emailTemplate" [label]="''" [rows]="12"/>
+      </app-accordion-item>
+      <app-accordion-item [defaultCollapsed]="true" icon="bi bi-braces" label="send.model" stateKey="inlineModel">
+        <app-json-model-field [control]="inlineForm.controls.model" [label]="''" [rows]="8"
+                              placeholder="send.model_placeholder"/>
+      </app-accordion-item>
+    </div>
+
+    <!-- Advanced: CC / BCC -->
+    <details class="mb-4">
+      <summary class="details-summary">{{ 'send.advanced' | translate }}</summary>
+      <div class="details-body">
+        <div class="mb-3">
+          <app-chip-field
+            [form]="inlineForm"
+            arrayName="cc"
+            icon="bi bi-envelope-plus"
+            inputName="ccInput"
+            inputType="email"
+            label="send.cc"
+          />
+        </div>
+        <div class="mb-3">
+          <app-chip-field
+            [form]="inlineForm"
+            arrayName="bcc"
+            icon="bi bi-envelope-check"
+            inputName="bccInput"
+            inputType="email"
+            label="send.bcc"
+          />
+        </div>
+      </div>
+    </details>
+
+  </form>
+}

@@ -1,0 +1,107 @@
+// ─── Status card (shared layout) ──────────────────────────────────────────────
+.status-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-left: 3px solid var(--border);
+  border-radius: var(--radius-md);
+  transition: border-left-color var(--transition);
+
+  &:hover {
+    border-left-color: var(--accent-border);
+  }
+
+  &__pip {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: var(--text-muted);
+    transition: background var(--transition);
+  }
+
+  &__body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  &__hint {
+    font-family: var(--font-mono), monospace;
+    font-size: 0.83rem;
+    color: var(--text-muted);
+
+    @media (max-width: 639px) {
+      display: none;
+    }
+  }
+
+  &__source-icon {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+
+    @media (max-width: 639px) {
+      display: none;
+    }
+  }
+
+  &__right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+}
+
+.pip--up {
+  background: var(--success);
+  box-shadow: 0 0 5px var(--success);
+}
+
+.pip--down {
+  background: var(--error);
+}
+
+// ─── Status badge ─────────────────────────────────────────────────────────────
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 2px;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+
+  &__dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+  }
+
+  &--up {
+    background: rgba(22, 163, 74, 0.08);
+    color: var(--success);
+    border: 1px solid rgba(22, 163, 74, 0.2);
+
+    .status-badge__dot {
+      background: var(--success);
+    }
+  }
+
+  &--down {
+    background: rgba(220, 38, 38, 0.08);
+    color: var(--error);
+    border: 1px solid rgba(220, 38, 38, 0.2);
+
+    .status-badge__dot {
+      background: var(--error);
+    }
+  }
+}

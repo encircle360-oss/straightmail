@@ -1,0 +1,17 @@
+<label class="form-label">
+  @if (icon()) {
+    <i [class]="icon()" style="margin-right: 6px"></i>
+  }
+  {{ label() | translate }}
+  @if (required()) {
+    <span class="text-danger">*</span>
+  }
+</label>
+<select
+  [formControl]="control()"
+  [class.is-invalid]="control().invalid && control().touched"
+  class="form-select"
+>
+  <ng-content />
+</select>
+<app-form-error [control]="control()" />

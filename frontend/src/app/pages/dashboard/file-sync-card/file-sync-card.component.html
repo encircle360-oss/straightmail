@@ -1,0 +1,20 @@
+<div class="status-card">
+  <div [class]="'status-card__pip ' + (status().accessible ? 'pip--up' : 'pip--down')"></div>
+  <div class="status-card__body">
+    <span class="status-card__hint">Files</span>
+    <i class="bi bi-folder status-card__source-icon" [title]="'templates.source_file' | translate"></i>
+  </div>
+  <div class="status-card__right">
+    @if (status().accessible) {
+      <span class="status-badge status-badge--up">
+        <span class="status-badge__dot"></span>
+        {{ 'dashboard.file_accessible' | translate }}
+      </span>
+    } @else {
+      <span class="status-badge status-badge--down">
+        <span class="status-badge__dot"></span>
+        {{ 'dashboard.file_unavailable' | translate }}
+      </span>
+    }
+  </div>
+</div>

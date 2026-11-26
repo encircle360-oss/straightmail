@@ -1,0 +1,57 @@
+<aside [class.sidebar--open]="open()" class="sidebar">
+  <!-- Logo -->
+  <app-logo/>
+
+  <!-- Tenant Selector -->
+  @if (tenants$ | async; as tenants) {
+    <div class="sidebar__divider"></div>
+
+    <div class="sidebar__tenant">
+      @if (tenants.length > 1) {
+        <app-tenant-avatar [tenant]="selectedTenant()" size="sm"/>
+        <select
+          class="sidebar__tenant-select"
+          [ngModel]="selectedTenantId$ | async"
+          (ngModelChange)="selectTenant($event)"
+        >
+          @for (tenant of tenants; track tenant.slug) {
+            <option [value]="tenant.slug">{{ tenant.displayName }}</option>
+          }
+        </select>
+      } @else if (tenants.length === 1) {
+        <app-tenant-avatar [tenant]="tenants[0]" size="sm"/>
+        <span class="sidebar__tenant-badge">{{ tenants[0].displayName }}</span>
+      }
+    </div>
+  }
+
+  <div class="sidebar__divider"></div>
+
+  <!-- Nav -->
+  <nav aria-label="Main navigation" class="sidebar__nav">
+    @for (item of navItems(); track item.path; let i = $index) {
+      <a
+        [attr.aria-label]="item.label | translate"
+        [routerLink]="item.path"
+        [style.--delay]="i * 70 + 'ms'"
+        (click)="navClick.emit()"
+        class="nav-item"
+        routerLinkActive="nav-item--active"
+      >
+        <app-nav-icon aria-hidden="true" [icon]="item.icon" class="nav-item__icon"/>
+        <span class="nav-item__label">{{ item.label | translate }}</span>
+        <span aria-hidden="true" class="nav-item__indicator"></span>
+      </a>
+    }
+
+  </nav>
+
+  <!-- Footer -->
+  <div class="sidebar__footer">
+    <div class="sidebar__divider"></div>
+    <div class="sidebar__footer-content">
+      <span class="sidebar__version">{{ version }}</span>
+      <app-language-selector/>
+    </div>
+  </div>
+</aside>

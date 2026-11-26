@@ -1,0 +1,29 @@
+<div class="api-key-login">
+  <div class="api-key-login__card">
+    <h1 class="api-key-login__title">Straightmail</h1>
+    <form (ngSubmit)="submit()" #form="ngForm">
+      <div class="mb-3">
+        <label for="apiKey" class="form-label">{{ 'login.api_key' | translate }}</label>
+        <input
+          id="apiKey"
+          type="password"
+          class="form-control"
+          [(ngModel)]="apiKey"
+          name="apiKey"
+          autocomplete="off"
+          required
+          [disabled]="loading()"
+        />
+      </div>
+      @if (errorMessage()) {
+        <div class="alert alert-danger" role="alert">{{ errorMessage() | translate }}</div>
+      }
+      <button type="submit" class="btn btn-primary w-100" [disabled]="loading() || !apiKey">
+        @if (loading()) {
+          <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+        }
+        {{ 'login.submit' | translate }}
+      </button>
+    </form>
+  </div>
+</div>

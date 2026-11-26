@@ -1,0 +1,69 @@
+spring:
+  application:
+    name: straightmail
+  mail:
+    host: localhost
+    username: foo
+    password: bar
+    port: 1025
+    default-sender: "tester@example.com"
+    default-template: "default"
+  freemarker:
+    template-loader-path:
+      - classpath:templates
+
+auth:
+  mode: oidc
+  issuer-uri: http://localhost:8090/realms/straightmail
+  # mode: api-key
+  # mode: none
+
+api:
+  prefix: /api
+  url: /api
+  key: apiKey
+
+encryption:
+  # Generate with: openssl rand -base64 32
+  key: CHANGE_ME_GENERATE_RANDOM_KEY
+
+templates:
+  file:
+    base-path: /path/to/your/templates/files
+  git-sync:
+    base-path: /path/to/your/templates/git
+    cron: ${GIT_SYNC_CRON:0 */5 * * * *}
+
+tenants:
+  default-id: acme
+  config:
+    - id: acme
+      displayName: ACME Corp
+      logo-url: https://example.com/logo.png
+      brand-color: "#0066CC"
+      smtp-host: smtp.example.com
+      smtp-port: 587
+      smtp-tls: true
+      smtp-sender: admin@example.com
+      smtp-user: admin@example.com
+      smtp-password: <your-smtp-password>
+      git-token: "<your-github-personal-access-token>"
+      git-repo-url: https://github.com/example/straightmail-templates.git
+      git-branches:
+        - main
+    - id: acme-corp
+      displayName: ACME Corp (Secondary)
+      logo-url: https://acme-corp.com/apple-touch-icon.png
+      brand-color: "#FFFFFF"
+      smtp-host: smtp.example.com
+      smtp-port: 587
+      smtp-tls: true
+      smtp-sender: contact@acme-corp.com
+      smtp-user: contact@acme-corp.com
+      smtp-password: <your-smtp-password>
+    - id: demo
+      displayName: Demo Tenant
+      logo-url: https://avatars.githubusercontent.com/u/64778707?s=200&v=4
+      brand-color: "#FFFFFF"
+      smtp-host: localhost
+      smtp-port: 1025

@@ -1,45 +1,83 @@
-name: CI
+# Pull request CI: runs on every pull request, without a paths filter, and ends in one job with a stable name,
+# `CI gate`, which is meant to be the required status check on master.
+#
+# A required check from backend.yml or frontend.yml would never report on a pull request outside their paths and
+# block it forever. Here the paths decision moves inside the workflow: `changes` detects the touched areas, only
+# those suites run, and `CI gate` is green only if every suite that had to run succeeded (also green when none
+# had to). The suites are backend.yml and frontend.yml themselves, called as reusable workflows.
+name: ci
 
 on:
-  push:
-    branches: [master]
-    tags: ['v*.*.*']
   pull_request:
-    branches: [master]
 
-# Cancel superseded runs on the same branch / PR to save runner time
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
-
-# Least-privilege defaults: only what the job actually needs
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
-  build:
-    name: Build & test
+  changes:
+    name: Detect changes
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: read
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
+      - id: filter
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         with:
-          distribution: temurin
-          java-version: '21'
+          # Keep these in step with the paths of backend.yml and frontend.yml. A change to this file runs both.
+          filters: |
+            backend:
+              - 'backend/**'
+              - '.github/workflows/backend.yml'
+              - '.github/workflows/ci.yml'
+            frontend:
+              - 'frontend/**'
+              - '.github/workflows/frontend.yml'
+              - '.github/workflows/ci.yml'
 
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+  backend:
+    name: Backend
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    uses: ./.github/workflows/backend.yml
 
-      - name: Build & test
-        run: ./gradlew --no-daemon build
+  frontend:
+    name: Frontend
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
+    uses: ./.github/workflows/frontend.yml
 
-      - name: Upload bootJar
-        uses: actions/upload-artifact@v4
-        with:
-          name: straightmail-jar
-          path: build/libs/*.jar
-          if-no-files-found: error
-          retention-days: 7
+  gate:
+    name: CI gate
+    needs: [changes, backend, frontend]
+    # Runs even when a needed job failed, was cancelled or skipped, so the check always reports.
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - env:
+          CHANGES: ${{ needs.changes.result }}
+          BACKEND_NEEDED: ${{ needs.changes.outputs.backend }}
+          BACKEND: ${{ needs.backend.result }}
+          FRONTEND_NEEDED: ${{ needs.changes.outputs.frontend }}
+          FRONTEND: ${{ needs.frontend.result }}
+        run: |
+          fail=0
+          echo "changes: $CHANGES"
+          if [ "$CHANGES" != success ]; then fail=1; fi
+          check() {
+            local area=$1 needed=$2 result=$3 want=skipped
+            if [ "$needed" = true ]; then want=success; fi
+            echo "$area: needed=${needed:-false} result=$result (want $want)"
+            if [ "$result" != "$want" ]; then fail=1; fi
+          }
+          check backend "$BACKEND_NEEDED" "$BACKEND"
+          check frontend "$FRONTEND_NEEDED" "$FRONTEND"
+          exit "$fail"

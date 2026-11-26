@@ -1,0 +1,5 @@
+@if (gravatarUrl() && !gravatarFailed()) {
+  <img [src]="gravatarUrl()!" [alt]="name()" class="user-avatar__img" (error)="gravatarFailed.set(true)"/>
+} @else {
+  {{ initials() }}
+}
