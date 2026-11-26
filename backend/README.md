@@ -18,10 +18,10 @@ docker run -p 50003:50003 -p 50004:50004 \
     --env DEFAULT_SENDER=test@encircle360.com \
     --env SMTP_ENABLE_TLS=true \
     --env SMTP_ENABLE_SSL=false \
-    ghcr.io/encircle360-oss/straightmail:0.5.0
+    ghcr.io/encircle360-oss/straightmail:0.5.1
 ```
 
-The image carries the API only. From the release after 0.5.0 on it is published as
+The image carries the API only. From 0.5.1 on it is published as
 `ghcr.io/encircle360-oss/straightmail/backend` and, with the identical digest, as
 `ghcr.io/encircle360-oss/straightmail`; releases up to 0.5.0 exist only under the second name. The
 image with the admin UI embedded is `ghcr.io/encircle360-oss/straightmail/aio` — see
@@ -84,7 +84,7 @@ Bring your own templates and message bundles by mounting them into the container
 your own image on top of the straightmail image:
 
 ```
-FROM ghcr.io/encircle360-oss/straightmail:0.5.0
+FROM ghcr.io/encircle360-oss/straightmail:0.5.1
 ADD templates /resources/templates
 ADD i18n /resources/i18n
 ```
@@ -127,7 +127,7 @@ docker run -p 50003:50003 -p 50004:50004 \
     --env SMTP_PORT=1025 \
     --env DEFAULT_SENDER=test@encircle360.com \
     --volume straightmail-data:/data \
-    ghcr.io/encircle360-oss/straightmail:0.5.0
+    ghcr.io/encircle360-oss/straightmail:0.5.1
 ```
 
 Environment variables for database configuration:

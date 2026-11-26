@@ -5,6 +5,16 @@ All notable changes to the straightmail backend will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.5.1] - 2026-11-26
+
+### Changed
+
+- No application change. The image with the API only is published as
+  `ghcr.io/encircle360-oss/straightmail/backend` and, with the identical digest, under the previous
+  name `ghcr.io/encircle360-oss/straightmail`, with the same tags: `0.5.1`, `0.5`, `0` and `latest`
+  for this release. Default-branch builds are tagged `edge` and with the 7-character commit SHA
+  instead of `master-<sha>`, and no longer move `latest`
+
 ## [0.5.0] - 2026-11-26
 
 ### Breaking changes — migrating from 0.4.x

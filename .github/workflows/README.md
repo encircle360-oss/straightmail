@@ -191,7 +191,7 @@ attestation referrer tags once their parent is gone)
 |---|---|
 | pull request | nothing is pushed |
 | push to `master` (commit `abc1234…`) | `edge`, `abc1234` |
-| tag `v0.6.0` | `0.6.0`, `0.6`, `0`, `latest` |
+| tag `v0.5.1` | `0.5.1`, `0.5`, `0`, `latest` |
 | tag `v1.0.0-rc.1` | `1.0.0-rc.1` |
 
 `latest` therefore always points at the most recently tagged release and never at an unreleased

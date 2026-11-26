@@ -7,7 +7,11 @@ For component-specific changes see [`backend/CHANGELOG.md`](backend/CHANGELOG.md
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.5.1] - 2026-11-26
+
+No application code changes; this release changes how the container images are named, tagged and
+published. For component-specific changes see [`backend/CHANGELOG.md`](backend/CHANGELOG.md) and
+[`frontend/CHANGELOG.md`](frontend/CHANGELOG.md).
 
 ### Added
 
@@ -44,9 +48,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Removed
 
-- `ghcr.io/encircle360-oss/straightmail/monorepo` is no longer published; use
-  `ghcr.io/encircle360-oss/straightmail/aio`. The package stays at its last build, the 0.5.0 commit
-  `0397766` (also its `latest`)
+- `ghcr.io/encircle360-oss/straightmail/monorepo`, the name under which 0.5.0 published the image
+  with the Admin UI, is no longer updated; use `ghcr.io/encircle360-oss/straightmail/aio`. The
+  package stays at its last build, the 0.5.0 commit `0397766` (also its `latest`)
 
 ### Fixed
 

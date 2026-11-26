@@ -5,13 +5,13 @@ All notable changes to the straightmail client will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.5.1] - 2026-11-26
 
 ### Changed
 
 - The image with the Admin UI embedded is `ghcr.io/encircle360-oss/straightmail/aio`, with version
-  tags from the next release on. It replaces `ghcr.io/encircle360-oss/straightmail/monorepo`, which
-  is no longer published
+  tags from this release on. It replaces `ghcr.io/encircle360-oss/straightmail/monorepo`, under
+  which 0.5.0 published it and which is no longer updated. No change to the client itself
 
 ## [0.5.0] - 2026-11-26
 

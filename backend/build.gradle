@@ -20,7 +20,7 @@ plugins {
 }
 
 group = 'com.encircle360.oss.straightmail'
-version '0.5.0'
+version '0.5.1'
 
 java {
     toolchain {
