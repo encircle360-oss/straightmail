@@ -33,7 +33,9 @@ The migration guide in the [README](README.md#migrating-from-04x) shows each ste
 - FreeMarker renders sandboxed: `?new`, `?api` and the Spring form-binding macros fail (see Security)
 - `/api/v1/render` and the template listing only read the per-tenant layout
   `TEMPLATE_FILE_PATH/<tenant>/<id>.ftl`; only `/api/v1/email` still falls back to the flat 0.4.x
-  layout under `/resources/templates`. `TEMPLATE_FILE_PATH` defaults to `/directory/files/templates`
+  layout under `/resources/templates`, and only in single-tenant operation (no `database` profile, at
+  most one tenant declared in `tenants.config`). `TEMPLATE_FILE_PATH` defaults to
+  `/directory/files/templates`
 - Actuator exposes `health` only (`MANAGEMENT_ENDPOINTS` widens it again)
 
 ### Security
@@ -97,6 +99,8 @@ The migration guide in the [README](README.md#migrating-from-04x) shows each ste
   on the first insert. Changeset `0009` converts the three columns; SQLite installations are unaffected
 - Three Compose stacks shipped `ENCRYPTION_KEY: "CHANGE_ME_GENERATE_RANDOM_KEY"`, which is not valid
   Base64 and put the container in a crash loop on first start
+- With the `database` profile, `/api/v1/email` answers an unknown template ID with `400` (template not
+  found) instead of `500`
 
 ### Removed
 

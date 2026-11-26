@@ -21,7 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   and the whitespace of that part can differ
 - `RenderController` and `TemplateReadController` resolve templates only through
   `CompositeTemplateProvider` (per-tenant layout under `templates.file.base-path`); only
-  `EmailService` falls back to `FileTemplateLoader` and the flat `/resources/templates` layout.
+  `EmailService` falls back to `FileTemplateLoader` and the flat `/resources/templates` layout, and
+  only without the `database` profile and with at most one entry in `tenants.config`.
   `templates.file.base-path` defaults to `/directory/files/templates`
 - Runtime image: Temurin 25 JRE, non-root user `straightmail` (UID 10001), layered application in `/app`
 - FreeMarker sandbox and narrowed `springMacroRequestContext` (see Security)
@@ -113,6 +114,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   changeset `0002`, which PostgreSQL rejects when Hibernate binds a boolean, so the first insert from
   `TenantReconciliationService` failed at startup. Changeset `0009` converts the three columns to
   `boolean` and is marked as ran on SQLite, leaving existing SQLite installations untouched
+- `EmailService` answers an unknown template ID with "Template not found" (`400`) under the `database`
+  profile; the flat fallback used `ObjectProvider<TemplateLoader>`, which failed with
+  `NoUniqueBeanDefinitionException` (`500`) once `DatabaseTemplateLoader` and `FileTemplateLoader` both
+  existed
 
 ### Removed
 

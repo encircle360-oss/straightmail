@@ -217,10 +217,13 @@ ADD i18n /resources/i18n
 The same Dockerfile works with `FROM ghcr.io/encircle360-oss/straightmail:0.5.0`, and so does
 mounting the two directories as volumes. What 0.5.0 does with the files depends on their layout.
 
-**Flat layout (0.4.x)** — `/resources/templates/<id>.ftl`. `POST /api/v1/email` still finds these
-templates: when no template source knows the ID, it falls back to the 0.4.x lookup, first
-`classpath:templates/<id>.ftl`, then `/resources/templates/<id>.ftl`. `POST /api/v1/render` and the
-template listing (`GET /api/v1/templates`) do not use this fallback and answer `404` / list nothing.
+**Flat layout (0.4.x)** — `/resources/templates/<id>.ftl`. In single-tenant operation — no
+`database` profile and at most one tenant declared in `tenants.config` — `POST /api/v1/email` still
+finds these templates: when no template source knows the ID, it falls back to the 0.4.x lookup, first
+`classpath:templates/<id>.ftl`, then `/resources/templates/<id>.ftl`. Once several tenants are declared
+or the `database` profile is active, the flat layout is not served: an ID no template source knows
+answers `400` (template not found). `POST /api/v1/render` and the template listing
+(`GET /api/v1/templates`) never use this fallback and answer `404` / list nothing.
 
 **Tenant layout** — `<TEMPLATE_FILE_PATH>/<tenant>/<id>.ftl`, read by the file template source,
 which is enabled by default. All endpoints see these templates. Set `TEMPLATE_FILE_PATH`: its
@@ -243,8 +246,9 @@ templates/
 
 The directory name is the tenant ID; without authentication that is `default` (`TENANTS_DEFAULT_ID`).
 Subdirectories are supported — `default/emails/welcome.ftl` gets the template ID `emails/welcome`.
-Keep the tenant layout outside `/resources/templates` when several tenants share one instance: the
-flat fallback reads any path below `/resources/templates`, another tenant's folder included.
+A request resolves templates only in its own tenant's folder; with several tenants declared, a
+template ID that names another tenant's folder answers `400` like any unknown template, wherever the
+tenant layout lives.
 
 **Includes do not follow the tenant layout.** `<#include>` and `<#import>` resolve through
 `spring.freemarker.template-loader-path` — `file:/resources/templates`, then `classpath:templates` —
@@ -525,8 +529,9 @@ straightmail supports three template sources that can be combined:
 | File     | Read-only `.ftl` files from a directory per tenant              | by default (`TEMPLATE_FILE_ENABLED=true`)       |
 | Git-sync | Templates cloned from a per-tenant Git repository on a schedule | by default (`TEMPLATE_GIT_SYNC_ENABLED=true`)   |
 
-`POST /api/v1/email` additionally falls back to the 0.4.x flat layout under `/resources/templates` —
-see [Templates and translations](#templates-and-translations).
+In single-tenant operation (no `database` profile, at most one declared tenant) `POST /api/v1/email`
+additionally falls back to the 0.4.x flat layout under `/resources/templates` — see
+[Templates and translations](#templates-and-translations).
 
 ### File Templates
 
