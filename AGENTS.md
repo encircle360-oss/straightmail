@@ -1,6 +1,6 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to coding agents working with code in this repository.
 
 ## Commands
 
@@ -119,7 +119,7 @@ Angular 22 with standalone components and NGXS state management.
 
 **Template editor** — CodeMirror 6 with HTML/JSON language support for editing FreeMarker bodies inline.
 
-**i18n** — `@ngx-translate` with English (`en`) and German (`de`) JSON bundles under `src/assets/i18n/`.
+**i18n** — `@ngx-translate` with English (`en`) and German (`de`) JSON bundles under `frontend/public/assets/i18n/`.
 
 **E2E tests** — Playwright in `frontend/tests/`, run against the `:4299` e2e-specific serve target (auth-mode: `none`).
 
