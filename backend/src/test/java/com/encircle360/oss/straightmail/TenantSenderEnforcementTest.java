@@ -83,4 +83,37 @@ class TenantSenderEnforcementTest extends AbstractTest {
 
         assertTrue(emailFound, "Email 'Tenant Sender Enforcement Test' not found in Mailpit");
     }
+
+    @Test
+    void senderNameIsDisplayNameOfTenantConfiguredSender() throws Exception {
+        String subject = "Tenant Sender Display Name Test";
+
+        EmailInlineTemplateRequestDTO emailRequest = EmailInlineTemplateRequestDTO.builder()
+                .recipients(List.of("recipient@test.com"))
+                .sender("caller-provided@test.com")
+                .senderName("Acme Support")
+                .subject(subject)
+                .emailTemplate("Display name test body")
+                .build();
+
+        post("/v1/email/inline", emailRequest, status().is2xxSuccessful());
+        Thread.sleep(2000);
+
+        ResponseEntity<JsonNode> response = restTemplate.exchange(
+                getMailpitApiUrl() + "/api/v1/messages", HttpMethod.GET, null, JsonNode.class);
+        assertNotNull(response.getBody());
+
+        JsonNode from = null;
+        for (JsonNode message : response.getBody().get("messages")) {
+            JsonNode subjectNode = message.get("Subject");
+            if (subjectNode != null && subject.equals(subjectNode.asString())) {
+                from = message.get("From");
+                break;
+            }
+        }
+
+        assertNotNull(from, "Email '" + subject + "' not found in Mailpit");
+        assertEquals("noreply@tenant.com", from.get("Address").asString());
+        assertEquals("Acme Support", from.get("Name").asString());
+    }
 }

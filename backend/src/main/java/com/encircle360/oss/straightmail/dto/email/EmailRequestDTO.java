@@ -19,7 +19,7 @@ import java.util.List;
  * Abstract base class for all email send requests.
  *
  * <p>Contains common fields shared by both template-file-based and inline-template requests:
- * recipients (to, cc, bcc), sender, attachments, FreeMarker model data, locale, and a verbose flag.
+ * recipients (to, cc, bcc), sender and its display name, attachments, FreeMarker model data, locale, and a verbose flag.
  * Concrete subclasses add the template reference ({@link EmailTemplateFileRequestDTO}) or
  * inline template content ({@link EmailInlineTemplateRequestDTO}).
  */
@@ -47,6 +47,11 @@ public abstract class EmailRequestDTO {
     @Pattern(regexp = EmailRegex.value)
     @Schema(description = "Sender of the email", example = "sender@encircle360.com")
     private String sender;
+
+    @Schema(description = "Optional display name of the sender. When set, the From header is "
+            + "rendered as 'Display Name <sender@example.com>'.",
+            example = "Straightmail")
+    private String senderName;
 
     @Schema(description = "Contains contents for template, map key will be available in template")
     private HashMap<String, JsonNode> model;

@@ -97,6 +97,61 @@ class MailpitIntegrationTest extends AbstractTest {
     }
 
     @Test
+    void shouldRenderSenderNameAsDisplayNameOfFrom() throws Exception {
+        String subject = "Sender Name Test";
+
+        EmailInlineTemplateRequestDTO emailRequest = EmailInlineTemplateRequestDTO.builder()
+                .recipients(List.of("recipient@test.com"))
+                .sender("sender@test.com")
+                .senderName("Straightmail Ümlaut Team")
+                .subject(subject)
+                .emailTemplate("Sender name body")
+                .build();
+
+        post("/v1/email/inline", emailRequest, status().is2xxSuccessful());
+        Thread.sleep(2000);
+
+        JsonNode from = findFromBySubject(subject);
+        assertEquals("sender@test.com", from.get("Address").asString());
+        assertEquals("Straightmail Ümlaut Team", from.get("Name").asString());
+    }
+
+    @Test
+    void shouldSendWithoutDisplayNameWhenSenderNameIsBlank() throws Exception {
+        String subject = "Blank Sender Name Test";
+
+        EmailInlineTemplateRequestDTO emailRequest = EmailInlineTemplateRequestDTO.builder()
+                .recipients(List.of("recipient@test.com"))
+                .sender("sender@test.com")
+                .senderName("  ")
+                .subject(subject)
+                .emailTemplate("Blank sender name body")
+                .build();
+
+        post("/v1/email/inline", emailRequest, status().is2xxSuccessful());
+        Thread.sleep(2000);
+
+        JsonNode from = findFromBySubject(subject);
+        assertEquals("sender@test.com", from.get("Address").asString());
+        assertEquals("", from.get("Name").asString());
+    }
+
+    private JsonNode findFromBySubject(String subject) {
+        ResponseEntity<JsonNode> response = restTemplate.exchange(
+                getMailpitApiUrl() + "/api/v1/messages", HttpMethod.GET, null, JsonNode.class);
+        JsonNode messages = Objects.requireNonNull(response.getBody()).get("messages");
+        for (JsonNode message : messages) {
+            JsonNode subjectNode = message.get("Subject");
+            if (subjectNode != null && subject.equals(subjectNode.asString())) {
+                JsonNode from = message.get("From");
+                assertNotNull(from, "From field must be present");
+                return from;
+            }
+        }
+        return fail("Email with subject '" + subject + "' not found in Mailpit");
+    }
+
+    @Test
     void shouldSendMultipleEmailsAndVerifyCount() throws Exception {
         // Arrange — clear Mailpit first
         try {

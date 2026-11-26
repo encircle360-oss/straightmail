@@ -47,7 +47,9 @@ import java.util.Optional;
  *
  * <p>In both modes the tenant's configured {@code smtpSender} is authoritative: it always overrides
  * any {@code sender} supplied in the request. If no tenant sender is configured the request sender
- * is used, with the global {@code spring.mail.default-sender} as the last fallback.
+ * is used, with the global {@code spring.mail.default-sender} as the last fallback. A non-blank
+ * {@code senderName} from the request becomes the display name of whichever address ends up in
+ * {@code From}.
  *
  * <p>Profile-restricted optional dependencies are injected via {@link ObjectProvider} so that the
  * service starts correctly regardless of which profile is active.
@@ -291,7 +293,12 @@ public class EmailService {
                 plainText = HtmlUtil.replaceHtmlLinkToPlainText(plainText);
             }
 
-            helper.setFrom(emailRequest.getSender());
+            String senderName = emailRequest.getSenderName();
+            if (senderName != null && !senderName.isBlank()) {
+                helper.setFrom(emailRequest.getSender(), senderName);
+            } else {
+                helper.setFrom(emailRequest.getSender());
+            }
             helper.setSubject(subject);
 
             if (emailRequest.getRecipients() != null && !emailRequest.getRecipients().isEmpty()) {

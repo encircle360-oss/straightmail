@@ -81,6 +81,26 @@ class RequestDtoDeserializationTest extends AbstractTest {
     }
 
     @Test
+    void inlineMail_senderName() {
+        EmailInlineTemplateRequestDTO dto = mapper.readValue(
+                "{\"recipients\":[\"a@b.de\"],\"sender\":\"noreply@b.de\",\"senderName\":\"Acme Support\","
+                        + "\"emailTemplate\":\"hi\"}",
+                EmailInlineTemplateRequestDTO.class);
+
+        assertEquals("noreply@b.de", dto.getSender());
+        assertEquals("Acme Support", dto.getSenderName());
+    }
+
+    @Test
+    void mailByTemplateId_senderNameIsOptional() {
+        EmailTemplateFileRequestDTO dto = mapper.readValue(
+                "{\"recipients\":[\"a@b.de\"],\"emailTemplateId\":\"welcome\"}",
+                EmailTemplateFileRequestDTO.class);
+
+        assertNull(dto.getSenderName());
+    }
+
+    @Test
     void render_minimalPayload() {
         TemplateRenderRequestDTO dto = mapper.readValue(
                 "{\"templateId\":\"welcome\"}", TemplateRenderRequestDTO.class);
