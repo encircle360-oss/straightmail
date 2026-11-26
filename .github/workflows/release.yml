@@ -4,14 +4,8 @@ on:
   push:
     branches: [master, main]
     tags: ['v*.*.*']
-    # ACHTUNG, ungeprueft: ob GitHub paths-ignore auch auf TAG-Pushes anwendet,
-    # ist nicht belegt. Faellt ein v*-Tag auf einen reinen Doku-Commit, koennte
-    # der Release-Lauf ausbleiben. Beim naechsten Release einmal nachsehen.
-    # Reine Dokumentationsaenderungen bauen kein Image mehr. Vorher loeste jeder
-    # README-Push einen vollen Build aus, GHCR bekam ein neues Tag, der ArgoCD
-    # Image Updater rollte die Produktion neu aus und hinterliess ein weiteres
-    # ReplicaSet samt Trivy-Report. Am 2026-09-20 waren das drei Deployments
-    # eines unveraenderten Programms.
+    # Documentation-only changes do not build or publish an image. GitHub ignores path
+    # filters for tag pushes, so a v*.*.* tag always triggers a release.
     paths-ignore:
       - '**/*.md'
       - 'docs/**'
@@ -110,10 +104,6 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Scan image for known vulnerabilities
-        # 0.28.0 aufloest GitHub nicht mehr, das Tag existiert nicht mehr im Action-Repo.
-        # Der Release-Lauf vom 2026-09-17 starb daran schon in "Set up job", also bevor
-        # ein einziger Schritt lief: Actions werden vor dem ersten Schritt aufgeloest.
-        # v0.36.0 kennt alle fuenf hier benutzten Eingaben unveraendert.
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}

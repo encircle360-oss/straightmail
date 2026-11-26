@@ -3,11 +3,7 @@ name: Monorepo Full Build
 on:
   push:
     branches: [ "master", "main" ]
-    # Reine Dokumentationsaenderungen bauen kein Image mehr. Vorher loeste jeder
-    # README-Push einen vollen Build aus, GHCR bekam ein neues Tag, der ArgoCD
-    # Image Updater rollte die Produktion neu aus und hinterliess ein weiteres
-    # ReplicaSet samt Trivy-Report. Am 2026-09-20 waren das drei Deployments
-    # eines unveraenderten Programms.
+    # Documentation-only changes do not build or publish an image.
     paths-ignore:
       - '**/*.md'
       - 'docs/**'
@@ -138,13 +134,8 @@ jobs:
         id: meta
         uses: docker/metadata-action@v6
         with:
-          # /monorepo, nicht /backend: hier wird das KOMBINIERTE Artefakt gepusht,
-          # Spring Boot samt Angular (siehe Job "Backend Build & Test", der das
-          # combined-jar hochlaedt, und den Download weiter oben). Der Pfad hiess bis
-          # 2026-09-17 /backend und beschrieb damit den Quellordner statt des Inhalts —
-          # das hat beim Umstellen des Clusters fuer echte Verwirrung gesorgt.
-          # Backend-only liegt weiterhin in /backend (backend.yml) und im Root-Pfad
-          # (release.yml mit SKIP_FRONTEND_BUILD).
+          # The combined image: Spring Boot with the Angular console embedded. The
+          # backend-only image is published by release.yml under ghcr.io/<repo>.
           images: ghcr.io/${{ steps.repo.outputs.repo_lowercase }}/monorepo
           tags: |
             type=raw,value=latest
@@ -161,16 +152,10 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          # Eigener Cache-Tag. Vorher teilte sich dieser Lauf den buildcache mit
-          # backend.yml, obwohl beide unterschiedliche Artefakte bauen.
           cache-from: type=registry,ref=ghcr.io/${{ steps.repo.outputs.repo_lowercase }}/monorepo:buildcache
           cache-to: type=registry,ref=ghcr.io/${{ steps.repo.outputs.repo_lowercase }}/monorepo:buildcache,mode=max
 
       - name: Scan image for known vulnerabilities
-        # 0.28.0 aufloest GitHub nicht mehr, das Tag existiert nicht mehr im Action-Repo.
-        # Der Release-Lauf vom 2026-09-17 starb daran schon in "Set up job", also bevor
-        # ein einziger Schritt lief: Actions werden vor dem ersten Schritt aufgeloest.
-        # v0.36.0 kennt alle fuenf hier benutzten Eingaben unveraendert.
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ghcr.io/${{ steps.repo.outputs.repo_lowercase }}/monorepo@${{ steps.build.outputs.digest }}

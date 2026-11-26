@@ -1,6 +1,6 @@
 # Submits the resolved Gradle dependency graph to GitHub, so Dependabot alerts see transitive
 # dependencies. spring-security-core, for one, comes through the Boot starters and stands in no
-# build file; read statically, a CVE in such a jar raises no alert. cm-k8s-cluster spec 011, ISC-162.
+# build file; read statically, a CVE in such a jar raises no alert.
 name: Dependency submission
 
 on:

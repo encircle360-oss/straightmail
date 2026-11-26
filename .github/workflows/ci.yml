@@ -1,6 +1,5 @@
-# Pull request CI: runs on EVERY pull request, without a paths filter, and ends in one job with a stable name,
-# `CI gate`. That job is the required status check on master and the gate for Renovate automerge
-# (cm-k8s-cluster spec 011, ISC-159).
+# Pull request CI: runs on every pull request, without a paths filter, and ends in one job with a stable name,
+# `CI gate`, which is meant to be the required status check on master.
 #
 # A required check from backend.yml or frontend.yml would never report on a pull request outside their paths and
 # block it forever. Here the paths decision moves inside the workflow: `changes` detects the touched areas, only

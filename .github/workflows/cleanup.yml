@@ -1,10 +1,6 @@
 name: Cleanup Old Packages
 
-# GHCR retention for this repository, self-contained.
-#
-# Why this is not a reusable workflow pulled from another repo: it runs with
-# `packages: write` against straightmail's own registry, so its content belongs where it
-# is reviewed — in this repository, in the same pull request as the images it prunes.
+# GHCR retention for the packages this repository publishes.
 #
 # Why a cleanup action rather than "delete all untagged versions":
 # Images are built with docker/build-push-action and buildx, which attaches an SLSA
@@ -17,17 +13,13 @@ name: Cleanup Old Packages
 # parents go with them.
 #
 # Two things in this repo depend on the exclusions below:
-#   * backend.yml and monorepo.yml use a registry build cache
-#     (…/straightmail/backend:buildcache und …/straightmail/monorepo:buildcache).
-#     Without protecting those tags,
-#     every build after the first one is a cold build.
-#   * release.yml uses actions/attest-build-provenance with subject-name, which creates
-#     sha256-<digest> referrer tags. delete-orphaned-images removes those once the parent
-#     digest is gone.
+#   * monorepo.yml uses a registry build cache (…/straightmail/monorepo:buildcache).
+#     Without protecting that tag, every build after the first one is a cold build.
+#   * release.yml and monorepo.yml use actions/attest-build-provenance with subject-name,
+#     which creates sha256-<digest> referrer tags. delete-orphaned-images removes those
+#     once the parent digest is gone.
 #
-# straightmail-app deploys via update-strategy newest-build with tag-filter
-# regexp:^[0-9a-f]{7}$ — the 7-hex commit tags are the deploy path, and keep-n-tagged 15
-# leaves rollback room across the last 15 builds.
+# keep-n-tagged 15 leaves rollback room across the 15 newest commit builds per package.
 
 on:
   schedule:
@@ -44,9 +36,8 @@ permissions:
   packages: write
 
 env:
-  # GHCR package names without the owner prefix; nested names are fine.
-  # straightmail/monorepo kam am 2026-09-17 dazu: monorepo.yml pusht das kombinierte
-  # Image seither dorthin statt nach /backend. Fehlt es hier, waechst es unbegrenzt.
+  # GHCR package names without the owner prefix; nested names are fine. Every package a
+  # workflow publishes belongs here, or it grows without limit.
   PACKAGES: straightmail,straightmail/backend,straightmail/monorepo
   # Number of newest tagged images to keep. Never set this to 0 — the action reads 0 as
   # "delete every tagged image", which would empty the package.
@@ -76,7 +67,7 @@ jobs:
 
           # Invariant 2 — latest and buildcache are always protected.
           # latest: what a deployment resolves to a digest.
-          # buildcache: the registry cache that backend.yml and monorepo.yml write to.
+          # buildcache: the registry cache that monorepo.yml writes to.
           EXCLUDE="latest,buildcache"
           if [ -n "${IN_EXCLUDE}" ]; then
             EXCLUDE="${EXCLUDE},${IN_EXCLUDE}"

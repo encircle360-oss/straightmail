@@ -6,7 +6,7 @@ on:
     paths:
       - "frontend/**"
       - ".github/workflows/frontend.yml"
-  # Called by ci.yml, whose `CI gate` is the required check (cm-k8s-cluster spec 011).
+  # Called by ci.yml, whose `CI gate` job reports the combined result.
   workflow_call:
   pull_request:
     branches: [ "master", "main" ]
