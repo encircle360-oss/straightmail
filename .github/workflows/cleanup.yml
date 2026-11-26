@@ -12,12 +12,12 @@ name: Cleanup Old Packages
 # before applying the rules, so children of kept images stay and children of deleted
 # parents go with them.
 #
-# Two things in this repo depend on the exclusions below:
-#   * monorepo.yml uses a registry build cache (…/straightmail/monorepo:buildcache).
-#     Without protecting that tag, every build after the first one is a cold build.
-#   * release.yml and monorepo.yml use actions/attest-build-provenance with subject-name,
-#     which creates sha256-<digest> referrer tags. delete-orphaned-images removes those
-#     once the parent digest is gone.
+# The images are attested with actions/attest-build-provenance and subject-name, which
+# creates sha256-<digest> referrer tags. delete-orphaned-images removes those once the parent
+# digest is gone.
+#
+# A package that does not exist (not published yet, or deleted) is skipped with a warning
+# instead of failing the run: the action aborts on the first package it cannot find.
 #
 # keep-n-tagged 15 leaves rollback room across the 15 newest commit builds per package.
 
@@ -38,12 +38,12 @@ permissions:
 env:
   # GHCR package names without the owner prefix; nested names are fine. Every package a
   # workflow publishes belongs here, or it grows without limit.
-  PACKAGES: straightmail,straightmail/monorepo
+  PACKAGES: straightmail,straightmail/backend,straightmail/aio
   # Number of newest tagged images to keep. Never set this to 0 — the action reads 0 as
   # "delete every tagged image", which would empty the package.
   KEEP_TAGGED: '15'
-  # Release tags, which retention never deletes. `latest`, `edge` and `buildcache` are
-  # protected unconditionally below. This is a regular expression (the action runs with
+  # Release tags, which retention never deletes. `latest` and `edge` are protected
+  # unconditionally below. This is a regular expression (the action runs with
   # use-regex): the wildcard syntax has no character classes, so `[0-9]` would only match itself.
   # Alternatives: the released tags by name, then any x, x.y and x.y.z (optionally with a
   # `v` prefix). A bare major is limited to three digits so that a 7-character commit SHA
@@ -52,7 +52,7 @@ env:
 
 jobs:
   images:
-    name: Images — straightmail + monorepo
+    name: Images — straightmail, straightmail/backend, straightmail/aio
     runs-on: ubuntu-latest
     steps:
       - name: Compose guarded action inputs
@@ -69,13 +69,12 @@ jobs:
           if [ "$KEEP" -lt 1 ]; then KEEP=1; fi
           echo "keep=$KEEP" >> "$GITHUB_OUTPUT"
 
-          # Invariant 2 — latest, edge and buildcache are always protected.
+          # Invariant 2 — latest and edge are always protected.
           # latest: the newest release, what a deployment resolves to a digest.
           # edge: the newest default-branch build.
-          # buildcache: the registry cache that monorepo.yml writes to.
           # The action matches a regular expression anywhere in a tag or digest, so the
           # alternatives are anchored to the whole tag.
-          EXCLUDE="latest|edge|buildcache"
+          EXCLUDE="latest|edge"
           if [ -n "${IN_RELEASE_TAGS}" ]; then
             EXCLUDE="${EXCLUDE}|${IN_RELEASE_TAGS}"
           fi
@@ -85,13 +84,41 @@ jobs:
           echo "Effective exclude-tags: $EXCLUDE"
           echo "Effective keep-n-tagged: $KEEP"
 
+      - name: Select the packages that exist
+        id: packages
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          set -euo pipefail
+          owner_type=$(gh api "/users/$OWNER" --jq .type)
+          case "$owner_type" in
+            Organization) scope=orgs ;;
+            *) scope=users ;;
+          esac
+          existing=""
+          IFS=',' read -ra wanted <<< "$PACKAGES"
+          for package in "${wanted[@]}"; do
+            if error=$(gh api "/$scope/$OWNER/packages/container/${package//\//%2F}" --silent 2>&1); then
+              existing="${existing:+$existing,}$package"
+            elif [[ "$error" == *"HTTP 404"* ]]; then
+              echo "::warning::Package $package does not exist under $OWNER or this repository has no access to it; skipped"
+            else
+              echo "::error::Looking up package $package failed: $error"
+              exit 1
+            fi
+          done
+          echo "list=$existing" >> "$GITHUB_OUTPUT"
+          echo "Packages to clean up: ${existing:-none}"
+
       # Keep the newest tagged images and clear untagged leftovers. No older-than here,
       # so keep-n-tagged counts across all images rather than only the older ones.
       - name: Retention — keep newest tagged, drop untagged leftovers
+        if: steps.packages.outputs.list != ''
         uses: dataaxiom/ghcr-cleanup-action@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          packages: ${{ env.PACKAGES }}
+          packages: ${{ steps.packages.outputs.list }}
           keep-n-tagged: ${{ steps.guard.outputs.keep }}
           exclude-tags: ${{ steps.guard.outputs.exclude }}
           use-regex: true

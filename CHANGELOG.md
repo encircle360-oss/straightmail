@@ -36,6 +36,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   `monorepo.yml`. It publishes only after the backend and frontend test suites and the smoke test
   passed. Each image has its own GitHub Actions build cache; the registry cache tag
   `…/straightmail/monorepo:buildcache` is no longer written
+- The GHCR cleanup covers `straightmail`, `straightmail/backend` and `straightmail/aio`, no longer
+  protects a `buildcache` tag, and skips a package that does not exist instead of failing the run
 - Dependabot offers TypeScript only patch updates, since Angular 22.3 accepts `>=6.0 <6.1`, and
   updates the Angular packages (`@angular/*`, `@angular-devkit/*`, `@schematics/angular`) in one
   pull request of their own, apart from the other npm minor and patch updates

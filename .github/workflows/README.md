@@ -156,18 +156,22 @@ OCI index plus untagged child manifests, and deleting all untagged versions woul
 on a tag that still resolves.
 
 A shell guard step composes the action inputs and enforces two invariants: `keep-n-tagged` is never
-`0` or non-numeric (the action reads `0` as "delete every tagged image"), and `latest`, `edge` and
-`buildcache` are always excluded — `buildcache` is the registry cache `monorepo.yml` writes to, so
-dropping it turns every subsequent build cold.
+`0` or non-numeric (the action reads `0` as "delete every tagged image"), and `latest` and `edge`
+are always excluded.
+
+The action aborts on the first package it cannot find, so a second step looks each package up first
+and passes on only those that exist; a package that is not published yet, or was deleted, is skipped
+with a warning (a lookup that fails for any other reason fails the run).
 
 Tag exclusion runs with `use-regex: true`, as one anchored expression. The action's default
 wildcard syntax knows only `?`, `*` and `**` and has no character classes, so a pattern like
 `[0-9]*.[0-9]*` would match no version tag.
 
 **Job:** `images`  
-**Packages:** `straightmail`, `straightmail/monorepo`  
+**Packages:** `straightmail`, `straightmail/backend`, `straightmail/aio` (`straightmail/monorepo` is
+no longer published and is left alone)  
 **Keeps:** 15 newest tagged images per package  
-**Never deletes:** `latest`, `edge`, `buildcache`, the released tags `0.4.0`, `0.4.1`, `0.4`, `0`, and any
+**Never deletes:** `latest`, `edge`, the released tags `0.4.0`, `0.4.1`, `0.4`, `0`, and any
 `x`, `x.y`, `x.y.z` tag (optionally `v`-prefixed; a bare major has at most three digits, so a
 digits-only 7-character commit SHA tag is not exempt)  
 **Deletes:** untagged, ghost, partial and orphaned images (orphaned covers the `sha256-<digest>`
