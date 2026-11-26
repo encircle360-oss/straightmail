@@ -629,7 +629,8 @@ Deployment-level settings:
 | Variable                           | Default  | Description                                                                    |
 |------------------------------------|----------|--------------------------------------------------------------------------------|
 | `ENCRYPTION_KEY`                   | —        | **Required.** AES-256 key, Base64 of exactly 32 bytes (`openssl rand -base64 32`). A missing, non-Base64 or wrong-length value aborts startup |
-| `API_PREFIX`                       | `/api`   | Path prefix of every REST endpoint                                             |
+| `API_PREFIX`                       | `/api`   | Path prefix of every REST endpoint. Keep `/api` wherever the Admin UI is used: it loads its runtime configuration from the fixed path `/api/v1/info` before it starts, and without an answer there it falls back to its built-in defaults (API URL `/api`, auth mode `oidc`) |
+| `API_URL`                          | `/api`   | Base URL of the REST API as the browser sees it, returned as `apiUrl` by `/api/v1/info`; the Admin UI sends its API requests there |
 | `I18N_PATH`                        | `/resources/i18n` | Directory with external `messages*.properties`, read before the built-in bundles |
 | `MANAGEMENT_ENDPOINTS`             | `health` | Comma-separated actuator endpoints exposed on `:50004`                         |
 | `SECURITY_CONTENT_SECURITY_POLICY` | derived  | Replaces the generated CSP wholesale; the default adds `auth.issuer-uri` to `connect-src`, `frame-src` and `form-action`. Needed to show remote images in template previews — see [Security defaults in 0.5.0](#security-defaults-in-050) |
