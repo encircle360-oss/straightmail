@@ -7,6 +7,13 @@ For component-specific changes see [`backend/CHANGELOG.md`](backend/CHANGELOG.md
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+
+- Build provenance attestations of both images also create the artifact storage record, which lists
+  the image on the organization's Linked Artifacts page; the workflows grant `artifact-metadata: write`
+
 ## [0.5.0] - 2026-11-26
 
 For component-specific changes see [`backend/CHANGELOG.md`](backend/CHANGELOG.md) and [`frontend/CHANGELOG.md`](frontend/CHANGELOG.md).

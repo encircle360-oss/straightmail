@@ -91,7 +91,7 @@ image behind `latest`.
 **Build cache:** registry cache at `…/straightmail/monorepo:buildcache`  
 **Security:** SBOM + provenance in the build, Trivy scan of the pushed digest (CRITICAL/HIGH,
 `ignore-unfixed`) uploaded as SARIF to code scanning (category `container-image`), plus
-`actions/attest-build-provenance` pushed to the registry
+`actions/attest-build-provenance` pushed to the registry with an artifact storage record
 
 ---
 
@@ -109,7 +109,8 @@ release flow runs per ref at a time, and a tagged release is never cancelled mid
 `v*.*.*` tag · `<branch>-<sha>` for branch builds — e.g. tag `v0.5.0` yields `0.5.0`, `0.5`, `0`  
 **Build cache:** GitHub Actions cache (`type=gha`)  
 **Security:** SBOM + provenance in the build, Trivy scan of the pushed digest → SARIF (category
-`container-image`), `actions/attest-build-provenance` pushed to the registry
+`container-image`), `actions/attest-build-provenance` pushed to the registry with an artifact
+storage record
 
 ---
 
@@ -179,6 +180,7 @@ No repository secrets need to be configured manually.
 | `security-events: write` | `monorepo.yml`, `release.yml`, `codeql.yml` | Uploading Trivy and CodeQL SARIF to code scanning |
 | `id-token: write` | `monorepo.yml`, `release.yml` | OIDC tokens for SBOM and provenance attestations |
 | `attestations: write` | `monorepo.yml`, `release.yml` | Required for `actions/attest-build-provenance` |
+| `artifact-metadata: write` | `monorepo.yml`, `release.yml` | Lets `actions/attest-build-provenance` create the artifact storage record for the pushed image |
 | `contents: write` | `dependency-submission.yml` | Submitting the dependency graph |
 | `pull-requests: read` | `ci.yml` | `changes` job reads the pull request's changed files |
 

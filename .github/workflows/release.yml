@@ -26,6 +26,8 @@ permissions:
   # build provenance and SBOM attestations
   id-token: write
   attestations: write
+  # Required so the attestation step can create the artifact storage record for the image
+  artifact-metadata: write
 
 env:
   REGISTRY: ghcr.io
