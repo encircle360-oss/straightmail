@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 - Build provenance attestations of both images also create the artifact storage record, which lists
   the image on the organization's Linked Artifacts page; the workflows grant `artifact-metadata: write`
+- The Trivy scans of the two images upload to separate code scanning categories,
+  `container-image-straightmail` and `container-image-monorepo`; with the shared category
+  `container-image`, the second upload for a commit replaced the results of the first image
 
 ## [0.5.0] - 2026-11-26
 

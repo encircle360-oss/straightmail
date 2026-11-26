@@ -90,8 +90,8 @@ image behind `latest`.
 **Tags:** `latest` · short commit SHA (7 hex)  
 **Build cache:** registry cache at `…/straightmail/monorepo:buildcache`  
 **Security:** SBOM + provenance in the build, Trivy scan of the pushed digest (CRITICAL/HIGH,
-`ignore-unfixed`) uploaded as SARIF to code scanning (category `container-image`), plus
-`actions/attest-build-provenance` pushed to the registry with an artifact storage record
+`ignore-unfixed`) uploaded as SARIF to code scanning (category `container-image-monorepo`),
+plus `actions/attest-build-provenance` pushed to the registry with an artifact storage record
 
 ---
 
@@ -109,8 +109,8 @@ release flow runs per ref at a time, and a tagged release is never cancelled mid
 `v*.*.*` tag · `<branch>-<sha>` for branch builds — e.g. tag `v0.5.0` yields `0.5.0`, `0.5`, `0`  
 **Build cache:** GitHub Actions cache (`type=gha`)  
 **Security:** SBOM + provenance in the build, Trivy scan of the pushed digest → SARIF (category
-`container-image`), `actions/attest-build-provenance` pushed to the registry with an artifact
-storage record
+`container-image-straightmail`), `actions/attest-build-provenance` pushed to the registry with an
+artifact storage record
 
 ---
 
@@ -200,5 +200,8 @@ For `cleanup.yml`, each package must also grant this repository the **Admin** ro
   `ghcr.io/encircle360-oss/straightmail` (version tags on release); `monorepo.yml` publishes the
   image with the embedded admin console to `ghcr.io/encircle360-oss/straightmail/monorepo`
   (7-hex commit tags). Nothing publishes `…/straightmail/backend`.
+- **Each image has its own code scanning category** (`container-image-straightmail`,
+  `container-image-monorepo`). Code scanning replaces earlier results of the same tool and category
+  for a commit, so a shared category would keep only the image whose scan uploads last.
 - **Several workflows can run for the same push or pull request** (for example `ci.yml` together
   with `backend.yml`/`frontend.yml`, or `monorepo.yml` together with `release.yml`).
